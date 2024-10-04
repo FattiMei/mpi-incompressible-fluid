@@ -80,7 +80,7 @@ $$
 \frac{ p_{i+1, j, k}^{n+1} -2 p_{i, j, k}^{n+1} + p_{i-1, j, k}^{n+1}  }{\Delta x} +  \frac{ p_{i, j, k+1}^{n+1} -2 p_{i, j, k}^{n+1} + p_{i, j-1, k}^{n+1}  }{\Delta y} +  \frac{ p_{i, j, k+1}^{n+1} -2 p_{i, j, k}^{n+1} + p_{i, j, k-1}^{n+1}  }{\Delta z} = f|_{i, j, k}
 $$
 
-Once we get how to sort out this problem the next step is trivial.
+Once we get how to sort out this problem the next step is trivial. Ok actually thinking about it it can be build like a pyramid but has to be studied in a optimal way.
 
 $$
 u_{i+0.5, j, k}^{n+1} = u_{i+0.5, j, k} ^{*}- \Delta t \cdot \frac{ p^{n+1}_{i, j, k} - p^{n+1}_{i-1, j, k}  }{\Delta x} 
