@@ -21,6 +21,7 @@
 #ifdef DEBUG_MODE
 #include <cassert>
 #endif
+#include "Real.h"
 
 #ifndef MPI_INCOMPRESSIBLE_FLUID_TENSOR_H
 #define MPI_INCOMPRESSIBLE_FLUID_TENSOR_H
