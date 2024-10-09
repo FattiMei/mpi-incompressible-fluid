@@ -1,3 +1,4 @@
+import sys
 import sympy as sp
 from sympy import diff
 from sympy.utilities.codegen import codegen
@@ -12,7 +13,7 @@ def laplacian(u):
 
 def manufsol(u, v, w, p, ignore_pressure=False):
     if diff(u,x) + diff(v,y) + diff(w,z) != 0:
-        print("[WARNING]: the proposed manufactured solution is not divergence free, correcting")
+        sys.stderr.write('[WARNING]: the proposed manufactured solution is not divergence free, correcting\n')
         w = -z * (diff(u,x) + diff(v,y))
 
     if ignore_pressure:
