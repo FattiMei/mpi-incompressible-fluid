@@ -17,7 +17,6 @@ namespace mif {
 
     };
 
-
 } // mif
 
 #endif //MPI_INCOMPRESSIBLE_FLUID_TENSOR_H
