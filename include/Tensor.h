@@ -89,7 +89,7 @@ public:
   /*!
    * Resize the tensor dimension
    * Currently this has to be used with caution as data will be messed up if we
-   * enlarge or shrink a initialized tensor
+   * enlarge or shrink an initialized tensor
    * @tparam WithAllocation A flag to control if buffer memory has to be changed
    * or not
    * @param in_dimensions The new tensor dimensions
