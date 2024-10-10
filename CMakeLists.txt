@@ -11,11 +11,12 @@ if(NOT DEFINED VERBOSE)
 endif ()
 set(EXE_NAME "mif")
 
-file(GLOB SOURCES "src/*.cpp")
+file(GLOB SOURCES "src/main.cpp")
 include_directories(include)
 
 
 
 
 add_executable(${EXE_NAME} ${SOURCES})
+add_executable(tensor_usage src/tensor_usage.cpp)
 
