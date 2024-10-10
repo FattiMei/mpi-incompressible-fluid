@@ -1,6 +1,7 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+#include <cstddef>
 #include "Real.h"
 
 namespace mif {
@@ -34,7 +35,7 @@ namespace mif {
 
             // Constructor.
             Constants(size_t Nx, size_t Ny, size_t Nz, Real x_size, Real y_size, Real z_size, Real Re);
-    }
+    };
 
 } // mif
 
