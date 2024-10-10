@@ -14,14 +14,11 @@
 #include <numeric>
 #include <sstream>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #ifndef MPI_INCOMPRESSIBLE_FLUID_TENSOR_H
 #define MPI_INCOMPRESSIBLE_FLUID_TENSOR_H
-
-#define T_VALUE_1D(t, i) (t[i])
-#define T_VALUE_2D(t, i, j) (t[i * t.strides[0] + j])
-#define T_VALUE_3D(t, i, j, k) (t[i * t.strides[0] + j * t.strides[1] + k])
 
 namespace mif {
 
@@ -30,104 +27,347 @@ namespace mif {
  * @brief A flatten multidimensional tensor
  * @tparam Type The type of the element
  * @tparam SpaceDim The physical space dimension
- * @tparam dimensionsize The tensor dimensions data type
+ * @tparam DimensionsType The tensor dimensions data type. By default
+ * std::size_t as tensors shapes may be very large
  */
 template <typename Type = double, uint8_t SpaceDim = 3,
-          typename dimensionsType = std::size_t>
+          typename DimensionsType = std::size_t>
 class Tensor {
   static_assert(SpaceDim <= 3,
                 "Space dimension bigger than 3 is not supported");
   static_assert(SpaceDim >= 1,
                 "Space dimension smaller than 1 is not supported");
 
+#define DISPATCH(size, index_storage)                                          \
+  do {                                                                         \
+    if constexpr (size == 1) {                                                 \
+      return _data[index_storage[0]];                                          \
+    } else if constexpr (size == 2) {                                          \
+      return _data[index_storage[0] * _strides[0] + index_storage[1]];         \
+    } else if constexpr (size == 3) {                                          \
+      return _data[index_storage[0] * _strides[0] +                            \
+                   index_storage[1] * _strides[1] + index_storage[2]];         \
+    }                                                                          \
+  } while (0)
+
 private:
   /*!
    * The data buffer
    */
-  std::array<dimensionsType, SpaceDim> dimensions;
+  std::array<DimensionsType, SpaceDim> _dimensions;
   /*!
    * The tensor dimensions
    */
-  std::vector<Type> data;
-
-public:
+  std::vector<Type> _data;
   /*!
    * Cache the strindes for indexing
+   * Not saving the 1D stride as it can be retrieved with the dimensions
    */
-  std::array<dimensionsType, SpaceDim - 1> strides;
+  std::array<DimensionsType, SpaceDim - 1> _strides;
+  /*!
+   * Initialization status
+   */
+  bool initialized = false;
+
+public:
   /*!
    * A flag to retrieve the total data count contained in the underlying buffer
    */
   static constexpr unsigned TOTAL_DATA_COUNT = UINT32_MAX;
   /*!
    * Constructor
-   * @param _dimensions The tensor dimensions defining its dimension
+   * @param in_dimensions The tensor dimensions defining its dimension
    */
-  Tensor(const std::array<dimensionsType, SpaceDim> &_dimensions)
-      : dimensions(_dimensions),
-        data(std::accumulate(_dimensions.begin(), _dimensions.end(),
-                             static_cast<dimensionsType>(1),
-                             std::multiplies<dimensionsType>()),
-             static_cast<Type>(0)) {
-    if constexpr (SpaceDim == 2) {
-      strides[0] = _dimensions[1];
-    }
-    if constexpr (SpaceDim == 3) {
-      strides[0] = _dimensions[1] * _dimensions[2];
-      strides[1] = _dimensions[1];
-    }
+  Tensor(const std::array<DimensionsType, SpaceDim> &in_dimensions)
+      : _dimensions(in_dimensions),
+        _data(std::accumulate(in_dimensions.begin(), in_dimensions.end(),
+                              static_cast<DimensionsType>(1),
+                              std::multiplies<DimensionsType>()),
+              static_cast<Type>(0)) {
+    resize<false>(in_dimensions);
   }
-
-  template <typename F> void set(F lambda);
   /*!
    * Resize the tensor dimension
    * Currently this has to be used with caution as data will be messed up if we
    * enlarge or shrink a initialized tensor
-   * @param _dimensions The new tensor dimensions
+   * @tparam WithAllocation A flag to control if buffer memory has to be changed
+   * or not
+   * @param in_dimensions The new tensor dimensions
    */
-  void resize(const std::array<dimensionsType, SpaceDim> &_dimensions) {
-    data.resize(std::accumulate(_dimensions.begin(), _dimensions.end(),
-                                static_cast<dimensionsType>(1),
-                                std::multiplies<dimensionsType>()));
+  template <bool WithAllocation = true>
+  void resize(const std::array<DimensionsType, SpaceDim> &in_dimensions) {
+    if constexpr (WithAllocation) {
+      _data.resize(std::accumulate(in_dimensions.begin(), in_dimensions.end(),
+                                   static_cast<DimensionsType>(1),
+                                   std::multiplies<DimensionsType>()));
+    }
+    _dimensions = in_dimensions;
+    if constexpr (SpaceDim == 2) {
+      _strides[0] = in_dimensions[1];
+    }
+    if constexpr (SpaceDim == 3) {
+      _strides[0] = in_dimensions[1] * in_dimensions[2];
+      _strides[1] = in_dimensions[1];
+    }
   }
   /*!
-   * Retrieve the dimensions dimensions
-   * @return The stride values
+   * Retrieve the tensor dimensions
+   * @return A reference to the dimensions vector
    */
-  std::array<dimensionsType, SpaceDim> const &size() const {
-    return dimensions;
+  std::array<DimensionsType, SpaceDim> const &sizes() const {
+    return _dimensions;
   }
   /*!
    * Retrieve a stride dimensions
+   * The overall data discretized space size can be retrieved with the flag
+   * TOTAL_DATA_COUNT
    * @param dim The desired dimension
    * @return The stride values
    */
-  dimensionsType size(const unsigned dim) const {
+  DimensionsType size(const unsigned dim) const {
     if (dim == TOTAL_DATA_COUNT) {
-      return std::accumulate(dimensions.begin(), dimensions.end(),
-                             static_cast<dimensionsType>(1),
-                             std::multiplies<dimensionsType>());
+      return _data.size();
     }
-    return dimensions[dim];
+    return _dimensions[dim];
+  }
+  /*!
+   * Compute an integer sequence size
+   */
+  template <typename T, T... Ints> struct integer_sequence_size;
+  /*!
+   * Compute an integer sequence size with at least one element specialization
+   */
+  template <typename T, T Head, T... Tail>
+  struct integer_sequence_size<T, Head, Tail...> {
+    static constexpr uint8_t value =
+        1 + integer_sequence_size<T, Tail...>::value;
+  };
+  /*!
+   * Compute an empty integer sequence specialization
+   */
+  template <typename T> struct integer_sequence_size<T> {
+    static constexpr uint8_t value = 0;
+  };
+  /*!
+   * Retrieve a copy of an element stored inside the tensor
+   * Indexes dispatching is performed at compile time
+   */
+  template <typename T, T... Values>
+  constexpr Type operator()(const std::integer_sequence<T, Values...>) const {
+    constexpr unsigned size = integer_sequence_size<T, Values...>::value;
+    static_assert(size > 0 && size < 4,
+                  "Minimum one index and maximum 3 indexes allowed");
+    constexpr std::array<T, size> index_storage = {Values...};
+    DISPATCH(size, index_storage);
+  }
+  /*!
+   * Retrieve a reference of an element stored inside the tensor
+   * Indexes dispatching is performed at compile time
+   */
+  template <typename T, T... Values>
+  constexpr Type &operator()(const std::integer_sequence<T, Values...>) {
+    constexpr unsigned size = integer_sequence_size<T, Values...>::value;
+    static_assert(size > 0 && size < 4,
+                  "Minimum one index and maximum 3 indexes allowed");
+    constexpr std::array<T, size> index_storage = {Values...};
+    DISPATCH(size, index_storage);
+  }
+  /*!
+   * Retrieve a copy of an element stored inside the tensor
+   * @param i first dimension index The index
+   */
+  constexpr Type operator()(const DimensionsType i) const { return _data[i]; }
+  /*!
+   * Retrieve a reference of an element stored inside the tensor
+   * @param i first dimension index The index
+   */
+  constexpr Type &operator()(const DimensionsType i) { return _data[i]; }
+  /*!
+   * Retrieve a copy of an element stored inside the tensor
+   * @param i first dimension index The index
+   * @param j second dimension index The index
+   */
+  constexpr Type operator()(const DimensionsType i,
+                            const DimensionsType j) const {
+    return _data[i * _strides[0] + j];
+  }
+  /*!
+   * Retrieve a reference of an element stored inside the tensor
+   * @param i first dimension index The index
+   * @param j second dimension index The index
+   */
+  constexpr Type &operator()(const DimensionsType i, const DimensionsType j) {
+    return _data[i * _strides[0] + j];
+  }
+  /*!
+   * Retrieve a copy of an element stored inside the tensor
+   * @param i first dimension index The index
+   * @param j second dimension index The index
+   * @param k third dimension index
+   */
+  constexpr Type operator()(const DimensionsType i, const DimensionsType j,
+                            const DimensionsType k) const {
+    return _data[i * _strides[0] + j * _strides[1] + k];
+  }
+  /*!
+   * Retrieve a reference of an element stored inside the tensor
+   * @param i first dimension index The index
+   * @param j second dimension index The index
+   * @param k third dimension index
+   */
+  constexpr Type &operator()(const DimensionsType i, const DimensionsType j,
+                             const DimensionsType k) {
+    return _data[i * _strides[0] + j * _strides[1] + k];
+  }
+  /*!
+   * Apply Dirichlet boundary conditions
+   * @param face The boundary face
+   * @param value The boundary value
+   */
+  void apply_boudnary_value(const uint8_t face, const Type value) {
+    /*
+        Boundary tags
+
+        1D:
+        0+-------------------+1
+
+        2D:
+                  0
+        +-------------------+
+        |                   |
+        |                   |
+       1|                   |3
+        |                   |
+        |                   |
+        +-------------------+
+                  2
+
+        3D:
+            6+-------------------+7
+           /|                  /  |
+          / |                 /   |
+         /  |                /    |
+        4+------------------+5    |
+        |   |                |    |
+        |   |                |    |
+        |   3+-------------------+2
+        |  /                 |   /
+        | /                  | /
+        0+-------------------+1
+        0154: 0
+        4576: 1
+        3276: 2
+        0123: 3
+        1275: 4
+        0364: 5
+     */
+#ifdef DEBUG_MODE
+    if constexpr (SpaceDim == 1) {
+      assert(face < 2);
+    } else if constexpr (SpaceDim == 2) {
+      assert(face < 4);
+    } else {
+      assert(face < 6);
+    }
+#endif
+
+    if constexpr (SpaceDim == 1) {
+      switch (face) {
+      case 0:
+        operator()(0) = value;
+        break;
+      case 1:
+        operator()(_dimensions[0] - 1) = value;
+        break;
+      }
+    } else if constexpr (SpaceDim == 2) {
+      switch (face) {
+      case 0:
+        for (DimensionsType i = 0; i < _dimensions[1]; ++i) {
+          operator()(0, i) = value;
+        }
+        break;
+      case 1:
+        for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
+          operator()(i, 0) = value;
+        }
+        break;
+      case 2:
+        for (DimensionsType i = 0; i < _dimensions[1]; ++i) {
+          operator()(_dimensions[0] - 1, i) = value;
+        }
+        break;
+      case 3:
+        for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
+          operator()(i, _dimensions[1] - 1) = value;
+        }
+        break;
+      }
+    } else if constexpr (SpaceDim == 3) {
+      switch (face) {
+      case 0:
+        // First depth, loop over row and col
+        for (DimensionsType i = 0; i < _dimensions[1]; ++i) {
+          for (DimensionsType j = 0; j < _dimensions[2]; ++j) {
+            operator()(0, i, j) = value;
+          }
+        }
+        break;
+      case 1:
+        // First row, loop over depth and col
+        for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
+          for (DimensionsType j = 0; j < _dimensions[2]; ++j) {
+            operator()(i, 0, j) = value;
+          }
+        }
+        break;
+      case 2:
+        // Last depth, loop over row and col
+        for (DimensionsType i = 0; i < _dimensions[1]; ++i) {
+          for (DimensionsType j = 0; j < _dimensions[2]; ++j) {
+            operator()(_dimensions[0] - 1, i, j) = value;
+          }
+        }
+        break;
+      case 3:
+        // Last row, loop depth row and col
+        for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
+          for (DimensionsType j = 0; j < _dimensions[2]; ++j) {
+            operator()(i, _dimensions[1] - 1, j) = value;
+          }
+        }
+        break;
+      case 4:
+        // Last col, loop over depth and row
+        for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
+          for (DimensionsType j = 0; j < _dimensions[1]; ++j) {
+            operator()(i, j, _dimensions[2] - 1) = value;
+          }
+        }
+        break;
+      case 5:
+        // First col, loop over depth and row
+        for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
+          for (DimensionsType j = 0; j < _dimensions[1]; ++j) {
+            operator()(i, j, 0) = value;
+          }
+        }
+        break;
+      }
+    }
   }
 
   /*!
-   * Get a copy of a data
-   * @param i The data index
-   * @return The requested data
-   */
-  inline Type operator[](const size_t i) const { return data[i]; }
-  /*!
-   * Get a reference of a data
-   * @param i The data index
-   * @return A reference to the requested data
-   */
-  inline Type &operator[](const size_t i) { return data[i]; }
-  /*!
    * Load tensor content from file
+   * TODO: Currently this does not support a second read (we have to resize the
+   * tensor)
    * @param file_name The input file name
    */
   uint8_t load(std::string const &file_name) {
+    if (initialized) {
+      std::cerr << "Can not load file into an initialized tensor" << std::endl;
+      return 0;
+    }
     auto trim = [](std::string &str) {
       str.erase(std::remove(str.begin(), str.end(), '\n'), str.cend());
     };
@@ -146,7 +386,7 @@ public:
     }
 
     std::istringstream input_stream(input);
-    input_stream >> *this;
+    input_stream >> (*this);
 
     input_f.close();
     return 1;
@@ -162,7 +402,7 @@ public:
       return 0;
     }
 
-    out_f << *this;
+    out_f << (*this);
     out_f.close();
 
     return 1;
@@ -181,16 +421,17 @@ template <typename Type, uint8_t SpaceDim>
 std::ostream &operator<<(std::ostream &out,
                          Tensor<Type, SpaceDim> const &tensor) {
   // Recover the runtime stride type
-  using Stride = typename std::decay<decltype(tensor.size())>::type::value_type;
+  using Stride =
+      typename std::decay<decltype(tensor.sizes())>::type::value_type;
   out << "Tensor (row major). Dimensions: [ ";
-  for (auto &v : tensor.size()) {
+  for (auto &v : tensor.sizes()) {
     out << v << " ";
   }
   out << "]";
   out << std::endl << "[ ";
   for (Stride i = 0; i < tensor.size(Tensor<Type, SpaceDim>::TOTAL_DATA_COUNT);
        ++i) {
-    out << tensor[i] << " ";
+    out << tensor(i) << " ";
   }
   out << "]" << std::endl;
 
@@ -199,12 +440,13 @@ std::ostream &operator<<(std::ostream &out,
 template <typename Type, uint8_t SpaceDim>
 std::istream &operator>>(std::istream &in, Tensor<Type, SpaceDim> &tensor) {
   // Recover the runtime stride type
-  using Stride = typename std::decay<decltype(tensor.size())>::type::value_type;
+  using Stride =
+      typename std::decay<decltype(tensor.sizes())>::type::value_type;
   for (Stride i = 0; i < tensor.size(Tensor<Type, SpaceDim>::TOTAL_DATA_COUNT);
        ++i) {
-    in >> tensor[i];
-    // if the istream has not enough data we will leave the other data as they
-    // are in memory (hopefully zero by tensor construction)
+    in >> tensor(i);
+    // if the istream has not enough data we will leave the other memory cells
+    // as they are in memory (hopefully zero by tensor construction)
     if (!in) {
       break;
     }
