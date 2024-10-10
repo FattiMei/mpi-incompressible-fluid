@@ -18,6 +18,7 @@ namespace mif {
             const Real Re;
 
             // Derived constants (computed here once for efficiency).
+            // I think that compilers are smart enough to do this optimization by themselves.
             const Real dx;
             const Real dy;
             const Real dz;

@@ -6,34 +6,35 @@
 
 namespace mif {
 
-    // Calculate the x component of -(u*nabla)u + 1/Re nabla^2 u at index index.
-    inline Real calculate_momentum_rhs_u(const Tensor &u, const Tensor &v, const Tensor &w, const Constants &constants, const size_t index) {
-        return -u[index]*(u[index+1]-u[index-1])*constants.one_over_2_dx 
-               -(v[index]+v[index-constants.row_size]+v[index+1]+v[index+1-constants.row_size])*(u[index+constants.row_size]-u[index-constants.row_size])*constants.one_over_8_dy
-               -(w[index]+w[index-constants.matrix_size]+w[index+1]+w[index+1-constants.matrix_size])*(u[index+constants.matrix_size]-u[index-constants.matrix_size])*constants.one_over_8_dz
-               +(u[index+1]-2*u[index]+u[index-1])*constants.one_over_dx2_Re
-               +(u[index+constants.row_size]-2*u[index]+u[index-constants.row_size])*constants.one_over_dy2_Re
-               +(u[index+constants.matrix_size]-2*u[index]+u[index-constants.matrix_size])*constants.one_over_dz2_Re;
+
+
+    inline Real calculate_momentum_rhs_u(const Tensor &u, const Tensor &v, const Tensor &w, const Constants &constants, const size_t i, const size_t j, const size_t k) {
+        return -u.get(i, j, k)*(u.get(i+1, j, k)-u.get(i-1, j, k))*constants.one_over_2_dx
+               -(v.get(i, j, k)+v.get(i, j-1, k)+v.get(i+1, j, k)+v.get(i+1, j-1, k))*(u.get(i, j+1, k)-u.get(i, j-1, k))*constants.one_over_8_dy
+               -(w.get(i, j, k)+w.get(i, j, k-1)+w.get(i+1, j, k)+w.get(i+1, j, k-1))*(u.get(i, j, k+1)-u.get(i, j, k-1))*constants.one_over_8_dz
+               +(u.get(i+1, j, k)-2*u.get(i, j, k)+u.get(i-1, j, k))*constants.one_over_dx2_Re
+               +(u.get(i, j+1, k)-2*u.get(i, j, k)+u.get(i, j-1, k))*constants.one_over_dy2_Re
+               +(u.get(i, j, k+1)-2*u.get(i, j, k)+u.get(i, j, k-1))*constants.one_over_dz2_Re
     }
 
-    // Calculate the y component of -(u*nabla)u + 1/Re nabla^2 u at index index.
-    inline Real calculate_momentum_rhs_v(const Tensor &u, const Tensor &v, const Tensor &w, const Constants &constants, const size_t index) {
-        return -(u[index]+u[index-1]+u[index+constants.row_size]+u[index+constants.row_size-1])*(v[index+1]-v[index-1])*constants.one_over_8_dx
-               -v[index]*(v[index+constants.row_size]-v[index-constants.row_size])*constants.one_over_2_dy 
-               -(w[index]+w[index-constants.matrix_size]+w[index+constants.row_size]+w[index+constants.row_size-constants.matrix_size])*(v[index+constants.matrix_size]-v[index-constants.matrix_size])*constants.one_over_8_dz
-               +(v[index+1]-2*v[index]+v[index-1])*constants.one_over_dx2_Re
-               +(v[index+constants.row_size]-2*v[index]+v[index-constants.row_size])*constants.one_over_dy2_Re
-               +(v[index+constants.matrix_size]-2*v[index]+v[index-constants.matrix_size])*constants.one_over_dz2_Re;
+
+    inline Real calculate_momentum_rhs_v(const Tensor &u, const Tensor &v, const Tensor &w, const Constants &constants, const size_t i, const size_t j, const size_t k) {
+        return -(u.get(i, j, k)+u.get(i-1, j, k)+u.get(i, j+1, k)+u.get(i-1, j+1, k))*(v.get(i+1, j, k)-v.get(i-1, j, k))*constants.one_over_8_dx
+               -v.get(i, j, k)*(v.get(i, j+1, k)-v.get(i, j-1, k))*constants.one_over_2_dy
+               -(w.get(i, j, k)+w.get(i, j, k-1)+w.get(i, j+1, k)+w.get(i, j+1, k-1))*(v.get(i, j, k+1)-v.get(i, j, k-1))*constants.one_over_8_dz
+               +(v.get(i+1, j, k)-2*v.get(i, j, k)+v.get(i-1, j, k))*constants.one_over_dx2_Re
+               +(v.get(i, j+1, k)-2*v.get(i, j, k)+v.get(i, j-1, k))*constants.one_over_dy2_Re
+               +(v.get(i, j, k+1)-2*v.get(i, j, k)+v.get(i, j, k-1))*constants.one_over_dz2_Re
     }
 
-    // Calculate the z component of -(u*nabla)u + 1/Re nabla^2 u at index index.
-    inline Real calculate_momentum_rhs_w(const Tensor &u, const Tensor &v, const Tensor &w, const Constants &constants, const size_t index) {
-        return -(u[index]+u[index-1]+u[index+constants.matrix_size]+u[index+constants.matrix_size-1])*(w[index+1]-w[index-1])*constants.one_over_8_dx
-               -(v[index]+v[index-constants.row_size]+v[index+constants.matrix_size]+v[index+constants.matrix_size-constants.row_size])*(w[index+constants.row_size]-w[index-constants.row_size])*constants.one_over_8_dy
-               -w[index]*(w[index+constants.matrix_size]-w[index-constants.matrix_size])*constants.one_over_2_dz
-               +(w[index+1]-2*w[index]+w[index-1])*constants.one_over_dx2_Re
-               +(w[index+constants.row_size]-2*w[index]+w[index-constants.row_size])*constants.one_over_dy2_Re
-               +(w[index+constants.matrix_size]-2*w[index]+w[index-constants.matrix_size])*constants.one_over_dz2_Re;
+
+    inline Real calculate_momentum_rhs_w(const Tensor &u, const Tensor &v, const Tensor &w, const Constants &constants, const size_t i, const size_t j, const size_t k) {
+        return -(u.get(i, j, k)+u.get(i-1, j, k)+u.get(i, j, k+1)+u.get(i-1, j, k+1))*(w.get(i+1, j, k)-w.get(i-1, j, k))*constants.one_over_8_dx
+               -(v.get(i, j, k)+v.get(i, j-1, k)+v.get(i, j, k+1)+v.get(i, j-1, k+1))*(w.get(i, j+1, k)-w.get(i, j-1, k))*constants.one_over_8_dy
+               -w.get(i, j, k)*(w.get(i, j, k+1)-w.get(i, j, k-1))*constants.one_over_2_dz
+               +(w.get(i+1, j, k)-2*w.get(i, j, k)+w.get(i-1, j, k))*constants.one_over_dx2_Re
+               +(w.get(i, j+1, k)-2*w.get(i, j, k)+w.get(i, j-1, k))*constants.one_over_dy2_Re
+               +(w.get(i, j, k+1)-2*w.get(i, j, k)+w.get(i, j, k-1))*constants.one_over_dz2_Re
     }
 
 } // mif
