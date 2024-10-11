@@ -16,6 +16,9 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#ifdef DEBUG_MODE
+#include <cassert>
+#endif
 
 #ifndef MPI_INCOMPRESSIBLE_FLUID_TENSOR_H
 #define MPI_INCOMPRESSIBLE_FLUID_TENSOR_H
