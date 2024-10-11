@@ -77,9 +77,7 @@ int main(int argc, char *argv[]) {
     std::cout << "After BC on face " << i << ":" << std::endl
               << tt << std::endl;
   }
-  // We can also assign a specific point to a boudnary value. The current API
-  // requires us to give also the face for future impls. As the face is not used
-  // we can pass 0.
+  // We can also assign a specific point to a boudnary value.
   for (unsigned i = 0; i < 6; ++i) {
     tt.apply_dirichlet_boundary_face(i, 0.0);
   }
