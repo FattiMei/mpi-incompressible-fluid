@@ -212,7 +212,7 @@ public:
    * face is left to the caller
    * TODO: Integrate the assertion that the point lies on a face
    * TODO: Currently when this method is called you have to specify the template
-   * aerguments
+   * arguments
    * @param face The boundary face
    * @param value The boundary value
    */
