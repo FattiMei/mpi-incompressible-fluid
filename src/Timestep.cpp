@@ -3,10 +3,10 @@
 //
 
 #include <functional>
-#include "MomentumEquation.h"
 #include "Constants.h"
+#include "MomentumEquation.h"
 #include "Tensor.h"
-#include "timestep.h"
+#include "Timestep.h"
 
 namespace mif {
     Real RK3(Real x, Real dt, const std::function<Real(size_t, size_t, size_t, Real)> &f, size_t i, size_t j, size_t k);

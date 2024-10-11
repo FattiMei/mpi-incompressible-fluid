@@ -4,7 +4,6 @@
 #include "Constants.h"
 #include "Tensor.h"
 
-
 // Given a specific point in the grid denoted by the indices i, j, k, the following functions calculate the
 // right-hand side of the momentum equation for the u, v, and w components, respectively. The incoming
 // parameters are the scalar fields u, v, and w, which represent the velocity components in the x, y, and z
