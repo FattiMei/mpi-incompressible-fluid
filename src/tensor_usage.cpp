@@ -5,7 +5,7 @@
 int main(int argc, char *argv[]) {
   const std::size_t depth = 2;
   const std::size_t rows = 2;
-  const std::size_t cols = 2;
+  const std::size_t cols = 4;
   std::cout << std::endl
             << "Testing tensor load, dump and indexing" << std::endl;
   // Create a tensor
@@ -36,6 +36,21 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // Resize the tensor and print
+  std::cout << std::endl << "Resizing tensor:" << std::endl;
+
+  auto new_depth = depth + 1;
+  auto new_rows = rows + 1;
+  auto new_cols = cols + 1;
+  t.resize({new_depth, new_rows, new_cols});
+  for (std::size_t i = 0; i < new_depth; i++) {
+    for (std::size_t j = 0; j < new_rows; j++) {
+      for (std::size_t k = 0; k < new_cols; k++) {
+        std::cout << "value at {" << i << "," << j << "," << k << "}"
+                  << t(i, j, k) << std::endl;
+      }
+    }
+  }
   // Modify element
   std::cout << std::endl
             << "Modifying vlaue at {0, 0, 0} with constexpr indexing"
