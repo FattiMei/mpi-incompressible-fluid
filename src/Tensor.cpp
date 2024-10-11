@@ -1,9 +1,9 @@
-//
-// Created by giorgio on 07/10/24.
-//
+/**
+ * @file Tensor.cpp
+ * @brief Definition file for the Tensor class.
+ * @author Giorgio
+ */
 
-#include "../include/Tensor.h"
+#include <Tensor.h>
 
-namespace mif {
-
-}
+namespace mif {}

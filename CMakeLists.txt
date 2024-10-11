@@ -14,13 +14,14 @@ endif ()
 set(EXE_NAME "mif")
 set(FORCING_TERM_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol.py)
 
-file(GLOB SOURCES "src/*.cpp")
+file(GLOB SOURCES "src/main.cpp")
 include_directories(include)
 
 
 
 
 add_executable(${EXE_NAME} ${SOURCES})
+add_executable(tensor_usage src/tensor_usage.cpp)
 
 add_custom_target(
 	manifacture ALL
