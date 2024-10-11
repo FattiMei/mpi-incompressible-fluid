@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
+#include "Tensor.h"
 
 #ifndef MPI_INCOMPRESSIBLE_FLUID_L2Norm
 #define MPI_INCOMPRESSIBLE_FLUID_L2Norm
@@ -46,74 +47,102 @@ class Constants {
     }
 };
 
-inline Real calculate_momentum_rhs_u(const std::vector<double> &u, const std::vector<double> &v, const std::vector<double> &w, const Constants &constants, const size_t index) {
-    return -u[index]*(u[index+1]-u[index-1])*constants.one_over_2_dx 
-            -(v[index]+v[index-constants.row_size]+v[index+1]+v[index+1-constants.row_size])*(u[index+constants.row_size]-u[index-constants.row_size])*constants.one_over_8_dy
-            -(w[index]+w[index-constants.matrix_size]+w[index+1]+w[index+1-constants.matrix_size])*(u[index+constants.matrix_size]-u[index-constants.matrix_size])*constants.one_over_8_dz
-            +(u[index+1]-2*u[index]+u[index-1])*constants.one_over_dx2_Re
-            +(u[index+constants.row_size]-2*u[index]+u[index-constants.row_size])*constants.one_over_dy2_Re
-            +(u[index+constants.matrix_size]-2*u[index]+u[index-constants.matrix_size])*constants.one_over_dz2_Re;
-}
 
-    // Calculate the y component of -(u*nabla)u + 1/Re nabla^2 u at index index.
-inline Real calculate_momentum_rhs_v(const std::vector<double> &u, const std::vector<double> &v, const std::vector<double> &w, const Constants &constants, const size_t index) {
-    return -(u[index]+u[index-1]+u[index+constants.row_size]+u[index+constants.row_size-1])*(v[index+1]-v[index-1])*constants.one_over_8_dx
-            -v[index]*(v[index+constants.row_size]-v[index-constants.row_size])*constants.one_over_2_dy 
-            -(w[index]+w[index-constants.matrix_size]+w[index+constants.row_size]+w[index+constants.row_size-constants.matrix_size])*(v[index+constants.matrix_size]-v[index-constants.matrix_size])*constants.one_over_8_dz
-            +(v[index+1]-2*v[index]+v[index-1])*constants.one_over_dx2_Re
-            +(v[index+constants.row_size]-2*v[index]+v[index-constants.row_size])*constants.one_over_dy2_Re
-            +(v[index+constants.matrix_size]-2*v[index]+v[index-constants.matrix_size])*constants.one_over_dz2_Re;
-}
-
-// Calculate the z component of -(u*nabla)u + 1/Re nabla^2 u at index index.
-inline Real calculate_momentum_rhs_w(const std::vector<double> &u, const std::vector<double> &v, const std::vector<double> &w, const Constants &constants, const size_t index) {
-    return -(u[index]+u[index-1]+u[index+constants.matrix_size]+u[index+constants.matrix_size-1])*(w[index+1]-w[index-1])*constants.one_over_8_dx
-            -(v[index]+v[index-constants.row_size]+v[index+constants.matrix_size]+v[index+constants.matrix_size-constants.row_size])*(w[index+constants.row_size]-w[index-constants.row_size])*constants.one_over_8_dy
-            -w[index]*(w[index+constants.matrix_size]-w[index-constants.matrix_size])*constants.one_over_2_dz
-            +(w[index+1]-2*w[index]+w[index-1])*constants.one_over_dx2_Re
-            +(w[index+constants.row_size]-2*w[index]+w[index-constants.row_size])*constants.one_over_dy2_Re
-            +(w[index+constants.matrix_size]-2*w[index]+w[index-constants.matrix_size])*constants.one_over_dz2_Re;
-}
-
-
-
-//template<typename T>
-double L2Norm(std::vector<double> &U, std::vector<double> &V, std::vector<double> &W, std::vector<double> &Uex, std::vector<double> &Vex, std::vector<double> &Wex, Constants c){
+/// @brief Computes the L2 norm of the difference between numerical and exact solutions for 3D velocity components (U, V, W).
+/// This function calculates the weighted L2 norm by summing the squared differences between the numerical and exact 
+/// velocity components for all grid points, using the trapezoidal method, that is second order accuracy.
+/// 
+/// @param U A vector of numerical values for the velocity component U.
+/// @param V A vector of numerical values for the velocity component V.
+/// @param W A vector of numerical values for the velocity component W.
+/// @param Uex A vector of exact solution values for the velocity component U.
+/// @param Vex A vector of exact solution values for the velocity component V.
+/// @param Wex A vector of exact solution values for the velocity component W.
+/// @param c A `Constants` structure containing grid dimensions (Nx, Ny, Nz) and grid spacing (dx, dy, dz).
+/// @return The computed L2 norm, which represents the error between the numerical and exact solutions.
+double L2Norm(std::vector<double> &U, std::vector<double> &V, std::vector<double> &W, std::vector<double> &Uex, std::vector<double> &Vex, std::vector<double> &Wex, Constants c)
+{
+    std::vector<double> wx(c.Nx), wy(c.Ny), wz(c.Nz);
     double integral = 0.0; 
 
-    for (size_t i = 1; i < c.Nx - 1; ++i) { 
-        for (size_t j = 1; j < c.Ny - 1; ++j) { 
-            for (size_t k = 1; k < c.Nz - 1; ++k) { 
-                size_t index = i + j * c.row_size + k * c.matrix_size; 
- 
-                // Compute the RHS for computed velocities 
-                Real computed_rhs_u = calculate_momentum_rhs_u(U, V, W, c, index); 
-                Real computed_rhs_v = calculate_momentum_rhs_v(U, V, W, c, index); 
-                Real computed_rhs_w = calculate_momentum_rhs_w(U, V, W, c, index); 
- 
-                // Compute the RHS for exact velocities 
-                Real exact_rhs_u = calculate_momentum_rhs_u(Uex, Vex, Wex, c, index); 
-                Real exact_rhs_v = calculate_momentum_rhs_v(Uex, Vex, Wex, c, index); 
-                Real exact_rhs_w = calculate_momentum_rhs_w(Uex, Vex, Wex, c, index); 
- 
-                // Compute the residuals 
-                double residual_u = computed_rhs_u - exact_rhs_u; 
-                double residual_v = computed_rhs_v - exact_rhs_v; 
-                double residual_w = computed_rhs_w - exact_rhs_w; 
- 
-                // Compute the squared residual 
-                double residual_squared = residual_u * residual_u + residual_v * residual_v + residual_w * residual_w; 
- 
-                // Accumulate the residual (no weighting needed for interior points) 
-                integral += residual_squared; 
-            } 
-        } 
-    } 
- 
-    integral *= c.dx * c.dy * c.dz; 
-    return std::sqrt(integral); 
+    for (size_t i = 0; i < c.Nx; ++i) {
+        wx[i] = (i == 0 || i == c.Nx - 1) ? 1.0 : 0.5;
+    }
+    for (size_t j = 0; j < c.Ny; ++j) {
+        wy[j] = (j == 0 || j == c.Ny - 1) ? 1.0 : 0.5;
+    }
+    for (size_t k = 0; k < c.Nz; ++k) {
+        wz[k] = (k == 0 || k == c.Nz - 1) ? 1.0 : 0.5;
+    }
+
+    // Loop over all grid points using a single loop
+    for (size_t index = 0; index < U.size(); ++index) {
+        // Compute 3D indices from the flat index
+        size_t i = index % c.Nx;
+        size_t j = (index / c.Nx) % c.Ny;
+        size_t k = index / (c.Nx * c.Ny);
+
+        // Retrieve weights
+        double weight = wx[i] * wy[j] * wz[k];
+
+        // Compute the differences between numerical and exact velocities
+        double diff_u = U[index] - Uex[index];
+        double diff_v = V[index] - Vex[index];
+        double diff_w = W[index] - Wex[index];
+
+        // Compute the squared difference
+        double diff_squared = diff_u * diff_u + diff_v * diff_v + diff_w * diff_w;
+
+        // Accumulate the weighted squared differences
+        integral += weight * diff_squared;
+    }
+
+    // Multiply by the volume element
+    integral *= c.dx * c.dy * c.dz;
+
+    // Take the square root to get the L2 norm
+    return std::sqrt(integral);
 }
 
+// This one is the same method as before, but with input the Tensor class, declared into "Tensor.h"
+// NB: To be tested
+template <typename Type, size_t SpaceDim>
+double L2NormTensor(mif::Tensor<Type, SpaceDim> &U, mif::Tensor<Type, SpaceDim> &V, 
+              mif::Tensor<Type, SpaceDim> &W, mif::Tensor<Type, SpaceDim> &Uex, 
+              mif::Tensor<Type, SpaceDim> &Vex, mif::Tensor<Type, SpaceDim> &Wex, 
+              const Constants &c)
+{
+    double wxi, wyj, wzk;
+    double weight = 0;
+    double integral = 0.0;
+
+    // Iterate over the entire tensor space
+    for (size_t i = 0; i < c.Nx; ++i) {
+        wxi = (i == 0 || i == c.Nx - 1) ? 1.0 : 0.5;
+        for (size_t j = 0; j < c.Ny; ++j) {
+            wyj = (j == 0 || j == c.Ny - 1) ? 1.0 : 0.5;
+            for (size_t k = 0; k < c.Nz; ++k) {
+                // Calculate weight for current grid point
+                wzk = (k == 0 || k == c.Nz - 1) ? 1.0 : 0.5;
+
+                weight = wxi * wyj * wzk;
+
+                // Compute differences
+                double diff_u = U(i, j, k) - Uex(i, j, k);
+                double diff_v = V(i, j, k) - Vex(i, j, k);
+                double diff_w = W(i, j, k) - Wex(i, j, k);
+
+                // Accumulate squared differences with weights
+                integral += weight * (diff_u * diff_u + diff_v * diff_v + diff_w * diff_w);
+            }
+        }
+    }
+
+    // Multiply by volume element and return the square root
+    integral *= c.dx * c.dy * c.dz;
+    return std::sqrt(integral);
+};
 
 
-#endif //MPI_INCOMPRESSIBLE_FLUID_std::vector<double>_H
+
+#endif //MPI_INCOMPRESSIBLE_FLUID_H

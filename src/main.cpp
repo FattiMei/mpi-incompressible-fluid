@@ -5,10 +5,10 @@ int main()
 {
     std::cout<<"Bella li"<<std::endl;
     size_t Nx = 3;
-    size_t Ny = 3; 
-    size_t Nz = 3; 
-    Real x_size = 1.0; 
-    Real y_size = 1.0; 
+    size_t Ny = 4; 
+    size_t Nz = 5; 
+    Real x_size = 10.0; 
+    Real y_size = 200.0; 
     Real z_size = 1.0; 
     Real Re = 1.0;
     Constants cc(Nx, Ny, Nz, x_size, y_size, z_size, Re);
@@ -43,14 +43,15 @@ int main()
             }
         }
     }
-    // Introduce perturbation at center point
-    // size_t center_index = 1 + 1 * cc.row_size + 1 * cc.matrix_size;
-    // U[center_index] += 0.1;
-    // V[center_index] += 0.1;
-    // W[center_index] += 0.1;
+    //Introduce perturbation at center point
+    size_t center_index = 1 + 1 * cc.row_size + 1 * cc.matrix_size;
+    U[center_index] += 0.1;
+    V[center_index] += 0.1;
+    W[center_index] += 0.1;
     
 
     double res = L2Norm(U, V, W, Uex, Vex, Wex, cc);
+
     
     std::cout<<"Res = "<< res <<std::endl;
 
