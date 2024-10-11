@@ -11,7 +11,11 @@
 namespace mif {
     // Perform a single step of an explicit RK3 method for a single point.
     Real RK3(Real x, Real dt, const std::function<Real(size_t, size_t, size_t, Real)> &f, size_t i, size_t j, size_t k);
-    std::array<Real,3> RK3_coupled(Real u_n, Real v_n, Real w_n, Real dt, const std::function<Real(size_t, size_t, size_t, Real)> &f_u, const std::function<Real(size_t, size_t, size_t, Real)> &f_v, const std::function<Real(size_t, size_t, size_t, Real)> &f_w, size_t i, size_t j, size_t k);
+
+    std::array<Real, 3>
+    RK3_coupled(Real u_n, Real v_n, Real w_n, Real dt, const std::function<Real(size_t, size_t, size_t, Real)> &f_u,
+                const std::function<Real(size_t, size_t, size_t, Real)> &f_v,
+                const std::function<Real(size_t, size_t, size_t, Real)> &f_w, size_t i, size_t j, size_t k);
 
     void timestep(Tensor &u, Tensor &v, Tensor &w, const Constants &constants) {
         auto f_u = [&u, &v, &w, &constants](size_t i, size_t j, size_t k, Real x) {
@@ -29,16 +33,17 @@ namespace mif {
         };
 
         // Update the velocity solution inside the mesh.
-        for (size_t i = 1; i < u.size[0] - 1; i++) { // TODO: need to skip the boundary points.
+        for (size_t i = 1; i < u.size[0] - 1; i++) {
             for (size_t j = 1; j < u.size[1] - 1; j++) {
                 for (size_t k = 1; k < u.size[2] - 1; k++) {
                     // Update the solution. I don't know if updating each component separately is the correct way to do it since the components are dependent on each other.
-                   /* u.set(i, j, k, RK3(u.get(i, j, k), constants.dt, f_u, i, j, k));
-                    v.set(i, j, k, RK3(v.get(i, j, k), constants.dt, f_v, i, j, k));
-                    w.set(i, j, k, RK3(w.get(i, j, k), constants.dt, f_w, i, j, k));
-                    */
+                    /* u.set(i, j, k, RK3(u.get(i, j, k), constants.dt, f_u, i, j, k));
+                     v.set(i, j, k, RK3(v.get(i, j, k), constants.dt, f_v, i, j, k));
+                     w.set(i, j, k, RK3(w.get(i, j, k), constants.dt, f_w, i, j, k));
+                     */
                     //Probably this is better for stability reasons, but we would need to check it
-                    auto result = RK3_coupled(u.get(i, j, k), v.get(i, j, k), w.get(i, j, k), constants.dt, f_u, f_v, f_w, i, j, k);
+                    auto result = RK3_coupled(u.get(i, j, k), v.get(i, j, k), w.get(i, j, k), constants.dt, f_u, f_v,
+                                              f_w, i, j, k);
                     u.set(i, j, k, result[0]);
                     v.set(i, j, k, result[1]);
                     w.set(i, j, k, result[2]);
