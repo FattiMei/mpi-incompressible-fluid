@@ -15,8 +15,9 @@ file(GLOB SOURCES "src/main.cpp")
 include_directories(include)
 
 
-
-
 add_executable(${EXE_NAME} ${SOURCES})
 add_executable(tensor_usage src/tensor_usage.cpp)
+
+# Add the test directory
+add_subdirectory(test)
 
