@@ -5,6 +5,8 @@
  * @author Frizzy
  * @author Kaixi
  */
+#include <MetaHelpers.hpp>
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -134,24 +136,6 @@ public:
     return _dimensions[dim];
   }
   /*!
-   * Compute an integer sequence size
-   */
-  template <typename T, T... Ints> struct integer_sequence_size;
-  /*!
-   * Compute an integer sequence size with at least one element specialization
-   */
-  template <typename T, T Head, T... Tail>
-  struct integer_sequence_size<T, Head, Tail...> {
-    static constexpr uint8_t value =
-        1 + integer_sequence_size<T, Tail...>::value;
-  };
-  /*!
-   * Compute an empty integer sequence specialization
-   */
-  template <typename T> struct integer_sequence_size<T> {
-    static constexpr uint8_t value = 0;
-  };
-  /*!
    * Retrieve a copy of an element stored inside the tensor
    * Indexes dispatching is performed at compile time
    */
@@ -224,10 +208,53 @@ public:
   }
   /*!
    * Apply Dirichlet boundary conditions
+   * This will apply a value on a given point. Checks that the point lies on a
+   * face is left to the caller
+   * TODO: Integrate the assertion that the point lies on a face
+   * TODO: Currently when this method is called you have to specify the template
+   * aerguments
    * @param face The boundary face
    * @param value The boundary value
    */
-  void apply_boudnary_value(const uint8_t face, const Type value) {
+  template <typename... Indexes, typename MaybeCallable,
+            typename... MaybeCallableArgs>
+  typename std::enable_if<((sizeof...(Indexes) == SpaceDim)), void>::type
+  apply_dirichlet_boundary_point(Indexes... indexes, const MaybeCallable &input,
+                                 MaybeCallableArgs... args) {
+    Type value = {0};
+    if constexpr (is_callable<MaybeCallable>::value) {
+      // This static assertion checks that arguments provided to the caller are
+      // compatible
+      static_assert(
+          std::is_invocable<MaybeCallable, MaybeCallableArgs...>::value,
+          "Callable cannot be invoked with the given arguments.");
+      // Perfect forwarding
+      value = input(std::forward<MaybeCallableArgs>(args)...);
+    } else {
+      value = input;
+    }
+
+    // Recover the point the space and assign the requested value
+    std::array<DimensionsType, sizeof...(Indexes)> point = {
+        static_cast<DimensionsType>(indexes)...};
+    if constexpr (SpaceDim == 1) {
+      operator()(point[0]) = value;
+    } else if constexpr (SpaceDim == 2) {
+      operator()(point[0], point[1]) = value;
+    } else if constexpr (SpaceDim == 3) {
+      operator()(point[0], point[1], point[2]) = value;
+    }
+  }
+  /*!
+   * Apply Dirichlet boundary conditions
+   * This will apply the same value on an entire face
+   * @param face The boundary face
+   * @param value The boundary value
+   */
+  template <typename MaybeCallable, typename... MaybeCallableArgs>
+  void apply_dirichlet_boundary_face(const uint8_t face,
+                                     const MaybeCallable &input,
+                                     MaybeCallableArgs... args) {
     /*
         Boundary tags
 
@@ -273,6 +300,18 @@ public:
       assert(face < 6);
     }
 #endif
+    Type value = {0};
+    if constexpr (is_callable<MaybeCallable>::value) {
+      // This static assertion checks that arguments provided to the caller are
+      // compatible
+      static_assert(
+          std::is_invocable<MaybeCallable, MaybeCallableArgs...>::value,
+          "Callable cannot be invoked with the given arguments.");
+      // Perfect forwarding
+      value = input(std::forward<MaybeCallableArgs>(args)...);
+    } else {
+      value = input;
+    }
 
     if constexpr (SpaceDim == 1) {
       switch (face) {

@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
   std::cout << std::endl
             << "Testing tensor load, dump and indexing" << std::endl;
   // Create a tensor
-  mif::Tensor<double, 3> t({rows, cols, depth});
+  mif::Tensor<double, 3> t({depth, rows, cols});
   // Load data
   if (!t.load("in.txt")) {
     std::cerr << "Failed to load tensor from file." << std::endl;
@@ -57,20 +57,36 @@ int main(int argc, char *argv[]) {
   // Boundary conditions
   std::cout << std::endl << "Testing boundary conditions" << std::endl;
   // Create a tensor
-  mif::Tensor<double, 3> tt({rows, cols, depth});
+  mif::Tensor<double, 3> tt({depth, rows, cols});
   // Load data
   if (!tt.load("zero.txt")) {
     std::cerr << "Failed to load tensor from file." << std::endl;
     return 1;
   }
+  auto fn = [](const unsigned i) -> double {
+    if (i < 2) {
+      return 2.0;
+    }
+    return 3.0;
+  };
   for (unsigned i = 0; i < 6; ++i) {
     if (i > 0) {
-      tt.apply_boudnary_value(i - 1, 0.0);
+      tt.apply_dirichlet_boundary_face(i - 1, 0.0);
     }
-    tt.apply_boudnary_value(i, 1.0);
+    tt.apply_dirichlet_boundary_face(i, fn, i * 0.5);
     std::cout << "After BC on face " << i << ":" << std::endl
               << tt << std::endl;
   }
+  // We can also assign a specific point to a boudnary value. The current API
+  // requires us to give also the face for future impls. As the face is not used
+  // we can pass 0.
+  for (unsigned i = 0; i < 6; ++i) {
+    tt.apply_dirichlet_boundary_face(i, 0.0);
+  }
+  tt.apply_dirichlet_boundary_point<int, int, int>(0, 0, 0, fn, 0);
+  std::cout << "After BC on point {0,0,0}: " << std::endl << tt << std::endl;
+  tt.apply_dirichlet_boundary_point<int, int, int>(1, 1, 1, fn, 10);
+  std::cout << "After BC on point {1,1,1}: " << std::endl << tt << std::endl;
 
   return 0;
 }
