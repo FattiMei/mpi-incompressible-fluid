@@ -112,7 +112,7 @@ public:
     }
     if constexpr (SpaceDim == 3) {
       _strides[0] = in_dimensions[1] * in_dimensions[2];
-      _strides[1] = in_dimensions[1];
+      _strides[1] = in_dimensions[2];
     }
   }
   /*!
