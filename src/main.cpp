@@ -53,9 +53,9 @@ int main(int argc, char* argv[]) {
 
     // Set the initial conditions.
     std::cout << "Setting initial conditions." << std::endl;
-    apply_initial_conditions(u, function_at_time(exact_u, 0.0), constants);
-    apply_initial_conditions(v, function_at_time(exact_v, 0.0), constants);
-    apply_initial_conditions(w, function_at_time(exact_w, 0.0), constants);
+    apply_initial_conditions_u(u, function_at_time(exact_u, 0.0), constants);
+    apply_initial_conditions_v(v, function_at_time(exact_v, 0.0), constants);
+    apply_initial_conditions_w(w, function_at_time(exact_w, 0.0), constants);
 
     // Compute the solution.
     for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
