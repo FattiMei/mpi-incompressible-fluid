@@ -31,6 +31,7 @@ namespace mif {
         for (size_t i = 1; i < u.size[0] - 1; i++) {
             for (size_t j = 1; j < u.size[1] - 1; j++) {
                 for (size_t k = 1; k < u.size[2] - 1; k++) {
+                    // Update the solution. I don't know if updating each component separately is the correct way to do it since the components are dependent on each other.
                     u.set(i, j, k, RK3(u.get(i, j, k), constants.dt, f_u, i, j, k));
                     v.set(i, j, k, RK3(v.get(i, j, k), constants.dt, f_v, i, j, k));
                     w.set(i, j, k, RK3(w.get(i, j, k), constants.dt, f_w, i, j, k));
@@ -52,7 +53,7 @@ namespace mif {
         // Y3 = Y2 + ... Step
         const Real Y3 = Y2 + dt * a2 * f(i, j, k, Y2) + dt * a3 * f(i, j, k, x);
         // Y3 = Y2 + ... Step
-        x = Y3 + dt * a5 * f(i, j, k, Y2) + dt * a4 * f(i, j, k, Y3);
+        x = Y2 + dt * a5 * f(i, j, k, x) + dt * a4 * f(i, j, k, Y3);
         return x;
     }
 }
