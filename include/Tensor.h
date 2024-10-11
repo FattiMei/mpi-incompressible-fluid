@@ -6,7 +6,6 @@
  * @author Kaixi
  */
 #include <MetaHelpers.hpp>
-
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -43,19 +42,19 @@ class Tensor {
   static_assert(SpaceDim >= 1,
                 "Space dimension smaller than 1 is not supported");
 
-#define DISPATCH(size, index_storage)                                          \
-  do {                                                                         \
-    if constexpr (size == 1) {                                                 \
-      return _data[index_storage[0]];                                          \
-    } else if constexpr (size == 2) {                                          \
-      return _data[index_storage[0] * _strides[0] + index_storage[1]];         \
-    } else if constexpr (size == 3) {                                          \
-      return _data[index_storage[0] * _strides[0] +                            \
-                   index_storage[1] * _strides[1] + index_storage[2]];         \
-    }                                                                          \
+#define DISPATCH(size, index_storage)                                  \
+  do {                                                                 \
+    if constexpr (size == 1) {                                         \
+      return _data[index_storage[0]];                                  \
+    } else if constexpr (size == 2) {                                  \
+      return _data[index_storage[0] * _strides[0] + index_storage[1]]; \
+    } else if constexpr (size == 3) {                                  \
+      return _data[index_storage[0] * _strides[0] +                    \
+                   index_storage[1] * _strides[1] + index_storage[2]]; \
+    }                                                                  \
   } while (0)
 
-private:
+ private:
   /*!
    * The data buffer
    */
@@ -74,7 +73,7 @@ private:
    */
   bool initialized = false;
 
-public:
+ public:
   /*!
    * A flag to retrieve the total data count contained in the underlying buffer
    */
@@ -89,7 +88,13 @@ public:
                               static_cast<DimensionsType>(1),
                               std::multiplies<DimensionsType>()),
               static_cast<Type>(0)) {
-    resize<false>(in_dimensions);
+    if constexpr (SpaceDim == 2) {
+      _strides[0] = in_dimensions[1];
+    }
+    if constexpr (SpaceDim == 3) {
+      _strides[0] = in_dimensions[1] * in_dimensions[2];
+      _strides[1] = in_dimensions[2];
+    }
   }
   /*!
    * Resize the tensor dimension
@@ -99,21 +104,44 @@ public:
    * or not
    * @param in_dimensions The new tensor dimensions
    */
-  template <bool WithAllocation = true>
   void resize(const std::array<DimensionsType, SpaceDim> &in_dimensions) {
-    if constexpr (WithAllocation) {
-      _data.resize(std::accumulate(in_dimensions.begin(), in_dimensions.end(),
-                                   static_cast<DimensionsType>(1),
-                                   std::multiplies<DimensionsType>()));
-    }
+    // Backup existing data
+    std::vector<Type> buffer(std::accumulate(
+        in_dimensions.begin(), in_dimensions.end(),
+        static_cast<DimensionsType>(1), std::multiplies<DimensionsType>()));
+    std::array<DimensionsType, SpaceDim> old_dimensions = _dimensions;
+    std::array<DimensionsType, SpaceDim - 1> old_strides = _strides;
+
     _dimensions = in_dimensions;
     if constexpr (SpaceDim == 2) {
       _strides[0] = in_dimensions[1];
+      // Copy the data
+      for (DimensionsType i = 0;
+           i < std::min(old_dimensions[0], in_dimensions[0]); i++) {
+        for (DimensionsType j = 0;
+             j < std::min(old_dimensions[1], in_dimensions[1]); j++) {
+          buffer[i * _strides[0] + j] = _data[i * old_strides[0] + j];
+        }
+      }
     }
     if constexpr (SpaceDim == 3) {
       _strides[0] = in_dimensions[1] * in_dimensions[2];
-      _strides[1] = in_dimensions[1];
+      _strides[1] = in_dimensions[2];
+
+      // copy the data
+      for (DimensionsType i = 0;
+           i < std::min(old_dimensions[0], in_dimensions[0]); i++) {
+        for (DimensionsType j = 0;
+             j < std::min(old_dimensions[1], in_dimensions[1]); j++) {
+          for (DimensionsType k = 0;
+               k < std::min(old_dimensions[2], in_dimensions[2]); k++) {
+            buffer[i * _strides[0] + j * _strides[1] + k] =
+                _data[i * old_strides[0] + j * old_strides[1] + k];
+          }
+        }
+      }
     }
+    _data.swap(buffer);
   }
   /*!
    * Retrieve the tensor dimensions
@@ -315,86 +343,86 @@ public:
 
     if constexpr (SpaceDim == 1) {
       switch (face) {
-      case 0:
-        operator()(0) = value;
-        break;
-      case 1:
-        operator()(_dimensions[0] - 1) = value;
-        break;
+        case 0:
+          operator()(0) = value;
+          break;
+        case 1:
+          operator()(_dimensions[0] - 1) = value;
+          break;
       }
     } else if constexpr (SpaceDim == 2) {
       switch (face) {
-      case 0:
-        for (DimensionsType i = 0; i < _dimensions[1]; ++i) {
-          operator()(0, i) = value;
-        }
-        break;
-      case 1:
-        for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
-          operator()(i, 0) = value;
-        }
-        break;
-      case 2:
-        for (DimensionsType i = 0; i < _dimensions[1]; ++i) {
-          operator()(_dimensions[0] - 1, i) = value;
-        }
-        break;
-      case 3:
-        for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
-          operator()(i, _dimensions[1] - 1) = value;
-        }
-        break;
+        case 0:
+          for (DimensionsType i = 0; i < _dimensions[1]; ++i) {
+            operator()(0, i) = value;
+          }
+          break;
+        case 1:
+          for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
+            operator()(i, 0) = value;
+          }
+          break;
+        case 2:
+          for (DimensionsType i = 0; i < _dimensions[1]; ++i) {
+            operator()(_dimensions[0] - 1, i) = value;
+          }
+          break;
+        case 3:
+          for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
+            operator()(i, _dimensions[1] - 1) = value;
+          }
+          break;
       }
     } else if constexpr (SpaceDim == 3) {
       switch (face) {
-      case 0:
-        // First depth, loop over row and col
-        for (DimensionsType i = 0; i < _dimensions[1]; ++i) {
-          for (DimensionsType j = 0; j < _dimensions[2]; ++j) {
-            operator()(0, i, j) = value;
+        case 0:
+          // First depth, loop over row and col
+          for (DimensionsType i = 0; i < _dimensions[1]; ++i) {
+            for (DimensionsType j = 0; j < _dimensions[2]; ++j) {
+              operator()(0, i, j) = value;
+            }
           }
-        }
-        break;
-      case 1:
-        // First row, loop over depth and col
-        for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
-          for (DimensionsType j = 0; j < _dimensions[2]; ++j) {
-            operator()(i, 0, j) = value;
+          break;
+        case 1:
+          // First row, loop over depth and col
+          for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
+            for (DimensionsType j = 0; j < _dimensions[2]; ++j) {
+              operator()(i, 0, j) = value;
+            }
           }
-        }
-        break;
-      case 2:
-        // Last depth, loop over row and col
-        for (DimensionsType i = 0; i < _dimensions[1]; ++i) {
-          for (DimensionsType j = 0; j < _dimensions[2]; ++j) {
-            operator()(_dimensions[0] - 1, i, j) = value;
+          break;
+        case 2:
+          // Last depth, loop over row and col
+          for (DimensionsType i = 0; i < _dimensions[1]; ++i) {
+            for (DimensionsType j = 0; j < _dimensions[2]; ++j) {
+              operator()(_dimensions[0] - 1, i, j) = value;
+            }
           }
-        }
-        break;
-      case 3:
-        // Last row, loop depth row and col
-        for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
-          for (DimensionsType j = 0; j < _dimensions[2]; ++j) {
-            operator()(i, _dimensions[1] - 1, j) = value;
+          break;
+        case 3:
+          // Last row, loop depth row and col
+          for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
+            for (DimensionsType j = 0; j < _dimensions[2]; ++j) {
+              operator()(i, _dimensions[1] - 1, j) = value;
+            }
           }
-        }
-        break;
-      case 4:
-        // Last col, loop over depth and row
-        for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
-          for (DimensionsType j = 0; j < _dimensions[1]; ++j) {
-            operator()(i, j, _dimensions[2] - 1) = value;
+          break;
+        case 4:
+          // Last col, loop over depth and row
+          for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
+            for (DimensionsType j = 0; j < _dimensions[1]; ++j) {
+              operator()(i, j, _dimensions[2] - 1) = value;
+            }
           }
-        }
-        break;
-      case 5:
-        // First col, loop over depth and row
-        for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
-          for (DimensionsType j = 0; j < _dimensions[1]; ++j) {
-            operator()(i, j, 0) = value;
+          break;
+        case 5:
+          // First col, loop over depth and row
+          for (DimensionsType i = 0; i < _dimensions[0]; ++i) {
+            for (DimensionsType j = 0; j < _dimensions[1]; ++j) {
+              operator()(i, j, 0) = value;
+            }
           }
-        }
-        break;
+          break;
       }
     }
   }
@@ -496,6 +524,6 @@ std::istream &operator>>(std::istream &in, Tensor<Type, SpaceDim> &tensor) {
   return in;
 }
 
-} // namespace mif
+}  // namespace mif
 
-#endif // MPI_INCOMPRESSIBLE_FLUID_TENSOR_H
+#endif  // MPI_INCOMPRESSIBLE_FLUID_TENSOR_H
