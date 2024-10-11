@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 #include "BoundaryConditions.h"
 #include "InitialConditions.h"
 #include "Timestep.h"
@@ -37,9 +38,9 @@ int main(int argc, char* argv[]) {
     constexpr Real x_size = 1.0;
     constexpr Real y_size = 1.0;
     constexpr Real z_size = 1.0;
-    constexpr size_t Nx = 1024;
-    constexpr size_t Ny = 1024;
-    constexpr size_t Nz = 1024;
+    constexpr size_t Nx = 64;
+    constexpr size_t Ny = 64;
+    constexpr size_t Nz = 64;
     constexpr Real Re = 40.0;
     constexpr Real final_time = 10.0;
     constexpr unsigned int num_time_steps = 10; 
@@ -51,12 +52,15 @@ int main(int argc, char* argv[]) {
     Tensor w(Nx, Ny, Nz);
 
     // Set the initial conditions.
+    std::cout << "Setting initial conditions." << std::endl;
     apply_initial_conditions(u, function_at_time(exact_u, 0.0), constants);
     apply_initial_conditions(v, function_at_time(exact_v, 0.0), constants);
     apply_initial_conditions(w, function_at_time(exact_w, 0.0), constants);
 
     // Compute the solution.
     for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
+        std::cout << "Executing time step " << time_step+1 << "/" << num_time_steps << std::endl;
+
         // Create a function for the forcing term at the current time.
         const std::function<Real(Real, Real, Real)> current_forcing_term = 
             [&constants, &time_step](Real x, Real y, Real z) {
@@ -71,6 +75,7 @@ int main(int argc, char* argv[]) {
     }
 
     // TODO: check the error on the solution.
+    std::cout << "Checking the solution." << std::endl;
 
     return 0;
 }
