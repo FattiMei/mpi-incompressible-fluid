@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   std::cout << "value at {0,0,0}: "
             << t(std::integer_sequence<unsigned, 0, 0, 0>{}) << std::endl;
 
-  // The one beofre was constexpr indexes, a wonderful word...
+  // The one before was constexpr indexes, a wonderful word...
   // We need to manage indexing with runtime values also
   std::size_t i = 0;
   std::size_t j = 0;
