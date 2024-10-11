@@ -11,7 +11,8 @@
 
 namespace mif {
 
-    void timestep(Tensor &u, Tensor &v,Tensor &w, Real dt, const Constants &constants);
+    // Perform a single step of an explicit RK3 method for the velocity tensors, setting Dirichlet boundary conditions.
+    void timestep(Tensor &u, Tensor &v,Tensor &w, const Constants &constants);
 
 } // mif
 

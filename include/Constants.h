@@ -6,6 +6,7 @@
 
 namespace mif {
 
+    // A class containing all constants needed for execution and derived constants.
     class Constants {
         public:
             // Core constants.
@@ -16,9 +17,11 @@ namespace mif {
             const size_t Ny;
             const size_t Nz;
             const Real Re;
+            const Real final_time;
+            const unsigned int num_time_steps;
 
             // Derived constants (computed here once for efficiency).
-            // I think that compilers are smart enough to do this optimization by themselves.
+            const Real dt;
             const Real dx;
             const Real dy;
             const Real dz;
@@ -35,7 +38,7 @@ namespace mif {
             const Real one_over_dz2_Re;
 
             // Constructor.
-            Constants(size_t Nx, size_t Ny, size_t Nz, Real x_size, Real y_size, Real z_size, Real Re);
+            Constants(size_t Nx, size_t Ny, size_t Nz, Real x_size, Real y_size, Real z_size, Real Re, Real final_time, unsigned int num_time_steps);
     };
 
 } // mif
