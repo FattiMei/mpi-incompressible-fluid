@@ -14,6 +14,8 @@ std::function<Real(Real, Real, Real)> function_at_time(const std::function<Real(
     return result;
 }
 
+double Reynolds;
+
 // Simple main for the test case with no pressure and exact solution known.
 int main(int argc, char* argv[]) {
     using namespace mif;
@@ -30,7 +32,7 @@ int main(int argc, char* argv[]) {
     constexpr unsigned int num_time_steps = 10; 
     const Constants constants(x_size, y_size, z_size, Nx, Ny, Nz, Re, final_time, num_time_steps);
 
-    const double Reynolds = Re;
+    Reynolds = Re;
 
     // Create the velocity tensors.
     std::array<size_t, 3> sizes{Nx, Ny, Nz};
