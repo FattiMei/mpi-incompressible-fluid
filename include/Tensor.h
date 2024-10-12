@@ -223,7 +223,7 @@ public:
             typename... MaybeCallableArgs>
   void apply_dirichlet_boundary_point(std::tuple<Indexes...> const & point, const MaybeCallable &input,
                                  MaybeCallableArgs... args) {
-    static_assert(sizeof...(Indexes) == SpaceDim, "The provided has a number of coordinate different from the tensor space dimension.");
+    static_assert(sizeof...(Indexes) == SpaceDim, "The provided point has a number of coordinates different from the tensor space dimension.");
 
     Type value = {0};
     if constexpr (is_callable<MaybeCallable>::value) {
