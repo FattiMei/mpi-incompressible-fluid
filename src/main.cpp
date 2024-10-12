@@ -30,6 +30,8 @@ int main(int argc, char* argv[]) {
     constexpr unsigned int num_time_steps = 10; 
     const Constants constants(x_size, y_size, z_size, Nx, Ny, Nz, Re, final_time, num_time_steps);
 
+    const double Reynolds = Re;
+
     // Create the velocity tensors.
     std::array<size_t, 3> sizes{Nx, Ny, Nz};
     Tensor<> u(sizes);

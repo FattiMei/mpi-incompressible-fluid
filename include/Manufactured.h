@@ -2,6 +2,7 @@
 #define MANUFACTURED__H
 
 namespace mif {
+    
     extern const double Reynolds;
 
     double u_exact  (double t, double x, double y, double z);
