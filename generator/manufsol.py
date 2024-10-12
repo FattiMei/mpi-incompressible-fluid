@@ -27,10 +27,10 @@ def manufsol(*, u, v, w, p, ignore_pressure=False):
 
 
 if __name__ == '__main__':
-    u = x**3
-    v = x**3
-    w = x**3
-    p = x*y
+    u = u = sp.sin(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
+    v = v = sp.cos(x) * sp.sin(y) * sp.sin(z) * sp.sin(t)
+    w = w = 2 * sp.cos(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
+    p = p = 0
 
     # for current testing purpuoses we ignore the pressure term
     (u,v,w), (fx,fy,fz) = manufsol(u=u,v=v,w=w,p=p,ignore_pressure=True)
