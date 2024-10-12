@@ -47,9 +47,9 @@ int main(int argc, char* argv[]) {
     const Constants constants(x_size, y_size, z_size, Nx, Ny, Nz, Re, final_time, num_time_steps);
 
     // Create the velocity tensors.
-    Tensor u(Nx, Ny, Nz);
-    Tensor v(Nx, Ny, Nz);
-    Tensor w(Nx, Ny, Nz);
+    Tensor<> u(std::array<size_t, 3>{Nx, Ny, Nz});
+    Tensor<> v(std::array<size_t, 3>{Nx, Ny, Nz});
+    Tensor<> w(std::array<size_t, 3>{Nx, Ny, Nz});
 
     // Set the initial conditions.
     std::cout << "Setting initial conditions." << std::endl;

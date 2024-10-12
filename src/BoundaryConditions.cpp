@@ -3,24 +3,24 @@
 namespace mif {
 
     // Apply a Dirichlet boundary condition to the u component of the velocity at the specified point, using the function f.
-    inline void apply_dirichlet_bc_u(Tensor &tensor, size_t i, size_t j, size_t k, const std::function<Real(Real, Real, Real)> &f, const Constants &constants) {
+    inline void apply_dirichlet_bc_u(Tensor<> &tensor, size_t i, size_t j, size_t k, const std::function<Real(Real, Real, Real)> &f, const Constants &constants) {
         const Real result = f(constants.dx * (i+0.5), constants.dy * j, constants.dz * k);
-        tensor.set(i, j, k, result);
+        tensor(i, j, k) =  result;
     }
 
     // Apply a Dirichlet boundary condition to the v component of the velocity at the specified point, using the function f.
-    inline void apply_dirichlet_bc_v(Tensor &tensor, size_t i, size_t j, size_t k, const std::function<Real(Real, Real, Real)> &f, const Constants &constants) {
+    inline void apply_dirichlet_bc_v(Tensor<> &tensor, size_t i, size_t j, size_t k, const std::function<Real(Real, Real, Real)> &f, const Constants &constants) {
         const Real result = f(constants.dx * i, constants.dy * (j+0.5), constants.dz * k);
-        tensor.set(i, j, k, result);
+        tensor(i, j, k) =  result;
     }
 
     // Apply a Dirichlet boundary condition to the w component of the velocity at the specified point, using the function f.
-    inline void apply_dirichlet_bc_w(Tensor &tensor, size_t i, size_t j, size_t k, const std::function<Real(Real, Real, Real)> &f, const Constants &constants) {
+    inline void apply_dirichlet_bc_w(Tensor<> &tensor, size_t i, size_t j, size_t k, const std::function<Real(Real, Real, Real)> &f, const Constants &constants) {
         const Real result = f(constants.dx * i, constants.dy * j, constants.dz * (k+0.5));
-        tensor.set(i, j, k, result);
+        tensor(i, j, k) =  result;
     }
 
-    void apply_all_dirichlet_bc(Tensor &u, Tensor &v, Tensor &w, const std::function<Real(Real, Real, Real)> &f, const Constants &constants) {
+    void apply_all_dirichlet_bc(Tensor<> &u, Tensor<> &v, Tensor<> &w, const std::function<Real(Real, Real, Real)> &f, const Constants &constants) {
         // Face 1: z=0
         for (size_t i = 0; i < constants.Nx; i++) {
             for (size_t j = 0; j < constants.Ny; j++) {
