@@ -21,12 +21,14 @@ namespace mif {
         Real initial_term;
         switch (component)
         {
-        case VelocityComponent::u:
+        case VelocityComponent::u: {
             initial_term = u(i,j,k);
             break;
-        case VelocityComponent::v:
+        }
+        case VelocityComponent::v: {
             initial_term = v(i,j,k);
             break;
+        }
         case VelocityComponent::w:
             initial_term = w(i,j,k);
         }
@@ -45,10 +47,14 @@ namespace mif {
         Real initial_term;
         switch (component)
         {
-        case VelocityComponent::u:
+        case VelocityComponent::u: {
             initial_term = Y2_u(i,j,k);
-        case VelocityComponent::v:
+            break;
+        }
+        case VelocityComponent::v: {
             initial_term = Y2_v(i,j,k);
+            break;
+        }
         case VelocityComponent::w:
             initial_term = Y2_w(i,j,k);
         }
@@ -69,10 +75,14 @@ namespace mif {
         Real initial_term;
         switch (component)
         {
-        case VelocityComponent::u:
+        case VelocityComponent::u: {
             initial_term = Y2_u(i,j,k);
-        case VelocityComponent::v:
+            break;
+        }
+        case VelocityComponent::v: {
             initial_term = Y2_v(i,j,k);
+            break;
+        }
         case VelocityComponent::w:
             initial_term = Y2_w(i,j,k);
         }
