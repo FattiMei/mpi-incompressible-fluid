@@ -1,4 +1,3 @@
-//
 #include "L2Norm.hpp"
 
 int main()
