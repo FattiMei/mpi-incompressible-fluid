@@ -23,8 +23,10 @@ namespace mif {
         {
         case VelocityComponent::u:
             initial_term = u(i,j,k);
+            break;
         case VelocityComponent::v:
             initial_term = v(i,j,k);
+            break;
         case VelocityComponent::w:
             initial_term = w(i,j,k);
         }
