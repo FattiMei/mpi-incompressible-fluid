@@ -46,7 +46,7 @@ if __name__ == '__main__':
             ('forcing_z', fz),
         ],
         language='C99',
-        prefix='Manifactured',
+        prefix='Manufactured',
         project='mif',
         header=True,
         empty=True,

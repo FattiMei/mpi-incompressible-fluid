@@ -93,6 +93,12 @@ public:
     resize<false>(in_dimensions);
   }
   /*!
+   * Swap this tensor's data with another tensor's, without moving data in memory.
+   */
+  void swap_data(Tensor<Type, SpaceDim, DimensionsType> &other) {
+    this->_data.swap(other._data);
+  }
+  /*!
    * Resize the tensor dimension
    * Currently this has to be used with caution as data will be messed up if we
    * enlarge or shrink an initialized tensor

@@ -47,9 +47,19 @@ int main(int argc, char* argv[]) {
     const Constants constants(x_size, y_size, z_size, Nx, Ny, Nz, Re, final_time, num_time_steps);
 
     // Create the velocity tensors.
-    Tensor<> u(std::array<size_t, 3>{Nx, Ny, Nz});
-    Tensor<> v(std::array<size_t, 3>{Nx, Ny, Nz});
-    Tensor<> w(std::array<size_t, 3>{Nx, Ny, Nz});
+    std::array<size_t, 3> sizes{Nx, Ny, Nz};
+    Tensor<> u(sizes);
+    Tensor<> v(sizes);
+    Tensor<> w(sizes);
+    Tensor<> u_buffer1(sizes);
+    Tensor<> v_buffer1(sizes);
+    Tensor<> w_buffer1(sizes);
+    Tensor<> u_buffer2(sizes);
+    Tensor<> v_buffer2(sizes);
+    Tensor<> w_buffer2(sizes);
+    Tensor<> u_buffer3(sizes);
+    Tensor<> v_buffer3(sizes);
+    Tensor<> w_buffer3(sizes);
 
     // Set the initial conditions.
     std::cout << "Setting initial conditions." << std::endl;
@@ -71,7 +81,7 @@ int main(int argc, char* argv[]) {
         apply_all_dirichlet_bc(u, v, w, current_forcing_term, constants);
 
         // Update the solution inside the mesh.
-        timestep(u, v, w, constants);
+        timestep(u, v, w, u_buffer1, v_buffer1, w_buffer1, u_buffer2, v_buffer2, w_buffer2, u_buffer3, v_buffer3, w_buffer3, constants);
     }
 
     // TODO: check the error on the solution.
