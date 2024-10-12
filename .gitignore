@@ -1,3 +1,5 @@
 build/
 artifacts/
 .ipynb_checkpoints/
+.cache
+compile_commands.json
