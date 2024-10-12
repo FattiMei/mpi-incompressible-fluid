@@ -81,9 +81,11 @@ int main(int argc, char *argv[]) {
   for (unsigned i = 0; i < 6; ++i) {
     tt.apply_dirichlet_boundary_face(i, 0.0);
   }
-  tt.apply_dirichlet_boundary_point<int, int, int>(0, 0, 0, fn, 0);
+  tt.apply_dirichlet_boundary_point(POINT(0,0,0), fn, 0);
   std::cout << "After BC on point {0,0,0}: " << std::endl << tt << std::endl;
-  tt.apply_dirichlet_boundary_point<int, int, int>(1, 1, 1, fn, 10);
+  tt.apply_dirichlet_boundary_point(POINT(0,1,1), fn, 2);
+  std::cout << "After BC on point {0,1,1}: " << std::endl << tt << std::endl;
+  tt.apply_dirichlet_boundary_point(POINT(1,1,1), fn, 10);
   std::cout << "After BC on point {1,1,1}: " << std::endl << tt << std::endl;
 
   return 0;

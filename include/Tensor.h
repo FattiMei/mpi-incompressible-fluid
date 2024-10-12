@@ -16,6 +16,7 @@
 #include <numeric>
 #include <sstream>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 #ifdef DEBUG_MODE
@@ -26,6 +27,9 @@
 #define MPI_INCOMPRESSIBLE_FLUID_TENSOR_H
 
 namespace mif {
+
+// We use a macro to avoid object creation overhead when representing a point is space.
+#define POINT(...) std::make_tuple(__VA_ARGS__)
 
 /*!
  * @class Tensor defined by row major
@@ -211,16 +215,16 @@ public:
    * This will apply a value on a given point. Checks that the point lies on a
    * face is left to the caller
    * TODO: Integrate the assertion that the point lies on a face
-   * TODO: Currently when this method is called you have to specify the template
    * arguments
    * @param face The boundary face
    * @param value The boundary value
    */
-  template <typename... Indexes, typename MaybeCallable,
+  template <typename ...Indexes, typename MaybeCallable,
             typename... MaybeCallableArgs>
-  typename std::enable_if<((sizeof...(Indexes) == SpaceDim)), void>::type
-  apply_dirichlet_boundary_point(Indexes... indexes, const MaybeCallable &input,
+  void apply_dirichlet_boundary_point(std::tuple<Indexes...> const & point, const MaybeCallable &input,
                                  MaybeCallableArgs... args) {
+    static_assert(sizeof...(Indexes) == SpaceDim, "The provided has a number of coordinate different from the tensor space dimension.");
+
     Type value = {0};
     if constexpr (is_callable<MaybeCallable>::value) {
       // This static assertion checks that arguments provided to the caller are
@@ -234,15 +238,12 @@ public:
       value = input;
     }
 
-    // Recover the point the space and assign the requested value
-    std::array<DimensionsType, sizeof...(Indexes)> point = {
-        static_cast<DimensionsType>(indexes)...};
     if constexpr (SpaceDim == 1) {
-      operator()(point[0]) = value;
+      operator()(std::get<0>(point)) = value;
     } else if constexpr (SpaceDim == 2) {
-      operator()(point[0], point[1]) = value;
+      operator()(std::get<0>(point), std::get<1>(point)) = value;
     } else if constexpr (SpaceDim == 3) {
-      operator()(point[0], point[1], point[2]) = value;
+      operator()(std::get<0>(point), std::get<1>(point), std::get<2>(point)) = value;
     }
   }
   /*!
