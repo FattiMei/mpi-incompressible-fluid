@@ -27,9 +27,11 @@ def manufsol(*, u, v, w, p, ignore_pressure=False):
 
 
 if __name__ == '__main__':
-    u = x**3
-    v = x**3
-    w = x**3
+    u = sp.sin(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
+    v = sp.cos(x) * sp.sin(y) * sp.sin(z) * sp.sin(t)
+    w = 2 * sp.cos(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
+
+    # don't set the pressure to zero or constant otherwise the generated function signature will be screwed
     p = x*y
 
     # for current testing purpuoses we ignore the pressure term
@@ -46,7 +48,7 @@ if __name__ == '__main__':
             ('forcing_z', fz),
         ],
         language='C99',
-        prefix='Manifactured',
+        prefix='Manufactured',
         project='mif',
         header=True,
         empty=True,

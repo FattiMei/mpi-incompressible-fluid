@@ -2,10 +2,9 @@
  * @file Tensor.h
  * @brief Header file containing the Tensor class.
  * @author Giorgio
- * @author Frizzy
+ * @author Francesco
  * @author Kaixi
  */
-#include <MetaHelpers.hpp>
 
 #include <array>
 #include <cstddef>
@@ -21,6 +20,8 @@
 #ifdef DEBUG_MODE
 #include <cassert>
 #endif
+#include "MetaHelpers.h"
+#include "Real.h"
 
 #ifndef MPI_INCOMPRESSIBLE_FLUID_TENSOR_H
 #define MPI_INCOMPRESSIBLE_FLUID_TENSOR_H
@@ -35,7 +36,7 @@ namespace mif {
  * @tparam DimensionsType The tensor dimensions data type. By default
  * std::size_t as tensors shapes may be very large
  */
-template <typename Type = double, uint8_t SpaceDim = 3,
+template <typename Type = Real, uint8_t SpaceDim = 3,
           typename DimensionsType = std::size_t>
 class Tensor {
   static_assert(SpaceDim <= 3,
@@ -90,6 +91,13 @@ public:
                               std::multiplies<DimensionsType>()),
               static_cast<Type>(0)) {
     resize<false>(in_dimensions);
+  }
+  /*!
+   * Swap this tensor's data with another tensor's, without moving data in memory.
+   * @param other The tensor whose data to be swapped with this tensor's.
+   */
+  void swap_data(Tensor<Type, SpaceDim, DimensionsType> &other) {
+    this->_data.swap(other._data);
   }
   /*!
    * Resize the tensor dimension

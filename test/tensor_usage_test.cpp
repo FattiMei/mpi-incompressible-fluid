@@ -1,6 +1,5 @@
-#include <Tensor.h>
-
 #include <iostream>
+#include <Tensor.h>
 
 int main(int argc, char *argv[]) {
   const std::size_t depth = 2;
