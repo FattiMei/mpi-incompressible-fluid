@@ -19,15 +19,7 @@ namespace mif {
                Real current_time, const Constants &constants, 
                size_t i, size_t j, size_t k) {
         constexpr Real a1 = (64.0 / 120.0);
-        Real initial_term;
-        if constexpr (component == VelocityComponent::u) {
-            initial_term = u(i,j,k);
-        } else if constexpr (component == VelocityComponent::v) {
-            initial_term = v(i,j,k);
-        } else {
-            static_assert(component == VelocityComponent::w);
-            initial_term = w(i,j,k);
-        }
+        const Real initial_term = choose_component<component>(u, v, w)(i,j,k);
         return initial_term + 
                constants.dt * a1 * calculate_momentum_rhs_with_forcing<component>(u, v, w, i, j, k, function_at_time(forcing_term, current_time), constants);
     }
@@ -43,15 +35,7 @@ namespace mif {
         constexpr Real a3 = (-34.0 / 120.0);
         constexpr Real partial_time_1 = (64.0 / 120.0);
         const Real time_1 = current_time + partial_time_1*constants.dt;
-        Real initial_term;
-        if constexpr (component == VelocityComponent::u) {
-            initial_term = Y2_u(i,j,k);
-        } else if constexpr (component == VelocityComponent::v) {
-            initial_term = Y2_v(i,j,k);
-        } else {
-            static_assert(component == VelocityComponent::w);
-            initial_term = Y2_w(i,j,k);
-        }
+        const Real initial_term = choose_component<component>(Y2_u, Y2_v, Y2_w)(i,j,k);
         return initial_term + 
                constants.dt * a2 * calculate_momentum_rhs_with_forcing<component>(Y2_u, Y2_v, Y2_w, i, j, k, function_at_time(forcing_term, time_1), constants) + 
                constants.dt * a3 * calculate_momentum_rhs_with_forcing<component>(u, v, w, i, j, k, function_at_time(forcing_term, current_time), constants);
@@ -70,15 +54,7 @@ namespace mif {
         constexpr Real partial_time_2 = (80.0 / 120.0);
         const Real time_1 = current_time + partial_time_1*constants.dt;
         const Real time_2 = current_time + partial_time_2*constants.dt;
-        Real initial_term;
-        if constexpr (component == VelocityComponent::u) {
-            initial_term = Y3_u(i,j,k);
-        } else if constexpr (component == VelocityComponent::v) {
-            initial_term = Y3_v(i,j,k);
-        } else {
-            static_assert(component == VelocityComponent::w);
-            initial_term = Y3_w(i,j,k);
-        }
+        const Real initial_term = choose_component<component>(Y3_u, Y3_v, Y3_w)(i,j,k);
         return initial_term + 
                constants.dt * a5 * calculate_momentum_rhs_with_forcing<component>(Y2_u, Y2_v, Y2_w, i, j, k, function_at_time(forcing_term, time_1), constants) + 
                constants.dt * a4 * calculate_momentum_rhs_with_forcing<component>(Y3_u, Y3_v, Y3_w, i, j, k, function_at_time(forcing_term, time_2), constants);

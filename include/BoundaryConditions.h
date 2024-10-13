@@ -8,60 +8,48 @@
 
 namespace mif {
 
-    // Apply a Dirichlet boundary condition to the u component of the velocity at the specified point, using the function f.
-    template <VelocityComponent component> inline void 
-    apply_dirichlet_bc(Tensor<> &tensor, size_t i, size_t j, size_t k, const std::function<Real(Real, Real, Real)> &f, const Constants &constants) {
-        if constexpr (component == VelocityComponent::u) {
-            tensor(i, j, k) = f(constants.dx * (i+0.5), constants.dy * j, constants.dz * k);
-        } else if constexpr (component == VelocityComponent::v) {
-            tensor(i, j, k) = f(constants.dx * i, constants.dy * (j+0.5), constants.dz * k);
-        } else {
-            static_assert(component == VelocityComponent::w);
-            tensor(i, j, k) = f(constants.dx * i, constants.dy * j, constants.dz * (k+0.5));
-        }
-    }
-
+    // Apply a Dirichlet boundary condition to the a component of the velocity on all boundaries, using the function f.
     template <VelocityComponent component> void 
     apply_all_dirichlet_bc(Tensor<> &tensor, const std::function<Real(Real, Real, Real)> &f, const Constants &constants) {
         // Face 1: z=0
         for (size_t i = 0; i < constants.Nx; i++) {
             for (size_t j = 0; j < constants.Ny; j++) {
-                apply_dirichlet_bc<component>(tensor, i, j, 0, f, constants);
+                tensor(i, j, 0) = evaluate_staggered<component>(tensor, i, j, 0, f, constants);
             }
         }
 
         // Face 2: z=z_max
         for (size_t i = 0; i < constants.Nx; i++) {
             for (size_t j = 0; j < constants.Ny; j++) {
-                apply_dirichlet_bc<component>(tensor, i, j, constants.Nz-1, f, constants);
+                tensor(i, j, constants.Nz-1) = evaluate_staggered<component>(tensor, i, j, constants.Nz-1, f, constants);
             }
         }
 
         // Face 3: y=0
         for (size_t i = 0; i < constants.Nx; i++) {
             for (size_t k = 0; k < constants.Nz; k++) {
-                apply_dirichlet_bc<component>(tensor, i, 0, k, f, constants);
+                tensor(i, 0, k) = evaluate_staggered<component>(tensor, i, 0, k, f, constants);
             }
         }
 
         // Face 4: y=y_max
         for (size_t i = 0; i < constants.Nx; i++) {
             for (size_t k = 0; k < constants.Nz; k++) {
-                apply_dirichlet_bc<component>(tensor, i, constants.Ny-1, k, f, constants);
+                tensor(i, constants.Ny-1, k) = evaluate_staggered<component>(tensor, i, constants.Ny-1, k, f, constants);
             }
         }
 
         // Face 5: x=0
         for (size_t j = 0; j < constants.Ny; j++) {
             for (size_t k = 0; k < constants.Nz; k++) {
-                apply_dirichlet_bc<component>(tensor, 0, j, k, f, constants);
+                tensor(0, j, k) = evaluate_staggered<component>(tensor, 0, j, k, f, constants);
             }
         }
 
         // Face 6: x=x_max
         for (size_t j = 0; j < constants.Ny; j++) {
             for (size_t k = 0; k < constants.Nz; k++) {
-                apply_dirichlet_bc<component>(tensor, 0, j, constants.Nx-1, f, constants);
+                tensor(constants.Nx-1, j, k) = evaluate_staggered<component>(tensor, constants.Nx-1, j, k, f, constants);
             }
         }
     }
