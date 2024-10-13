@@ -2,17 +2,9 @@
 #include <iostream>
 #include "BoundaryConditions.h"
 #include "InitialConditions.h"
+#include "FunctionHelpers.h"
 #include "Manufactured.h"
 #include "Timestep.h"
-
-// Return an input function f, depending on x,y,z and time, removing its time dependency.
-std::function<Real(Real, Real, Real)> function_at_time(const std::function<Real(Real, Real, Real, Real)> &f, Real time) {
-    const std::function<Real(Real, Real, Real)> result = 
-            [&time, &f](Real x, Real y, Real z) {
-                return f(time, x, y, z);
-            };
-    return result;
-}
 
 double Reynolds;
 
@@ -76,8 +68,8 @@ int main(int argc, char* argv[]) {
                 u_buffer1, v_buffer1, w_buffer1, 
                 u_buffer2, v_buffer2, w_buffer2, 
                 u_buffer3, v_buffer3, w_buffer3, 
-                function_at_time(forcing_x, current_time), function_at_time(forcing_y, current_time), function_at_time(forcing_z, current_time), 
-                constants);
+                forcing_x, forcing_y, forcing_z, 
+                current_time, constants);
     }
 
     // TODO: check the error on the solution.
