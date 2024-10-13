@@ -94,6 +94,7 @@ public:
   }
   /*!
    * Swap this tensor's data with another tensor's, without moving data in memory.
+   * @param other The tensor whose data to be swapped with this tensor's.
    */
   void swap_data(Tensor<Type, SpaceDim, DimensionsType> &other) {
     this->_data.swap(other._data);

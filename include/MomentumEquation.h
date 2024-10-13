@@ -113,16 +113,14 @@ namespace mif
                                        const size_t i, const size_t j, const size_t k,    // Grid point.
                                        const std::function<Real(Real, Real, Real)> &forcing_term,
                                        const Constants &constants) {
-        switch (component)
-        {
-        case VelocityComponent::u:
+        if constexpr (component == VelocityComponent::u) {
             return calculate_momentum_rhs_u(u, v, w, i, j, k, constants) + forcing_term(constants.dx * (i+0.5), constants.dy * j, constants.dz * k);
-        case VelocityComponent::v:
+        } else if constexpr (component == VelocityComponent::v) {
             return calculate_momentum_rhs_v(u, v, w, i, j, k, constants) + forcing_term(constants.dx * i, constants.dy * (j+0.5), constants.dz * k);
-        case VelocityComponent::w:
+        } else {
+            static_assert(component == VelocityComponent::w);
             return calculate_momentum_rhs_w(u, v, w, i, j, k, constants) + forcing_term(constants.dx * i, constants.dy * j, constants.dz * (k+0.5));
         }
-        return 0.0;
     }
 
 } // mif

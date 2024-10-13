@@ -19,17 +19,12 @@ namespace mif {
                const Constants &constants, size_t i, size_t j, size_t k) {
         constexpr Real a1 = (64.0 / 120.0);
         Real initial_term;
-        switch (component)
-        {
-        case VelocityComponent::u: {
+        if constexpr (component == VelocityComponent::u) {
             initial_term = u(i,j,k);
-            break;
-        }
-        case VelocityComponent::v: {
+        } else if constexpr (component == VelocityComponent::v) {
             initial_term = v(i,j,k);
-            break;
-        }
-        case VelocityComponent::w:
+        } else {
+            static_assert(component == VelocityComponent::w);
             initial_term = w(i,j,k);
         }
         return initial_term + 
@@ -45,17 +40,12 @@ namespace mif {
         constexpr Real a2 = (50.0 / 120.0);
         constexpr Real a3 = (-34.0 / 120.0);
         Real initial_term;
-        switch (component)
-        {
-        case VelocityComponent::u: {
+        if constexpr (component == VelocityComponent::u) {
             initial_term = Y2_u(i,j,k);
-            break;
-        }
-        case VelocityComponent::v: {
+        } else if constexpr (component == VelocityComponent::v) {
             initial_term = Y2_v(i,j,k);
-            break;
-        }
-        case VelocityComponent::w:
+        } else {
+            static_assert(component == VelocityComponent::w);
             initial_term = Y2_w(i,j,k);
         }
         return initial_term + 
@@ -73,17 +63,12 @@ namespace mif {
         constexpr Real a4 = (90.0 / 120.0);
         constexpr Real a5 = (-50.0 / 120.0);
         Real initial_term;
-        switch (component)
-        {
-        case VelocityComponent::u: {
+        if constexpr (component == VelocityComponent::u) {
             initial_term = Y2_u(i,j,k);
-            break;
-        }
-        case VelocityComponent::v: {
+        } else if constexpr (component == VelocityComponent::v) {
             initial_term = Y2_v(i,j,k);
-            break;
-        }
-        case VelocityComponent::w:
+        } else {
+            static_assert(component == VelocityComponent::w);
             initial_term = Y2_w(i,j,k);
         }
         return initial_term + 

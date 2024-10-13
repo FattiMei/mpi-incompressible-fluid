@@ -11,20 +11,13 @@ namespace mif {
     // Apply a Dirichlet boundary condition to the u component of the velocity at the specified point, using the function f.
     template <VelocityComponent component> inline void 
     apply_dirichlet_bc(Tensor<> &tensor, size_t i, size_t j, size_t k, const std::function<Real(Real, Real, Real)> &f, const Constants &constants) {
-        switch (component)
-        {
-        case VelocityComponent::u: {
-                tensor(i, j, k) = f(constants.dx * (i+0.5), constants.dy * j, constants.dz * k);
-                return;
-            }
-        case VelocityComponent::v: {
-                tensor(i, j, k) = f(constants.dx * i, constants.dy * (j+0.5), constants.dz * k);
-                return;
-            }
-        case VelocityComponent::w: {
-                tensor(i, j, k) = f(constants.dx * i, constants.dy * j, constants.dz * (k+0.5));
-                return;
-            }
+        if constexpr (component == VelocityComponent::u) {
+            tensor(i, j, k) = f(constants.dx * (i+0.5), constants.dy * j, constants.dz * k);
+        } else if constexpr (component == VelocityComponent::v) {
+            tensor(i, j, k) = f(constants.dx * i, constants.dy * (j+0.5), constants.dz * k);
+        } else {
+            static_assert(component == VelocityComponent::w);
+            tensor(i, j, k) = f(constants.dx * i, constants.dy * j, constants.dz * (k+0.5));
         }
     }
 

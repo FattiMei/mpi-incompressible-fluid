@@ -51,9 +51,9 @@ int main(int argc, char* argv[]) {
 
     // Set the initial conditions.
     std::cout << "Setting initial conditions." << std::endl;
-    apply_initial_conditions_u(u, function_at_time(u_exact, 0.0), constants);
-    apply_initial_conditions_v(v, function_at_time(v_exact, 0.0), constants);
-    apply_initial_conditions_w(w, function_at_time(w_exact, 0.0), constants);
+    apply_initial_conditions<VelocityComponent::u>(u, function_at_time(u_exact, 0.0), constants);
+    apply_initial_conditions<VelocityComponent::v>(v, function_at_time(v_exact, 0.0), constants);
+    apply_initial_conditions<VelocityComponent::w>(w, function_at_time(w_exact, 0.0), constants);
 
     // Compute the solution.
     for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
