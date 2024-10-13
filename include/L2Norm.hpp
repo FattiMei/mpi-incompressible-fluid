@@ -106,7 +106,7 @@ double L2Norm(std::vector<double> &U, std::vector<double> &V, std::vector<double
 
 // This one is the same method as before, but with input the Tensor class, declared into "Tensor.h"
 // NB: To be tested
-template <typename Type, size_t SpaceDim>
+template <typename Type, std::size_t SpaceDim>
 double L2NormTensor(mif::Tensor<Type, SpaceDim> &U, mif::Tensor<Type, SpaceDim> &V, 
               mif::Tensor<Type, SpaceDim> &W, mif::Tensor<Type, SpaceDim> &Uex, 
               mif::Tensor<Type, SpaceDim> &Vex, mif::Tensor<Type, SpaceDim> &Wex, 
@@ -117,11 +117,11 @@ double L2NormTensor(mif::Tensor<Type, SpaceDim> &U, mif::Tensor<Type, SpaceDim> 
     double integral = 0.0;
 
     // Iterate over the entire tensor space
-    for (size_t i = 0; i < c.Nx; ++i) {
+    for (std::size_t i = 0; i < c.Nx; ++i) {
         wxi = (i == 0 || i == c.Nx - 1) ? 1.0 : 0.5;
-        for (size_t j = 0; j < c.Ny; ++j) {
+        for (std::size_t j = 0; j < c.Ny; ++j) {
             wyj = (j == 0 || j == c.Ny - 1) ? 1.0 : 0.5;
-            for (size_t k = 0; k < c.Nz; ++k) {
+            for (std::size_t k = 0; k < c.Nz; ++k) {
                 // Calculate weight for current grid point
                 wzk = (k == 0 || k == c.Nz - 1) ? 1.0 : 0.5;
 

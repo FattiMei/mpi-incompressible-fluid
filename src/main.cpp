@@ -1,58 +1,121 @@
+#include <Tensor.h>
 #include "L2Norm.hpp"
 
-int main()
-{
-    std::cout<<"Bella li"<<std::endl;
-    size_t Nx = 3;
-    size_t Ny = 4; 
-    size_t Nz = 5; 
-    Real x_size = 10.0; 
-    Real y_size = 200.0; 
-    Real z_size = 1.0; 
-    Real Re = 1.0;
-    Constants cc(Nx, Ny, Nz, x_size, y_size, z_size, Re);
+#include <iostream>
 
-    size_t totalSize = Nx * Ny * Nz;
+int main(int argc, char *argv[]) {
+    // std::cout<<"Bella li"<<std::endl;
+    // size_t Nx = 3;
+    // size_t Ny = 4; 
+    // size_t Nz = 5; 
+    // Real x_size = 10.0; 
+    // Real y_size = 200.0; 
+    // Real z_size = 1.0; 
+    // Real Re = 1.0;
+    // Constants cc(Nx, Ny, Nz, x_size, y_size, z_size, Re);
 
-    std::vector<double> U(totalSize, 0.0); 
-    std::vector<double> V(totalSize, 0.0); 
-    std::vector<double> W(totalSize, 0.0); 
-    std::vector<double> Uex(totalSize, 0.0); 
-    std::vector<double> Vex(totalSize, 0.0); 
-    std::vector<double> Wex(totalSize, 0.0);
+    // size_t totalSize = Nx * Ny * Nz;
 
-    const double pi = M_PI;
+    // std::vector<double> U(totalSize, 0.0); 
+    // std::vector<double> V(totalSize, 0.0); 
+    // std::vector<double> W(totalSize, 0.0); 
+    // std::vector<double> Uex(totalSize, 0.0); 
+    // std::vector<double> Vex(totalSize, 0.0); 
+    // std::vector<double> Wex(totalSize, 0.0);
 
-    // Populate exact solutions and computed solutions
-    for (size_t k = 0; k < Nz; ++k) {
-        double z = k * cc.dz;
-        for (size_t j = 0; j < Ny; ++j) {
-            double y = j * cc.dy;
-            for (size_t i = 0; i < Nx; ++i) {
-                double x = i * cc.dx;
-                size_t index = i + j * cc.row_size + k * cc.matrix_size;
+    // const double pi = M_PI;
 
-                Uex[index] = sin(pi * x) * sin(pi * y) * sin(pi * z);
-                Vex[index] = Uex[index];
-                Wex[index] = Uex[index];
+    // // Populate exact solutions and computed solutions
+    // for (size_t k = 0; k < Nz; ++k) {
+    //     double z = k * cc.dz;
+    //     for (size_t j = 0; j < Ny; ++j) {
+    //         double y = j * cc.dy;
+    //         for (size_t i = 0; i < Nx; ++i) {
+    //             double x = i * cc.dx;
+    //             size_t index = i + j * cc.row_size + k * cc.matrix_size;
 
-                U[index] = Uex[index];
-                V[index] = Vex[index];
-                W[index] = Wex[index];
-            }
-        }
+    //             Uex[index] = sin(pi * x) * sin(pi * y) * sin(pi * z);
+    //             Vex[index] = Uex[index];
+    //             Wex[index] = Uex[index];
+
+    //             U[index] = Uex[index];
+    //             V[index] = Vex[index];
+    //             W[index] = Wex[index];
+    //         }
+    //     }
+    // }
+    // //Introduce perturbation at center point
+    // size_t center_index = 1 + 1 * cc.row_size + 1 * cc.matrix_size;
+    // U[center_index] += 0.1;
+    // V[center_index] += 0.1;
+    // W[center_index] += 0.1;
+    
+
+    const std::size_t depth = 2;
+    const std::size_t rows = 2;
+    const std::size_t cols = 2;
+    std::cout << std::endl
+                << "Testing tensor load, dump and indexing" << std::endl;
+    // Create a tensor
+    mif::Tensor<double, 3> u({depth, rows, cols});
+    mif::Tensor<double, 3> v({depth, rows, cols});
+    mif::Tensor<double, 3> w({depth, rows, cols});
+    // Load data
+    std::ofstream out("inU.txt");
+    out << "1 1 1 1 1 1 1 1";
+    out.close();
+    std::ofstream out1("inV.txt");
+    out1 << "1 1 1 1 1 1 1 1";
+    out1.close();
+    std::ofstream out2("inW.txt");
+    out2 << "1 1 1 1 1 1 1 1";
+    out2.close();
+
+    if (!u.load("inU.txt")) {
+        std::cerr << "Failed to load tensor from file." << std::endl;
+        return 1;
     }
-    //Introduce perturbation at center point
-    size_t center_index = 1 + 1 * cc.row_size + 1 * cc.matrix_size;
-    U[center_index] += 0.1;
-    V[center_index] += 0.1;
-    W[center_index] += 0.1;
-    
+    if (!v.load("inV.txt")) {
+        std::cerr << "Failed to load tensor from file." << std::endl;
+        return 1;
+    }
+    if (!w.load("inW.txt")) {
+        std::cerr << "Failed to load tensor from file." << std::endl;
+        return 1;
+    }
+    std::cout << "Tensor loaded from file" << std::endl;
 
-    double res = L2Norm(U, V, W, Uex, Vex, Wex, cc);
+    // Modify element
+    std::cout << std::endl
+                << "Modifying vlaue at {0, 0, 0} with constexpr indexing"
+                << std::endl;
+    // This is a compile time dispatched access
+    u(std::integer_sequence<unsigned, 0, 0, 0>{}) = 3.14;
+    v(std::integer_sequence<unsigned, 0, 0, 0>{}) = 3.14;
+    w(std::integer_sequence<unsigned, 0, 0, 0>{}) = 3.14;
 
+
+    mif::Tensor<double, 3> uEx({depth, rows, cols});
+    mif::Tensor<double, 3> vEx({depth, rows, cols});
+    mif::Tensor<double, 3> wEx({depth, rows, cols});
+
+    if (!uEx.load("inU.txt")) {
+        std::cerr << "Failed to load tensor from file." << std::endl;
+        return 1;
+    }
+    if (!vEx.load("inV.txt")) {
+        std::cerr << "Failed to load tensor from file." << std::endl;
+        return 1;
+    }
+    if (!wEx.load("inW.txt")) {
+        std::cerr << "Failed to load tensor from file." << std::endl;
+        return 1;
+    }
     
-    std::cout<<"Res = "<< res <<std::endl;
+    Constants ccc = Constants(2, 2, 2, 2, 2, 2, 100);
+    double ress = L2NormTensor<double, 3>(u, v, w, uEx, vEx, wEx, ccc);
+
+    std::cout<< "L2Norm: "<< ress <<std::endl;
 
     // Hand calculation for center point
     // double computed_rhs_u = mif::calculate_momentum_rhs_u(u, v, w, cc, center_index);

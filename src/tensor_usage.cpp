@@ -1,4 +1,5 @@
 #include <Tensor.h>
+#include "L2Norm.hpp"
 
 #include <iostream>
 
