@@ -70,6 +70,7 @@ namespace mif {
                   Real current_time,
                   const Constants &constants) {
         // Update the velocity solution inside the mesh.
+        // Stage 1.
         for (size_t i = 1; i < constants.Nx - 1; i++) {
             for (size_t j = 1; j < constants.Ny - 1; j++) {
                 for (size_t k = 1; k < constants.Nz - 1; k++) {
@@ -77,13 +78,25 @@ namespace mif {
                     u_buffer1(i, j, k) = compute_Y2<VelocityComponent::u>(u, v, w, forcing_term_u, current_time, constants, i, j, k);
                     v_buffer1(i, j, k) = compute_Y2<VelocityComponent::v>(u, v, w, forcing_term_v, current_time, constants, i, j, k);
                     w_buffer1(i, j, k) = compute_Y2<VelocityComponent::w>(u, v, w, forcing_term_w, current_time, constants, i, j, k);
+                }
+            }
+        }
 
-                    // Stage 2.
+        // Stage 2.
+        for (size_t i = 1; i < constants.Nx - 1; i++) {
+            for (size_t j = 1; j < constants.Ny - 1; j++) {
+                for (size_t k = 1; k < constants.Nz - 1; k++) {
                     u_buffer2(i, j, k) = compute_Y3<VelocityComponent::u>(u, v, w, u_buffer1, v_buffer1, w_buffer1, forcing_term_u, current_time, constants, i, j, k);
                     v_buffer2(i, j, k) = compute_Y3<VelocityComponent::v>(u, v, w, u_buffer1, v_buffer1, w_buffer1, forcing_term_v, current_time, constants, i, j, k);
                     w_buffer2(i, j, k) = compute_Y3<VelocityComponent::w>(u, v, w, u_buffer1, v_buffer1, w_buffer1, forcing_term_w, current_time, constants, i, j, k);
+                }
+            }
+        }
 
-                    // Stage 3.
+        // Stage 3.
+        for (size_t i = 1; i < constants.Nx - 1; i++) {
+            for (size_t j = 1; j < constants.Ny - 1; j++) {
+                for (size_t k = 1; k < constants.Nz - 1; k++) {
                     u_buffer3(i, j, k) = compute_new_u<VelocityComponent::u>(u_buffer1, v_buffer1, w_buffer1, u_buffer2, v_buffer2, w_buffer2, forcing_term_u, current_time, constants, i, j, k);
                     v_buffer3(i, j, k) = compute_new_u<VelocityComponent::v>(u_buffer1, v_buffer1, w_buffer1, u_buffer2, v_buffer2, w_buffer2, forcing_term_v, current_time, constants, i, j, k);
                     w_buffer3(i, j, k) = compute_new_u<VelocityComponent::w>(u_buffer1, v_buffer1, w_buffer1, u_buffer2, v_buffer2, w_buffer2, forcing_term_w, current_time, constants, i, j, k);
