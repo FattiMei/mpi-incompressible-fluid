@@ -12,13 +12,6 @@
 #include "VelocityComponent.h"
 
 namespace mif {
-    //constexpr Real a1 = (64.0 / 120.0);
-    //constexpr Real a2 = (50.0 / 120.0);
-    //constexpr Real a3 = (-34.0 / 120.0);
-    //constexpr Real a4 = (90.0 / 120.0);
-    //constexpr Real a5 = (-50.0 / 120.0);
-    //constexpr Real partial_time_1 = (64.0 / 120.0);
-    //constexpr Real partial_time_2 = (80.0 / 120.0);
     constexpr Real c2 = (8.0 / 15.0);
     constexpr Real a21 = (8.0 / 15.0);
     constexpr Real c3 = (2.0 / 3.0);
@@ -79,12 +72,11 @@ namespace mif {
                   const Constants &constants) {
         const Real time_1 = current_time + c2*constants.dt;
         const Real time_2 = current_time + c3*constants.dt;
+        const Real final_time = current_time + constants.dt;
 
-        // Stage 1.
-        // Apply Dirichlet boundary conditions.
-        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer1, function_at_time(u_exact, current_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer1, function_at_time(v_exact, current_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer1, function_at_time(w_exact, current_time), constants);
+        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer1, function_at_time(u_exact, time_1), constants);
+        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer1, function_at_time(v_exact, time_1), constants);
+        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer1, function_at_time(w_exact, time_1), constants);
 
         // Compute the solution inside the domain.
         for (size_t i = 1; i < constants.Nx - 1; i++) {
@@ -99,9 +91,9 @@ namespace mif {
 
         // Stage 2.
         // Apply Dirichlet boundary conditions.
-        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer2, function_at_time(u_exact, time_1), constants);
-        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer2, function_at_time(v_exact, time_1), constants);
-        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer2, function_at_time(w_exact, time_1), constants);
+        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer2, function_at_time(u_exact, time_2), constants);
+        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer2, function_at_time(v_exact, time_2), constants);
+        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer2, function_at_time(w_exact, time_2), constants);
 
         // Compute the solution inside the domain.
         for (size_t i = 1; i < constants.Nx - 1; i++) {
@@ -116,9 +108,9 @@ namespace mif {
 
         // Stage 3.
         // Apply Dirichlet boundary conditions.
-        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer1, function_at_time(u_exact, time_2), constants);
-        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer1, function_at_time(v_exact, time_2), constants);
-        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer1, function_at_time(w_exact, time_2), constants);
+        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer1, function_at_time(u_exact, final_time), constants);
+        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer1, function_at_time(v_exact, final_time), constants);
+        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer1, function_at_time(w_exact, final_time), constants);
 
         // Compute the solution inside the domain.
         for (size_t i = 1; i < constants.Nx - 1; i++) {

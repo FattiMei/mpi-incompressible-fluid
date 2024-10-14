@@ -2,3 +2,4 @@ build/
 artifacts/
 .ipynb_checkpoints/
 /.vscode/
+analysis/results.txt
