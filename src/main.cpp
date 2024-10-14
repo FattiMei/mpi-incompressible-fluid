@@ -6,6 +6,41 @@
 
 double Reynolds;
 
+Real L2Norm(mif::Tensor<> &U, mif::Tensor<> &V, 
+            mif::Tensor<> &W, mif::Tensor<> &Uex, 
+            mif::Tensor<> &Vex, mif::Tensor<> &Wex, 
+            const mif::Constants &c)
+{
+    double wxi, wyj, wzk;
+    double weight = 0;
+    double integral = 0.0;
+
+    // Iterate over the entire tensor space
+    for (std::size_t i = 0; i < c.Nx; ++i) {
+        wxi = (i == 0 || i == c.Nx - 1) ? 1.0 : 0.5;
+        for (std::size_t j = 0; j < c.Ny; ++j) {
+            wyj = (j == 0 || j == c.Ny - 1) ? 1.0 : 0.5;
+            for (std::size_t k = 0; k < c.Nz; ++k) {
+                // Calculate weight for current grid point
+                wzk = (k == 0 || k == c.Nz - 1) ? 1.0 : 0.5;
+
+                weight = wxi * wyj * wzk;
+
+                // Compute differences
+                double diff_u = U(i, j, k) - Uex(i, j, k);
+                double diff_v = V(i, j, k) - Vex(i, j, k);
+                double diff_w = W(i, j, k) - Wex(i, j, k);
+
+                // Accumulate squared differences with weights
+                integral += weight * (diff_u * diff_u + diff_v * diff_v + diff_w * diff_w);
+            }
+        }
+    }
+
+    // Multiply by volume element and return the square root
+    return std::sqrt(integral) * c.dx * c.dy * c.dz;
+};
+
 // Simple main for the test case with no pressure and exact solution known.
 int main(int argc, char* argv[]) {
     using namespace mif;
@@ -17,9 +52,9 @@ int main(int argc, char* argv[]) {
     constexpr size_t Nx = 64;
     constexpr size_t Ny = 64;
     constexpr size_t Nz = 64;
-    constexpr Real Re = 1000.0;
-    constexpr Real final_time = 0.005;
-    constexpr unsigned int num_time_steps = 1; 
+    constexpr Real Re = 10000.0;
+    constexpr Real final_time = 0.001;
+    constexpr unsigned int num_time_steps = 2; 
     const Constants constants(Nx, Ny, Nz, x_size, y_size, z_size, Re, final_time, num_time_steps);
 
     Reynolds = Re;
@@ -69,32 +104,8 @@ int main(int argc, char* argv[]) {
     discretize_function<VelocityComponent::v>(v_exact_tensor, function_at_time(v_exact, final_time), constants);
     discretize_function<VelocityComponent::w>(w_exact_tensor, function_at_time(w_exact, final_time), constants);
 
-    // TODO: Compute the L2 norm of the error.
-    std::cout << "L2 norm of the error: UNIMPLEMENTED" << std::endl;
-
-    // While there is no L2 norm, use a custom norm
-    Real u_error = 0.0;
-    Real v_error = 0.0;
-    Real w_error = 0.0;
-    for (size_t i = 0; i < Nx; i++) {
-        for (size_t j = 0; j < Ny; j++) {
-            for (size_t k = 0; k < Nz; k++) {
-                const Real u_difference = u(i, j, k) - u_exact_tensor(i, j, k);
-                u_error += u_difference * u_difference;
-                const Real v_difference = v(i, j, k) - v_exact_tensor(i, j, k);
-                v_error += v_difference * v_difference;
-                const Real w_difference = w(i, j, k) - w_exact_tensor(i, j, k);
-                w_error += w_difference * w_difference;
-            }
-        }
-    }
-    u_error = std::sqrt(u_error) / (Nx * Ny * Nz);
-    v_error = std::sqrt(v_error) / (Nx * Ny * Nz);
-    w_error = std::sqrt(w_error) / (Nx * Ny * Nz);
-
-    std::cout << "Error on u: " << u_error << std::endl;
-    std::cout << "Error on v: " << v_error << std::endl;
-    std::cout << "Error on w: " << w_error << std::endl;
+    // Compute the L2 norm of the error.
+    std::cout << "L2 norm of the error: " << L2Norm(u, v, w, u_exact_tensor, v_exact_tensor, w_exact_tensor, constants) << std::endl;
 
     return 0;
 }
