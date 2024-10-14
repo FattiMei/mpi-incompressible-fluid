@@ -1,7 +1,5 @@
-#include <cmath>
 #include <iostream>
 #include "BoundaryConditions.h"
-#include "InitialConditions.h"
 #include "FunctionHelpers.h"
 #include "Manufactured.h"
 #include "Timestep.h"
@@ -19,10 +17,10 @@ int main(int argc, char* argv[]) {
     constexpr size_t Nx = 64;
     constexpr size_t Ny = 64;
     constexpr size_t Nz = 64;
-    constexpr Real Re = 40.0;
-    constexpr Real final_time = 10.0;
+    constexpr Real Re = 1000.0;
+    constexpr Real final_time = 0.01;
     constexpr unsigned int num_time_steps = 10; 
-    const Constants constants(x_size, y_size, z_size, Nx, Ny, Nz, Re, final_time, num_time_steps);
+    const Constants constants(Nx, Ny, Nz, x_size, y_size, z_size, Re, final_time, num_time_steps);
 
     Reynolds = Re;
 
@@ -43,9 +41,9 @@ int main(int argc, char* argv[]) {
 
     // Set the initial conditions.
     std::cout << "Setting initial conditions." << std::endl;
-    apply_initial_conditions<VelocityComponent::u>(u, function_at_time(u_exact, 0.0), constants);
-    apply_initial_conditions<VelocityComponent::v>(v, function_at_time(v_exact, 0.0), constants);
-    apply_initial_conditions<VelocityComponent::w>(w, function_at_time(w_exact, 0.0), constants);
+    discretize_function<VelocityComponent::u>(u, function_at_time(u_exact, 0.0), constants);
+    discretize_function<VelocityComponent::v>(v, function_at_time(v_exact, 0.0), constants);
+    discretize_function<VelocityComponent::w>(w, function_at_time(w_exact, 0.0), constants);
 
     // Compute the solution.
     for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
@@ -72,8 +70,19 @@ int main(int argc, char* argv[]) {
                 current_time, constants);
     }
 
-    // TODO: check the error on the solution.
+    // Check the error on the solution.
     std::cout << "Checking the solution." << std::endl;
+
+    // Compute the exact solution.
+    Tensor<> u_exact_tensor(sizes);
+    Tensor<> v_exact_tensor(sizes);
+    Tensor<> w_exact_tensor(sizes);
+    discretize_function<VelocityComponent::u>(u_exact_tensor, function_at_time(u_exact, final_time), constants);
+    discretize_function<VelocityComponent::v>(v_exact_tensor, function_at_time(v_exact, final_time), constants);
+    discretize_function<VelocityComponent::w>(w_exact_tensor, function_at_time(w_exact, final_time), constants);
+
+    // TODO: Compute the L2 norm of the error.
+    std::cout << "L2 norm of the error: UNIMPLEMENTED" << std::endl;
 
     return 0;
 }

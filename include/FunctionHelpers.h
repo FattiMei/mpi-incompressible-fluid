@@ -10,9 +10,10 @@
 namespace mif {
 
     // Return an input function f, depending on x,y,z and time, removing its time dependency.
-    inline std::function<Real(Real, Real, Real)> function_at_time(const std::function<Real(Real, Real, Real, Real)> &f, Real time) {
+    inline std::function<Real(Real, Real, Real)> 
+    function_at_time(const std::function<Real(Real, Real, Real, Real)> &f, Real time) {
         const std::function<Real(Real, Real, Real)> result = 
-                [&time, &f](Real x, Real y, Real z) {
+                [time, &f](Real x, Real y, Real z) {
                     return f(time, x, y, z);
                 };
         return result;
@@ -43,6 +44,18 @@ namespace mif {
         } else {
             static_assert(component == VelocityComponent::w);
             return f(constants.dx * i, constants.dy * j, constants.dz * k + constants.dz * 0.5);
+        }
+    }
+
+    // Compute the function f on all points of a tensor representing a velocity component, and store the results in the tensor.
+    template <VelocityComponent component> void 
+    discretize_function(Tensor<> &tensor, const std::function<Real(Real, Real, Real)> &f, const Constants &constants) {
+        for (size_t i = 0; i < constants.Nx; i++) {
+            for (size_t j = 0; j < constants.Ny; j++) {
+                for (size_t k = 0; k < constants.Nz; k++) {
+                    tensor(i, j, k) = evaluate_staggered<component>(tensor, i, j, k, f, constants);
+                }
+            }
         }
     }
 
