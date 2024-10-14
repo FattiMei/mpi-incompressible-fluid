@@ -12,24 +12,22 @@ Real L2Norm(mif::Tensor<> &U, mif::Tensor<> &V,
             const mif::Constants &c)
 {
     double wxi, wyj, wzk;
-    double weight = 0;
     double integral = 0.0;
 
     // Iterate over the entire tensor space
     for (std::size_t i = 0; i < c.Nx; ++i) {
-        wxi = (i == 0 || i == c.Nx - 1) ? 1.0 : 0.5;
+        wxi = (i == 0 || i == c.Nx - 1) ? 0.5 : 1.0;
         for (std::size_t j = 0; j < c.Ny; ++j) {
-            wyj = (j == 0 || j == c.Ny - 1) ? 1.0 : 0.5;
+            wyj = (j == 0 || j == c.Ny - 1) ? 0.5 : 1.0;
             for (std::size_t k = 0; k < c.Nz; ++k) {
-                // Calculate weight for current grid point
-                wzk = (k == 0 || k == c.Nz - 1) ? 1.0 : 0.5;
+                wzk = (k == 0 || k == c.Nz - 1) ? 0.5 : 1.0;
 
-                weight = wxi * wyj * wzk;
+                const double weight = wxi * wyj * wzk;
 
                 // Compute differences
-                double diff_u = U(i, j, k) - Uex(i, j, k);
-                double diff_v = V(i, j, k) - Vex(i, j, k);
-                double diff_w = W(i, j, k) - Wex(i, j, k);
+                const double diff_u = U(i, j, k) - Uex(i, j, k);
+                const double diff_v = V(i, j, k) - Vex(i, j, k);
+                const double diff_w = W(i, j, k) - Wex(i, j, k);
 
                 // Accumulate squared differences with weights
                 integral += weight * (diff_u * diff_u + diff_v * diff_v + diff_w * diff_w);
@@ -38,7 +36,7 @@ Real L2Norm(mif::Tensor<> &U, mif::Tensor<> &V,
     }
 
     // Multiply by volume element and return the square root
-    return std::sqrt(integral) * c.dx * c.dy * c.dz;
+    return std::sqrt(integral * c.dx * c.dy * c.dz);
 };
 
 // Simple main for the test case with no pressure and exact solution known.
