@@ -3,6 +3,7 @@
 //
 
 #include <cassert>
+#include "BoundaryConditions.h"
 #include "Constants.h"
 #include "MomentumEquation.h"
 #include "FunctionHelpers.h"
@@ -11,6 +12,13 @@
 #include "VelocityComponent.h"
 
 namespace mif {
+    constexpr Real a1 = (64.0 / 120.0);
+    constexpr Real a2 = (50.0 / 120.0);
+    constexpr Real a3 = (-34.0 / 120.0);
+    constexpr Real a4 = (90.0 / 120.0);
+    constexpr Real a5 = (-50.0 / 120.0);
+    constexpr Real partial_time_1 = (64.0 / 120.0);
+    constexpr Real partial_time_2 = (80.0 / 120.0);
 
     // Perform the first stage of a single step of an explicit RK3 method for a single point of a single component.
     template <VelocityComponent component> inline Real
@@ -18,7 +26,6 @@ namespace mif {
                const std::function<Real(Real, Real, Real, Real)> &forcing_term,
                Real current_time, const Constants &constants, 
                size_t i, size_t j, size_t k) {
-        constexpr Real a1 = (64.0 / 120.0);
         const Real initial_term = choose_component<component>(u, v, w)(i,j,k);
         return initial_term + 
                constants.dt * a1 * calculate_momentum_rhs_with_forcing<component>(u, v, w, i, j, k, function_at_time(forcing_term, current_time), constants);
@@ -31,9 +38,6 @@ namespace mif {
                const std::function<Real(Real, Real, Real, Real)> &forcing_term,
                Real current_time, const Constants &constants, 
                size_t i, size_t j, size_t k) {
-        constexpr Real a2 = (50.0 / 120.0);
-        constexpr Real a3 = (-34.0 / 120.0);
-        constexpr Real partial_time_1 = (64.0 / 120.0);
         const Real time_1 = current_time + partial_time_1*constants.dt;
         const Real initial_term = choose_component<component>(Y2_u, Y2_v, Y2_w)(i,j,k);
         return initial_term + 
@@ -48,10 +52,6 @@ namespace mif {
                   const std::function<Real(Real, Real, Real, Real)> &forcing_term,
                   Real current_time, const Constants &constants, 
                   size_t i, size_t j, size_t k) {
-        constexpr Real a4 = (90.0 / 120.0);
-        constexpr Real a5 = (-50.0 / 120.0);
-        constexpr Real partial_time_1 = (64.0 / 120.0);
-        constexpr Real partial_time_2 = (80.0 / 120.0);
         const Real time_1 = current_time + partial_time_1*constants.dt;
         const Real time_2 = current_time + partial_time_2*constants.dt;
         const Real initial_term = choose_component<component>(Y3_u, Y3_v, Y3_w)(i,j,k);
@@ -62,19 +62,28 @@ namespace mif {
 
     void timestep(Tensor<> &u, Tensor<> &v, Tensor<> &w, 
                   Tensor<> &u_buffer1, Tensor<> &v_buffer1, Tensor<> &w_buffer1,
-                  Tensor<> &u_buffer2, Tensor<> &v_buffer2, Tensor<> &w_buffer2,  
-                  Tensor<> &u_buffer3, Tensor<> &v_buffer3, Tensor<> &w_buffer3,  
+                  Tensor<> &u_buffer2, Tensor<> &v_buffer2, Tensor<> &w_buffer2, 
+                  const std::function<Real(Real, Real, Real, Real)> &u_exact,
+                  const std::function<Real(Real, Real, Real, Real)> &v_exact,
+                  const std::function<Real(Real, Real, Real, Real)> &w_exact, 
                   const std::function<Real(Real, Real, Real, Real)> &forcing_term_u,
                   const std::function<Real(Real, Real, Real, Real)> &forcing_term_v,
                   const std::function<Real(Real, Real, Real, Real)> &forcing_term_w,
                   Real current_time,
                   const Constants &constants) {
-        // Update the velocity solution inside the mesh.
+        const Real time_1 = current_time + partial_time_1*constants.dt;
+        const Real time_2 = current_time + partial_time_2*constants.dt;
+
         // Stage 1.
+        // Apply Dirichlet boundary conditions.
+        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer1, function_at_time(u_exact, current_time), constants);
+        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer1, function_at_time(v_exact, current_time), constants);
+        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer1, function_at_time(w_exact, current_time), constants);
+
+        // Compute the solution inside the domain.
         for (size_t i = 1; i < constants.Nx - 1; i++) {
             for (size_t j = 1; j < constants.Ny - 1; j++) {
                 for (size_t k = 1; k < constants.Nz - 1; k++) {
-                    // Stage 1.
                     u_buffer1(i, j, k) = compute_Y2<VelocityComponent::u>(u, v, w, forcing_term_u, current_time, constants, i, j, k);
                     v_buffer1(i, j, k) = compute_Y2<VelocityComponent::v>(u, v, w, forcing_term_v, current_time, constants, i, j, k);
                     w_buffer1(i, j, k) = compute_Y2<VelocityComponent::w>(u, v, w, forcing_term_w, current_time, constants, i, j, k);
@@ -83,6 +92,12 @@ namespace mif {
         }
 
         // Stage 2.
+        // Apply Dirichlet boundary conditions.
+        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer2, function_at_time(u_exact, time_1), constants);
+        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer2, function_at_time(v_exact, time_1), constants);
+        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer2, function_at_time(w_exact, time_1), constants);
+
+        // Compute the solution inside the domain.
         for (size_t i = 1; i < constants.Nx - 1; i++) {
             for (size_t j = 1; j < constants.Ny - 1; j++) {
                 for (size_t k = 1; k < constants.Nz - 1; k++) {
@@ -94,19 +109,20 @@ namespace mif {
         }
 
         // Stage 3.
+        // Apply Dirichlet boundary conditions.
+        apply_all_dirichlet_bc<VelocityComponent::u>(u, function_at_time(u_exact, time_2), constants);
+        apply_all_dirichlet_bc<VelocityComponent::v>(v, function_at_time(v_exact, time_2), constants);
+        apply_all_dirichlet_bc<VelocityComponent::w>(w, function_at_time(w_exact, time_2), constants);
+
+        // Compute the solution inside the domain.
         for (size_t i = 1; i < constants.Nx - 1; i++) {
             for (size_t j = 1; j < constants.Ny - 1; j++) {
                 for (size_t k = 1; k < constants.Nz - 1; k++) {
-                    u_buffer3(i, j, k) = compute_new_u<VelocityComponent::u>(u_buffer1, v_buffer1, w_buffer1, u_buffer2, v_buffer2, w_buffer2, forcing_term_u, current_time, constants, i, j, k);
-                    v_buffer3(i, j, k) = compute_new_u<VelocityComponent::v>(u_buffer1, v_buffer1, w_buffer1, u_buffer2, v_buffer2, w_buffer2, forcing_term_v, current_time, constants, i, j, k);
-                    w_buffer3(i, j, k) = compute_new_u<VelocityComponent::w>(u_buffer1, v_buffer1, w_buffer1, u_buffer2, v_buffer2, w_buffer2, forcing_term_w, current_time, constants, i, j, k);
+                    u(i, j, k) = compute_new_u<VelocityComponent::u>(u_buffer1, v_buffer1, w_buffer1, u_buffer2, v_buffer2, w_buffer2, forcing_term_u, current_time, constants, i, j, k);
+                    v(i, j, k) = compute_new_u<VelocityComponent::v>(u_buffer1, v_buffer1, w_buffer1, u_buffer2, v_buffer2, w_buffer2, forcing_term_v, current_time, constants, i, j, k);
+                    w(i, j, k) = compute_new_u<VelocityComponent::w>(u_buffer1, v_buffer1, w_buffer1, u_buffer2, v_buffer2, w_buffer2, forcing_term_w, current_time, constants, i, j, k);
                 }
             }
         }
-
-        // Insert the new solution into the original tensors.
-        u.swap_data(u_buffer3);
-        v.swap_data(v_buffer3);
-        w.swap_data(w_buffer3);
     }
 }

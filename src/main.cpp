@@ -1,5 +1,5 @@
+#include <cmath>
 #include <iostream>
-#include "BoundaryConditions.h"
 #include "FunctionHelpers.h"
 #include "Manufactured.h"
 #include "Timestep.h"
@@ -18,8 +18,8 @@ int main(int argc, char* argv[]) {
     constexpr size_t Ny = 64;
     constexpr size_t Nz = 64;
     constexpr Real Re = 1000.0;
-    constexpr Real final_time = 0.01;
-    constexpr unsigned int num_time_steps = 10; 
+    constexpr Real final_time = 0.005;
+    constexpr unsigned int num_time_steps = 1; 
     const Constants constants(Nx, Ny, Nz, x_size, y_size, z_size, Re, final_time, num_time_steps);
 
     Reynolds = Re;
@@ -35,9 +35,6 @@ int main(int argc, char* argv[]) {
     Tensor<> u_buffer2(sizes);
     Tensor<> v_buffer2(sizes);
     Tensor<> w_buffer2(sizes);
-    Tensor<> u_buffer3(sizes);
-    Tensor<> v_buffer3(sizes);
-    Tensor<> w_buffer3(sizes);
 
     // Set the initial conditions.
     std::cout << "Setting initial conditions." << std::endl;
@@ -51,21 +48,12 @@ int main(int argc, char* argv[]) {
 
         // Set the boundary conditions.
         const Real current_time = time_step*constants.dt;
-        apply_all_dirichlet_bc<VelocityComponent::u>(u, function_at_time(u_exact, current_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::v>(v, function_at_time(v_exact, current_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::w>(w, function_at_time(v_exact, current_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer1, function_at_time(u_exact, current_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer1, function_at_time(v_exact, current_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer1, function_at_time(v_exact, current_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer2, function_at_time(u_exact, current_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer2, function_at_time(v_exact, current_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer2, function_at_time(v_exact, current_time), constants);
 
         // Update the solution inside the mesh.
         timestep(u, v, w, 
                 u_buffer1, v_buffer1, w_buffer1, 
-                u_buffer2, v_buffer2, w_buffer2, 
-                u_buffer3, v_buffer3, w_buffer3, 
+                u_buffer2, v_buffer2, w_buffer2,
+                u_exact, v_exact, w_exact,
                 forcing_x, forcing_y, forcing_z, 
                 current_time, constants);
     }
@@ -83,6 +71,30 @@ int main(int argc, char* argv[]) {
 
     // TODO: Compute the L2 norm of the error.
     std::cout << "L2 norm of the error: UNIMPLEMENTED" << std::endl;
+
+    // While there is no L2 norm, use a custom norm
+    Real u_error = 0.0;
+    Real v_error = 0.0;
+    Real w_error = 0.0;
+    for (size_t i = 0; i < Nx; i++) {
+        for (size_t j = 0; j < Ny; j++) {
+            for (size_t k = 0; k < Nz; k++) {
+                const Real u_difference = u(i, j, k) - u_exact_tensor(i, j, k);
+                u_error += u_difference * u_difference;
+                const Real v_difference = v(i, j, k) - v_exact_tensor(i, j, k);
+                v_error += v_difference * v_difference;
+                const Real w_difference = w(i, j, k) - w_exact_tensor(i, j, k);
+                w_error += w_difference * w_difference;
+            }
+        }
+    }
+    u_error = std::sqrt(u_error) / (Nx * Ny * Nz);
+    v_error = std::sqrt(v_error) / (Nx * Ny * Nz);
+    w_error = std::sqrt(w_error) / (Nx * Ny * Nz);
+
+    std::cout << "Error on u: " << u_error << std::endl;
+    std::cout << "Error on v: " << v_error << std::endl;
+    std::cout << "Error on w: " << w_error << std::endl;
 
     return 0;
 }
