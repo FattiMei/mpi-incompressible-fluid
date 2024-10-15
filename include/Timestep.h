@@ -23,6 +23,7 @@ namespace mif {
                   const std::function<Real(Real, Real, Real, Real)> &forcing_term_v,
                   const std::function<Real(Real, Real, Real, Real)> &forcing_term_w,
                   Real current_time,
+                  std::vector<std::array<Real, 3>> &rhs,
                   const Constants &constants);
 
 } // mif

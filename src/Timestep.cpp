@@ -1,7 +1,3 @@
-//
-// Created by giorgio on 10/10/2024.
-//
-
 #include <cassert>
 #include "BoundaryConditions.h"
 #include "Constants.h"
@@ -40,9 +36,16 @@ namespace mif {
                size_t i, size_t j, size_t k) {
         const Real time_1 = current_time + c2*constants.dt;
         const Real initial_term = choose_component<component>(u, v, w)(i,j,k);
-        return initial_term + 
-               constants.dt * a31 * calculate_momentum_rhs_with_forcing<component>(u, v, w, i, j, k, function_at_time(forcing_term, current_time), constants) +
-               constants.dt * a32 * calculate_momentum_rhs_with_forcing<component>(Y2_u, Y2_v, Y2_w, i, j, k, function_at_time(forcing_term, time_1), constants);
+        const Real fY2 = calculate_momentum_rhs_with_forcing<component>(Y2_u, Y2_v, Y2_w, i, j, k,
+                                                                        function_at_time(forcing_term, time_1),
+                                                                        constants);
+        const Real fU = calculate_momentum_rhs_with_forcing<component>(u, v, w, i, j, k,
+                                                                       function_at_time(forcing_term, current_time),
+                                                                       constants);
+
+        return initial_term +
+               constants.dt * a31 * fU +
+               constants.dt * a32 * fY2;
     }
 
     // Perform the third stage of a single step of an explicit RK3 method for a single point of a single component.
@@ -69,61 +72,153 @@ namespace mif {
                   const std::function<Real(Real, Real, Real, Real)> &forcing_term_v,
                   const std::function<Real(Real, Real, Real, Real)> &forcing_term_w,
                   Real current_time,
+                  std::vector<std::array<Real, 3>> &rhs,
                   const Constants &constants) {
-        const Real time_1 = current_time + c2*constants.dt;
-        const Real time_2 = current_time + c3*constants.dt;
+        // Precompute constants to avoid repetitive calculations inside the loops
+        const Real time_1 = current_time + c2 * constants.dt;
+        const Real time_2 = current_time + c3 * constants.dt;
         const Real final_time = current_time + constants.dt;
+        const Real dt_a21 = constants.dt * a21;
+        const Real dt_a31 = constants.dt * a31;
+        const Real dt_a32 = constants.dt * a32;
+        const Real dt_b1 = constants.dt * b1;
+        const Real dt_b3 = constants.dt * b3;
 
+        // Precompute forcing terms for current and future times to avoid recomputation
+        auto forcing_term_u_at_time = function_at_time(forcing_term_u, current_time);
+        auto forcing_term_v_at_time = function_at_time(forcing_term_v, current_time);
+        auto forcing_term_w_at_time = function_at_time(forcing_term_w, current_time);
+
+        auto forcing_term_u_at_time_1 = function_at_time(forcing_term_u, time_1);
+        auto forcing_term_v_at_time_1 = function_at_time(forcing_term_v, time_1);
+        auto forcing_term_w_at_time_1 = function_at_time(forcing_term_w, time_1);
+
+        auto forcing_term_u_at_time_2 = function_at_time(forcing_term_u, time_2);
+        auto forcing_term_v_at_time_2 = function_at_time(forcing_term_v, time_2);
+        auto forcing_term_w_at_time_2 = function_at_time(forcing_term_w, time_2);
+
+
+
+        // Apply Dirichlet boundary conditions for the first intermediate time (Stage 1)
         apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer1, function_at_time(u_exact, time_1), constants);
         apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer1, function_at_time(v_exact, time_1), constants);
         apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer1, function_at_time(w_exact, time_1), constants);
 
-        // Compute the solution inside the domain.
+        // --- Stage 1: Compute Y2 for each velocity component ---
         for (size_t i = 1; i < constants.Nx - 1; i++) {
             for (size_t j = 1; j < constants.Ny - 1; j++) {
+                #pragma ivdep
                 for (size_t k = 1; k < constants.Nz - 1; k++) {
-                    u_buffer1(i, j, k) = compute_Y2<VelocityComponent::u>(u, v, w, forcing_term_u, current_time, constants, i, j, k);
-                    v_buffer1(i, j, k) = compute_Y2<VelocityComponent::v>(u, v, w, forcing_term_v, current_time, constants, i, j, k);
-                    w_buffer1(i, j, k) = compute_Y2<VelocityComponent::w>(u, v, w, forcing_term_w, current_time, constants, i, j, k);
+                    //Compiler does not seam to like to inline the function calls here, so we will do it manually (we could also use a pragma to force inlining)
+                    const Real rhs_u = calculate_momentum_rhs_with_forcing<VelocityComponent::u>(u, v, w, i, j, k,
+                                                                                                 forcing_term_u_at_time,
+                                                                                                 constants);
+                    const Real rhs_v = calculate_momentum_rhs_with_forcing<VelocityComponent::v>(u, v, w, i, j, k,
+                                                                                                 forcing_term_v_at_time,
+                                                                                                 constants);
+                    const Real rhs_w = calculate_momentum_rhs_with_forcing<VelocityComponent::w>(u, v, w, i, j, k,
+                                                                                                 forcing_term_w_at_time,
+                                                                                                 constants);
+                    rhs[i * constants.Ny * constants.Nz + j * constants.Nz + k] = {rhs_u, rhs_v, rhs_w};
+                    u_buffer1(i, j, k) = u(i, j, k) + dt_a21 * rhs_u;
+                    v_buffer1(i, j, k) = v(i, j, k) + dt_a21 * rhs_v;
+                    w_buffer1(i, j, k) = w(i, j, k) + dt_a21 * rhs_w;
                 }
             }
         }
 
-        // Stage 2.
-        // Apply Dirichlet boundary conditions.
+        // Apply Dirichlet boundary conditions for the second intermediate time (Stage 2)
         apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer2, function_at_time(u_exact, time_2), constants);
         apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer2, function_at_time(v_exact, time_2), constants);
         apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer2, function_at_time(w_exact, time_2), constants);
 
-        // Compute the solution inside the domain.
+
+        // --- Stage 2: Compute Y3 for each velocity component ---
         for (size_t i = 1; i < constants.Nx - 1; i++) {
             for (size_t j = 1; j < constants.Ny - 1; j++) {
+                #pragma ivdep
                 for (size_t k = 1; k < constants.Nz - 1; k++) {
-                    u_buffer2(i, j, k) = compute_Y3<VelocityComponent::u>(u, v, w, u_buffer1, v_buffer1, w_buffer1, forcing_term_u, current_time, constants, i, j, k);
-                    v_buffer2(i, j, k) = compute_Y3<VelocityComponent::v>(u, v, w, u_buffer1, v_buffer1, w_buffer1, forcing_term_v, current_time, constants, i, j, k);
-                    w_buffer2(i, j, k) = compute_Y3<VelocityComponent::w>(u, v, w, u_buffer1, v_buffer1, w_buffer1, forcing_term_w, current_time, constants, i, j, k);
+                    /*const Real rhs_u = calculate_momentum_rhs_with_forcing<VelocityComponent::u>(u, v, w, i, j, k, forcing_term_u_at_time, constants);
+                    const Real rhs_v = calculate_momentum_rhs_with_forcing<VelocityComponent::v>(u, v, w, i, j, k, forcing_term_v_at_time, constants);
+                    const Real rhs_w = calculate_momentum_rhs_with_forcing<VelocityComponent::w>(u, v, w, i, j, k, forcing_term_w_at_time, constants);
+*/
+                    const Real rhs_u = rhs[i * constants.Ny * constants.Nz + j * constants.Nz + k][0];
+                    const Real rhs_v = rhs[i * constants.Ny * constants.Nz + j * constants.Nz + k][1];
+                    const Real rhs_w = rhs[i * constants.Ny * constants.Nz + j * constants.Nz + k][2];
+
+
+                    const Real rhs_u_buffer1 = calculate_momentum_rhs_with_forcing<VelocityComponent::u>(u_buffer1,
+                                                                                                         v_buffer1,
+                                                                                                         w_buffer1, i,
+                                                                                                         j, k,
+                                                                                                         forcing_term_u_at_time_1,
+                                                                                                         constants);
+                    const Real rhs_v_buffer1 = calculate_momentum_rhs_with_forcing<VelocityComponent::v>(u_buffer1,
+                                                                                                         v_buffer1,
+                                                                                                         w_buffer1, i,
+                                                                                                         j, k,
+                                                                                                         forcing_term_v_at_time_1,
+                                                                                                         constants);
+                    const Real rhs_w_buffer1 = calculate_momentum_rhs_with_forcing<VelocityComponent::w>(u_buffer1,
+                                                                                                         v_buffer1,
+                                                                                                         w_buffer1, i,
+                                                                                                         j, k,
+                                                                                                         forcing_term_w_at_time_1,
+                                                                                                         constants);
+
+                    u_buffer2(i, j, k) = u(i, j, k) + dt_a31 * rhs_u + dt_a32 * rhs_u_buffer1;
+                    v_buffer2(i, j, k) = v(i, j, k) + dt_a31 * rhs_v + dt_a32 * rhs_v_buffer1;
+                    w_buffer2(i, j, k) = w(i, j, k) + dt_a31 * rhs_w + dt_a32 * rhs_w_buffer1;
                 }
             }
         }
 
-        // Stage 3.
-        // Apply Dirichlet boundary conditions.
+        // Apply Dirichlet boundary conditions for the final time (Stage 3)
         apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer1, function_at_time(u_exact, final_time), constants);
         apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer1, function_at_time(v_exact, final_time), constants);
         apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer1, function_at_time(w_exact, final_time), constants);
 
-        // Compute the solution inside the domain.
-        for (size_t i = 1; i < constants.Nx - 1; i++) {
-            for (size_t j = 1; j < constants.Ny - 1; j++) {
-                for (size_t k = 1; k < constants.Nz - 1; k++) {
-                    u_buffer1(i, j, k) = compute_new_u<VelocityComponent::u>(u, v, w, u_buffer2, v_buffer2, w_buffer2, forcing_term_u, current_time, constants, i, j, k);
-                    v_buffer1(i, j, k) = compute_new_u<VelocityComponent::v>(u, v, w, u_buffer2, v_buffer2, w_buffer2, forcing_term_v, current_time, constants, i, j, k);
-                    w_buffer1(i, j, k) = compute_new_u<VelocityComponent::w>(u, v, w, u_buffer2, v_buffer2, w_buffer2, forcing_term_w, current_time, constants, i, j, k);
+        // --- Stage 3: Final computation for each velocity component ---
+        for (size_t i = 1; i < constants.Nx - 1; ++i) {
+            for (size_t j = 1; j < constants.Ny - 1; ++j) {
+                #pragma ivdep
+                for (size_t k = 1; k < constants.Nz - 1; ++k) {
+                    /*const Real rhs_u = calculate_momentum_rhs_with_forcing<VelocityComponent::u>(u, v, w, i, j, k, forcing_term_u_at_time, constants);
+                    const Real rhs_v = calculate_momentum_rhs_with_forcing<VelocityComponent::v>(u, v, w, i, j, k, forcing_term_v_at_time, constants);
+                    const Real rhs_w = calculate_momentum_rhs_with_forcing<VelocityComponent::w>(u, v, w, i, j, k, forcing_term_w_at_time, constants);
+*/
+                    const Real rhs_u = rhs[i * constants.Ny * constants.Nz + j * constants.Nz + k][0];
+                    const Real rhs_v = rhs[i * constants.Ny * constants.Nz + j * constants.Nz + k][1];
+                    const Real rhs_w = rhs[i * constants.Ny * constants.Nz + j * constants.Nz + k][2];
+
+
+                    const Real rhs_u_buffer2 = calculate_momentum_rhs_with_forcing<VelocityComponent::u>(u_buffer2,
+                                                                                                         v_buffer2,
+                                                                                                         w_buffer2, i,
+                                                                                                         j, k,
+                                                                                                         forcing_term_u_at_time_2,
+                                                                                                         constants);
+                    const Real rhs_v_buffer2 = calculate_momentum_rhs_with_forcing<VelocityComponent::v>(u_buffer2,
+                                                                                                         v_buffer2,
+                                                                                                         w_buffer2, i,
+                                                                                                         j, k,
+                                                                                                         forcing_term_v_at_time_2,
+                                                                                                         constants);
+                    const Real rhs_w_buffer2 = calculate_momentum_rhs_with_forcing<VelocityComponent::w>(u_buffer2,
+                                                                                                         v_buffer2,
+                                                                                                         w_buffer2, i,
+                                                                                                         j, k,
+                                                                                                         forcing_term_w_at_time_2,
+                                                                                                         constants);
+
+                    u_buffer1(i, j, k) = u(i, j, k) + dt_b1 * rhs_u + dt_b3 * rhs_u_buffer2;
+                    v_buffer1(i, j, k) = v(i, j, k) + dt_b1 * rhs_v + dt_b3 * rhs_v_buffer2;
+                    w_buffer1(i, j, k) = w(i, j, k) + dt_b1 * rhs_w + dt_b3 * rhs_w_buffer2;
                 }
             }
         }
 
-        // Put the solution in the original tensors.
+        // Swap buffers to finalize the step
         u.swap_data(u_buffer1);
         v.swap_data(v_buffer1);
         w.swap_data(w_buffer1);

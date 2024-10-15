@@ -1,6 +1,11 @@
 #include "Norms.h"
 #include <cmath>
 
+
+//if Real is float then sqrt -> sqrtf
+#ifdef REAL_FLOAT
+#define sqrt sqrtf
+#endif
 namespace mif {
 
     Real L2Norm(const Tensor<> &U, const Tensor<> &V, 
@@ -39,15 +44,15 @@ namespace mif {
                 const Tensor<> &W, const Tensor<> &Uex, 
                 const Tensor<> &Vex, const Tensor<> &Wex, 
                 const mif::Constants &c) {
-        double integral = 0.0;
+        Real integral = 0.0;
         // Iterate over the entire tensor space.
         for (std::size_t i = 0; i < c.Nx; ++i) {
             for (std::size_t j = 0; j < c.Ny; ++j) {
                 for (std::size_t k = 0; k < c.Nz; ++k) {
                     // Compute differences.
-                    const double diff_u = U(i, j, k) - Uex(i, j, k);
-                    const double diff_v = V(i, j, k) - Vex(i, j, k);
-                    const double diff_w = W(i, j, k) - Wex(i, j, k);
+                    const Real diff_u = U(i, j, k) - Uex(i, j, k);
+                    const Real diff_v = V(i, j, k) - Vex(i, j, k);
+                    const Real diff_w = W(i, j, k) - Wex(i, j, k);
 
                     // Accumulate abs differences.
                     integral += sqrt(diff_u * diff_u + diff_v * diff_v + diff_w * diff_w);
@@ -62,15 +67,15 @@ namespace mif {
                   const Tensor<> &Vex, const Tensor<> &Wex, 
                   const Constants &c)
     {
-        double integral = 0.0;
+        Real integral = 0.0;
         // Iterate over the entire tensor space.
         for (std::size_t i = 0; i < c.Nx; ++i) {
             for (std::size_t j = 0; j < c.Ny; ++j) {
                 for (std::size_t k = 0; k < c.Nz; ++k) {
                     // Compute differences.
-                    const double diff_u = std::abs(U(i, j, k) - Uex(i, j, k));
-                    const double diff_v = std::abs(V(i, j, k) - Vex(i, j, k));
-                    const double diff_w = std::abs(W(i, j, k) - Wex(i, j, k));
+                    const Real diff_u = std::abs(U(i, j, k) - Uex(i, j, k));
+                    const Real diff_v = std::abs(V(i, j, k) - Vex(i, j, k));
+                    const Real diff_w = std::abs(W(i, j, k) - Wex(i, j, k));
 
                     if (diff_u > integral) {
                         integral = diff_u;

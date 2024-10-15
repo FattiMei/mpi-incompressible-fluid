@@ -17,13 +17,13 @@ except:
     pass
 
 # Compile.
-os.system("cd ../build && make -j")
+os.system("cd ../build && cmake .. &&make -j")
 
 # Run.
 for step in range(num_tests):
     N = initial_N * 2**(step)
     time_steps = initial_time_steps * 2**(step)
-
+    print("Running test with N = ", N, " and time_steps = ", time_steps)
     os.system("../build/mif " + str(N) + " " + str(time_steps) + " >> results.txt")
 
 # Get the results.
@@ -67,3 +67,13 @@ plt.ylabel("Error")
 plt.legend()
 plt.savefig("convergence_order.png")
 plt.show()
+
+# now time the execution of the code
+import time
+
+start = time.time()
+for i in range(10):
+    os.system("../build/mif " + str(N / 2) + " " + str(time_steps / 2) + " >> results.txt")
+end = time.time()
+
+print("Execution time: ", (end - start) / 10, "s")

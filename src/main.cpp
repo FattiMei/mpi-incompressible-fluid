@@ -6,9 +6,11 @@
 #include "Norms.h"
 #include "Timestep.h"
 
-double Reynolds;
+Real Reynolds;
 
 // Simple main for the test case with no pressure and exact solution known.
+//static mif::Constants constants; we will initialize this in main
+
 int main(int argc, char* argv[]) {
     using namespace mif;
 
@@ -22,8 +24,8 @@ int main(int argc, char* argv[]) {
     const size_t Ny = Nx;
     const size_t Nz = Ny;
     constexpr Real Re = 1e6;
-    constexpr Real final_time = 1e-4;
-    const unsigned int num_time_steps = std::atoi(argv[2]); 
+    constexpr Real final_time = 1e-2;
+    const unsigned int num_time_steps = std::atol(argv[2]);
     const Constants constants(Nx, Ny, Nz, x_size, y_size, z_size, Re, final_time, num_time_steps);
 
     Reynolds = Re;
@@ -44,6 +46,8 @@ int main(int argc, char* argv[]) {
     discretize_function<VelocityComponent::u>(u, function_at_time(u_exact, 0.0), constants);
     discretize_function<VelocityComponent::v>(v, function_at_time(v_exact, 0.0), constants);
     discretize_function<VelocityComponent::w>(w, function_at_time(w_exact, 0.0), constants);
+    std::vector<std::array<Real, 3>> rhs(constants.Nx * constants.Ny * constants.Nz);
+
 
     // Compute the solution.
     for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
@@ -56,8 +60,10 @@ int main(int argc, char* argv[]) {
                 u_buffer1, v_buffer1, w_buffer1, 
                 u_buffer2, v_buffer2, w_buffer2,
                 u_exact, v_exact, w_exact,
-                forcing_x, forcing_y, forcing_z, 
-                current_time, constants);
+                 forcing_x, forcing_y, forcing_z,
+                 current_time,
+                 rhs,
+                 constants);
     }
 
     // Check the error on the solution.
@@ -69,6 +75,7 @@ int main(int argc, char* argv[]) {
     discretize_function<VelocityComponent::u>(u_exact_tensor, function_at_time(u_exact, final_time), constants);
     discretize_function<VelocityComponent::v>(v_exact_tensor, function_at_time(v_exact, final_time), constants);
     discretize_function<VelocityComponent::w>(w_exact_tensor, function_at_time(w_exact, final_time), constants);
+    //print highest value of u_exact_tensor
 
     // Compute the norms of the error.
     std::cout << L1Norm(u, v, w, u_exact_tensor, v_exact_tensor, w_exact_tensor, constants) << " " << 
