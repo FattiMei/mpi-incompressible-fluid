@@ -174,9 +174,9 @@ namespace mif {
         }
 
         // Apply Dirichlet boundary conditions for the final time (Stage 3)
-        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer1, function_at_time(u_exact, final_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer1, function_at_time(v_exact, final_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer1, function_at_time(w_exact, final_time), constants);
+        apply_all_dirichlet_bc<VelocityComponent::u>(u, function_at_time(u_exact, final_time), constants);
+        apply_all_dirichlet_bc<VelocityComponent::v>(v, function_at_time(v_exact, final_time), constants);
+        apply_all_dirichlet_bc<VelocityComponent::w>(w, function_at_time(w_exact, final_time), constants);
 
         // --- Stage 3: Final computation for each velocity component ---
         for (size_t i = 1; i < constants.Nx - 1; ++i) {
@@ -190,6 +190,9 @@ namespace mif {
                     const Real rhs_u = rhs[i * constants.Ny * constants.Nz + j * constants.Nz + k][0];
                     const Real rhs_v = rhs[i * constants.Ny * constants.Nz + j * constants.Nz + k][1];
                     const Real rhs_w = rhs[i * constants.Ny * constants.Nz + j * constants.Nz + k][2];
+                    const Real lu = u(i, j, k);
+                    const Real lv = v(i, j, k);
+                    const Real lw = w(i, j, k);
 
 
                     const Real rhs_u_buffer2 = calculate_momentum_rhs_with_forcing<VelocityComponent::u>(u_buffer2,
@@ -211,16 +214,13 @@ namespace mif {
                                                                                                          forcing_term_w_at_time_2,
                                                                                                          constants);
 
-                    u_buffer1(i, j, k) = u(i, j, k) + dt_b1 * rhs_u + dt_b3 * rhs_u_buffer2;
-                    v_buffer1(i, j, k) = v(i, j, k) + dt_b1 * rhs_v + dt_b3 * rhs_v_buffer2;
-                    w_buffer1(i, j, k) = w(i, j, k) + dt_b1 * rhs_w + dt_b3 * rhs_w_buffer2;
+                    u(i, j, k) = lu + dt_b1 * rhs_u + dt_b3 * rhs_u_buffer2;
+                    v(i, j, k) = lv + dt_b1 * rhs_v + dt_b3 * rhs_v_buffer2;
+                    w(i, j, k) = lw + dt_b1 * rhs_w + dt_b3 * rhs_w_buffer2;
                 }
             }
         }
 
         // Swap buffers to finalize the step
-        u.swap_data(u_buffer1);
-        v.swap_data(v_buffer1);
-        w.swap_data(w_buffer1);
     }
 }
