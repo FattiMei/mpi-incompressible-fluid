@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
     constexpr Real x_size = 1.0;
     constexpr Real y_size = 1.0;
     constexpr Real z_size = 1.0;
-    const size_t Nx = std::atol(argv[1]);
+    const size_t Nx = std::atol(argv[1]) + 1UL;
     const size_t Ny = Nx;
     const size_t Nz = Ny;
     constexpr Real Re = 1e6;
@@ -29,16 +29,18 @@ int main(int argc, char* argv[]) {
     Reynolds = Re;
 
     // Create the velocity tensors.
-    std::array<size_t, 3> sizes{Nx, Ny, Nz};
-    Tensor<> u(sizes);
-    Tensor<> v(sizes);
-    Tensor<> w(sizes);
-    Tensor<> u_buffer1(sizes);
-    Tensor<> v_buffer1(sizes);
-    Tensor<> w_buffer1(sizes);
-    Tensor<> u_buffer2(sizes);
-    Tensor<> v_buffer2(sizes);
-    Tensor<> w_buffer2(sizes);
+    std::array<size_t, 3> u_sizes{Nx-1, Ny, Nz};
+    std::array<size_t, 3> v_sizes{Nx, Ny-1, Nz};
+    std::array<size_t, 3> w_sizes{Nx, Ny, Nz-1};
+    Tensor<> u(u_sizes);
+    Tensor<> v(v_sizes);
+    Tensor<> w(w_sizes);
+    Tensor<> u_buffer1(u_sizes);
+    Tensor<> v_buffer1(v_sizes);
+    Tensor<> w_buffer1(w_sizes);
+    Tensor<> u_buffer2(u_sizes);
+    Tensor<> v_buffer2(v_sizes);
+    Tensor<> w_buffer2(w_sizes);
 
     // Set the initial conditions.
     discretize_function<VelocityComponent::u>(u, function_at_time(u_exact, 0.0), constants);
@@ -63,9 +65,9 @@ int main(int argc, char* argv[]) {
     // Check the error on the solution.
 
     // Compute the exact solution.
-    Tensor<> u_exact_tensor(sizes);
-    Tensor<> v_exact_tensor(sizes);
-    Tensor<> w_exact_tensor(sizes);
+    Tensor<> u_exact_tensor(u_sizes);
+    Tensor<> v_exact_tensor(v_sizes);
+    Tensor<> w_exact_tensor(w_sizes);
     discretize_function<VelocityComponent::u>(u_exact_tensor, function_at_time(u_exact, final_time), constants);
     discretize_function<VelocityComponent::v>(v_exact_tensor, function_at_time(v_exact, final_time), constants);
     discretize_function<VelocityComponent::w>(w_exact_tensor, function_at_time(w_exact, final_time), constants);

@@ -1,5 +1,5 @@
-#include <cassert>
 #include "Constants.h"
+#include <cassert>
 
 namespace mif {
 
@@ -8,7 +8,7 @@ namespace mif {
             x_size(x_size), y_size(y_size), z_size(z_size), 
             Re(Re),
             final_time(final_time), num_time_steps(num_time_steps),
-            dx(x_size/Nx), dy(y_size/Ny), dz(z_size/Nz),
+            dx(x_size/(Nx-1)), dy(y_size/(Ny-1)), dz(z_size/(Nz-1)),
             dt(final_time / num_time_steps),
             row_size(Nx), matrix_size(Nx*Ny),
             one_over_2_dx(1/(2*dx)), one_over_2_dy(1/(2*dy)), one_over_2_dz(1/(2*dz)),

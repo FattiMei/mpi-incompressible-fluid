@@ -1,6 +1,8 @@
 #include "Norms.h"
 #include <cmath>
 
+//TODO: using a temporary workaround for approximate norms, but norms need to be computed precisely.
+
 namespace mif {
 
     Real L2Norm(const Tensor<> &U, const Tensor<> &V, 
@@ -21,9 +23,9 @@ namespace mif {
                     const Real weight = wxi * wyj * wzk;
 
                     // Compute differences.
-                    const Real diff_u = U(i, j, k) - Uex(i, j, k);
-                    const Real diff_v = V(i, j, k) - Vex(i, j, k);
-                    const Real diff_w = W(i, j, k) - Wex(i, j, k);
+                    const Real diff_u = (i < c.Nx-1) ? U(i, j, k) - Uex(i, j, k) : 0.0;
+                    const Real diff_v = (j < c.Ny-1) ? V(i, j, k) - Vex(i, j, k) : 0.0;
+                    const Real diff_w = (k < c.Nz-1) ? W(i, j, k) - Wex(i, j, k) : 0.0;
 
                     // Accumulate squared differences with weights.
                     integral += weight * (diff_u * diff_u + diff_v * diff_v + diff_w * diff_w);
@@ -45,9 +47,9 @@ namespace mif {
             for (std::size_t j = 0; j < c.Ny; ++j) {
                 for (std::size_t k = 0; k < c.Nz; ++k) {
                     // Compute differences.
-                    const double diff_u = U(i, j, k) - Uex(i, j, k);
-                    const double diff_v = V(i, j, k) - Vex(i, j, k);
-                    const double diff_w = W(i, j, k) - Wex(i, j, k);
+                    const Real diff_u = (i < c.Nx-1) ? U(i, j, k) - Uex(i, j, k) : 0.0;
+                    const Real diff_v = (j < c.Ny-1) ? V(i, j, k) - Vex(i, j, k) : 0.0;
+                    const Real diff_w = (k < c.Nz-1) ? W(i, j, k) - Wex(i, j, k) : 0.0;
 
                     // Accumulate abs differences.
                     integral += sqrt(diff_u * diff_u + diff_v * diff_v + diff_w * diff_w);
@@ -68,9 +70,9 @@ namespace mif {
             for (std::size_t j = 0; j < c.Ny; ++j) {
                 for (std::size_t k = 0; k < c.Nz; ++k) {
                     // Compute differences.
-                    const double diff_u = std::abs(U(i, j, k) - Uex(i, j, k));
-                    const double diff_v = std::abs(V(i, j, k) - Vex(i, j, k));
-                    const double diff_w = std::abs(W(i, j, k) - Wex(i, j, k));
+                    const Real diff_u = (i < c.Nx-1) ? std::abs(U(i, j, k) - Uex(i, j, k)) : 0.0;
+                    const Real diff_v = (j < c.Ny-1) ? std::abs(V(i, j, k) - Vex(i, j, k)) : 0.0;
+                    const Real diff_w = (k < c.Nz-1) ? std::abs(W(i, j, k) - Wex(i, j, k)) : 0.0;
 
                     if (diff_u > integral) {
                         integral = diff_u;

@@ -14,6 +14,7 @@ def laplacian(u):
 def manufsol(*, u, v, w, p, ignore_pressure=False):
     if diff(u,x) + diff(v,y) + diff(w,z) != 0:
         sys.stderr.write('[WARNING]: the proposed manufactured solution is not divergence free, correcting\n')
+        # TODO: this does not result in 0 divergence.
         w = -z * (diff(u,x) + diff(v,y))
 
     if ignore_pressure:
@@ -27,9 +28,9 @@ def manufsol(*, u, v, w, p, ignore_pressure=False):
 
 
 if __name__ == '__main__':
-    u = sp.sin(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
-    v = sp.cos(x) * sp.sin(y) * sp.sin(z) * sp.sin(t)
-    w = 2 * sp.cos(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
+    u = sp.sin(x)*sp.cos(y)*sp.sin(z)*sp.sin(t)
+    v = sp.cos(x)*sp.sin(y)*sp.sin(z)*sp.sin(t)
+    w = 2*sp.cos(x)*sp.cos(y)*sp.cos(z)*sp.sin(t)
 
     # don't set the pressure to zero or constant otherwise the generated function signature will be screwed
     p = x*y
