@@ -2,10 +2,7 @@
 #include <cmath>
 
 
-//if Real is float then sqrt -> sqrtf
-#ifdef REAL_FLOAT
-#define sqrt sqrtf
-#endif
+
 namespace mif {
 
     Real L2Norm(const Tensor<> &U, const Tensor<> &V, 
