@@ -1,14 +1,20 @@
 #ifndef MANUFACTURED__H
 #define MANUFACTURED__H
 
-extern double Reynolds;
+extern Real Reynolds;
 
-double u_exact  (double t, double x, double y, double z);
-double v_exact  (double t, double x, double y, double z);
-double w_exact  (double t, double x, double y, double z);
-double p_exact  (double t, double x, double y, double z);
-double forcing_x(double t, double x, double y, double z);
-double forcing_y(double t, double x, double y, double z);
-double forcing_z(double t, double x, double y, double z);
+Real u_exact(Real t, Real x, Real y, Real z);
+
+Real v_exact(Real t, Real x, Real y, Real z);
+
+Real w_exact(Real t, Real x, Real y, Real z);
+
+Real p_exact(Real t, Real x, Real y, Real z);
+
+Real forcing_x(Real t, Real x, Real y, Real z);
+
+Real forcing_y(Real t, Real x, Real y, Real z);
+
+Real forcing_z(Real t, Real x, Real y, Real z);
 
 #endif // MANUFACTURED__H
