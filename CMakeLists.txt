@@ -5,7 +5,7 @@ find_package(Python3 REQUIRED)
 
 set(CMAKE_CXX_STANDARD 23)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ")
 
 if(NOT DEFINED VERBOSE)
     set(VERBOSE "FALSE")
@@ -14,7 +14,7 @@ endif ()
 set(EXE_NAME "mif")
 set(FORCING_TERM_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol.py)
 set(FORCING_TERM_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp)
-
+add_compile_definitions(Real=double)
 file(GLOB SOURCES "src/*.cpp")
 include_directories(include)
 

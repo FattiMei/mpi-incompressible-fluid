@@ -2,7 +2,6 @@
 #define CONSTANTS_H
 
 #include <cstddef>
-#include "Real.h"
 
 namespace mif {
 
