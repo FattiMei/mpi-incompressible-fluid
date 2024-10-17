@@ -1,7 +1,5 @@
 #include <cassert>
-#include <cmath>
 #include <iostream>
-#include "FunctionHelpers.h"
 #include "Manufactured.h"
 #include "Norms.h"
 #include "Timestep.h"
@@ -48,12 +46,8 @@ int main(int argc, char* argv[]) {
         timestep(velocity, 
                  velocity_buffer1, 
                  velocity_buffer2,
-                 exact_velocity,
-                 forcing_term, 
                  current_time);
     }
-
-    // Check the error on the solution.
 
     // Compute the exact solution.
     VelocityTensor exact_tensor(constants);

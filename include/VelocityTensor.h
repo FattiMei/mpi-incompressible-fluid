@@ -1,13 +1,13 @@
 #ifndef VELOCITY_TENSOR_H
 #define VELOCITY_TENSOR_H
 
-#include <cassert>
 #include "Constants.h"
-#include "StaggeringStatus.h"
 #include "Tensor.h"
 #include "VectorFunction.h"
 
 namespace mif {
+
+    enum StaggeringStatus {x, y, z, none};
 
     // Abstract class.
     class StaggeredTensor: public Tensor<Real, 3U, size_t> {
@@ -17,12 +17,7 @@ namespace mif {
                 staggering(staggering),
                 Tensor(in_dimensions) {}
 
-        /*!
-        * Return the staggering direction of this tensor.
-        */
-        StaggeringStatus get_staggering() const {
-            return staggering;
-        }
+        const Constants &constants;
 
         /*!
         * Evaluate the function f, depending on x,y,z, on an index of this tensor.
@@ -33,12 +28,16 @@ namespace mif {
         * @param constants An object containing information on the domain.
         */
         virtual inline Real evaluate_function_at_index(size_t i, size_t j, size_t k, 
-                                                        const std::function<Real(Real, Real, Real)> &f) const = 0;
+                                                       const std::function<Real(Real, Real, Real)> &f) const = 0;
+
+        virtual inline Real evaluate_function_at_index(Real time, size_t i, size_t j, size_t k,
+                                                       const std::function<Real(Real, Real, Real, Real)> &f) const = 0;
+
+        void print() const;
+        void print(const std::function<bool(Real)> &filter) const;
 
       private:
         const StaggeringStatus staggering;
-      protected:
-        const Constants &constants;
     };
 
     class UTensor: public StaggeredTensor {
@@ -47,8 +46,13 @@ namespace mif {
             StaggeredTensor(constants, {constants.Nx-1, constants.Ny, constants.Nz}, StaggeringStatus::x) {}
 
         inline Real evaluate_function_at_index(size_t i, size_t j, size_t k, 
-                                                const std::function<Real(Real, Real, Real)> &f) const override {
+                                               const std::function<Real(Real, Real, Real)> &f) const override {
             return f(constants.dx * i + constants.dx_over_2, constants.dy * j, constants.dz * k);
+        }
+
+        inline Real evaluate_function_at_index(Real time, size_t i, size_t j, size_t k, 
+                                               const std::function<Real(Real, Real, Real, Real)> &f) const override {
+            return f(time, constants.dx * i + constants.dx_over_2, constants.dy * j, constants.dz * k);
         }
     };
 
@@ -58,8 +62,13 @@ namespace mif {
             StaggeredTensor(constants, {constants.Nx, constants.Ny-1, constants.Nz}, StaggeringStatus::y) {}
 
         inline Real evaluate_function_at_index(size_t i, size_t j, size_t k, 
-                                                const std::function<Real(Real, Real, Real)> &f) const override {
+                                               const std::function<Real(Real, Real, Real)> &f) const override {
             return f(constants.dx * i, constants.dy * j + constants.dy_over_2, constants.dz * k);
+        }
+
+        inline Real evaluate_function_at_index(Real time, size_t i, size_t j, size_t k, 
+                                               const std::function<Real(Real, Real, Real, Real)> &f) const override {
+            return f(time, constants.dx * i, constants.dy * j + constants.dy_over_2, constants.dz * k);
         }
     };
 
@@ -69,31 +78,18 @@ namespace mif {
             StaggeredTensor(constants, {constants.Nx, constants.Ny, constants.Nz-1}, StaggeringStatus::z) {}
 
         inline Real evaluate_function_at_index(size_t i, size_t j, size_t k, 
-                                                const std::function<Real(Real, Real, Real)> &f) const override {
+                                               const std::function<Real(Real, Real, Real)> &f) const override {
             return f(constants.dx * i, constants.dy * j, constants.dz * k + constants.dz_over_2);
+        }
+
+        inline Real evaluate_function_at_index(Real time, size_t i, size_t j, size_t k, 
+                                               const std::function<Real(Real, Real, Real, Real)> &f) const override {
+            return f(time, constants.dx * i, constants.dy * j, constants.dz * k + constants.dz_over_2);
         }
     };
 
     class VelocityTensor {
       public:
-
-        class IndexVectorFunction {
-          public:
-
-            IndexVectorFunction(const std::function<Real(size_t, size_t, size_t)> f_u,
-                                const std::function<Real(size_t, size_t, size_t)> f_v,
-                                const std::function<Real(size_t, size_t, size_t)> f_w);
-
-            const std::function<Real(size_t, size_t, size_t)> f_u;
-            const std::function<Real(size_t, size_t, size_t)> f_v;
-            const std::function<Real(size_t, size_t, size_t)> f_w;
-            const std::array<const std::function<Real(size_t, size_t, size_t)>*, 3> components;
-
-            static IndexVectorFunction identity(const VelocityTensor &tensor);
-
-            IndexVectorFunction operator+(const IndexVectorFunction other);
-            IndexVectorFunction operator*(Real scalar);
-        };
 
         UTensor u;
         VTensor v;
@@ -105,15 +101,34 @@ namespace mif {
 
         void swap_data(VelocityTensor &other);
 
-        // Set all components of the tensor using the respective components of the function.
-        void set(const IndexVectorFunction &f, bool include_border);
+        #define ITERATE(tensor, function, include_border, args...) {                                        \
+            size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;                                \
+            const std::array<size_t, 3> &sizes = tensor.sizes();                                            \
+            if constexpr (include_border) {lower_limit = 0;} else {lower_limit = 1;};                       \
+            if constexpr (include_border) {upper_limit_x = sizes[0];} else {upper_limit_x = sizes[0] - 1;}; \
+            if constexpr (include_border) {upper_limit_y = sizes[1];} else {upper_limit_y = sizes[1] - 1;}; \
+            if constexpr (include_border) {upper_limit_z = sizes[2];} else {upper_limit_z = sizes[2] - 1;}; \
+            for (size_t i = lower_limit; i < upper_limit_x; i++) {                                          \
+                for (size_t j = lower_limit; j < upper_limit_y; j++) {                                      \
+                    for (size_t k = lower_limit; k < upper_limit_z; k++) {                                  \
+                        tensor(i,j,k) = function(args);                                                     \
+                    }                                                                                       \
+                }                                                                                           \
+            }                                                                                               \
+        }                                                                                                   \
+
+        #define SET(velocity, f_u, f_v, f_w, include_border, args...) { \
+            ITERATE(velocity.u, f_u, include_border, args)              \
+            ITERATE(velocity.v, f_v, include_border, args)              \
+            ITERATE(velocity.w, f_w, include_border, args)              \
+        }                                                               \
 
         // Set all components of the tensor using the respective components of the function.
-        void set(const VectorFunction &f, bool include_border);   
+        void set(const VectorFunction &f, bool include_border);  
 
         // Apply Dirichlet boundary conditions to all components of the velocity on all boundaries.
         // The function assumes the velocity field is divergence free.
-        void apply_all_dirichlet_bc(const VectorFunction &exact_solution);                                            
+        void apply_all_dirichlet_bc(Real time);                                       
     };
         
 

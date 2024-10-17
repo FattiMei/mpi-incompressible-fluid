@@ -14,8 +14,6 @@ namespace mif {
     void timestep(VelocityTensor &velocity,
                   VelocityTensor &velocity_buffer1,
                   VelocityTensor &velocity_buffer2,
-                  const TimeVectorFunction &exact_velocity,
-                  const TimeVectorFunction &forcing_term,
                   Real t_n);
 
 } // mif
