@@ -44,15 +44,22 @@ namespace mif {
         Real integral = 0.0;
         // Iterate over the entire tensor space.
         for (std::size_t i = 0; i < c.Nx; ++i) {
+            const Real wxi = (i == 0 || i == c.Nx - 1) ? 0.5 : 1.0;
+
             for (std::size_t j = 0; j < c.Ny; ++j) {
+                const Real wyj = (j == 0 || j == c.Ny - 1) ? 0.5 : 1.0;
+
                 for (std::size_t k = 0; k < c.Nz; ++k) {
+                    const Real wzk = (k == 0 || k == c.Nz - 1) ? 0.5 : 1.0;
+                    const Real weight = wxi * wyj * wzk;
+
                     // Compute differences.
                     const Real diff_u = U(i, j, k) - Uex(i, j, k);
                     const Real diff_v = V(i, j, k) - Vex(i, j, k);
                     const Real diff_w = W(i, j, k) - Wex(i, j, k);
 
                     // Accumulate abs differences.
-                    integral += sqrt(diff_u * diff_u + diff_v * diff_v + diff_w * diff_w);
+                    integral += weight * sqrt(diff_u * diff_u + diff_v * diff_v + diff_w * diff_w);
                 }
             }
         }
