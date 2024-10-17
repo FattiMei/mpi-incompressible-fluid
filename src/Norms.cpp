@@ -5,11 +5,10 @@
 
 namespace mif {
 
-    Real L2Norm(const Tensor<> &U, const Tensor<> &V, 
-                const Tensor<> &W, const Tensor<> &Uex, 
-                const Tensor<> &Vex, const Tensor<> &Wex, 
-                const Constants &c) {
+    Real L2Norm(const VelocityTensor &velocity,
+                const VelocityTensor &exact_velocity) {
         Real integral = 0.0;
+        const Constants &c = velocity.constants;
 
         // Iterate over the entire tensor space.
         for (std::size_t i = 0; i < c.Nx; ++i) {
@@ -23,9 +22,9 @@ namespace mif {
                     const Real weight = wxi * wyj * wzk;
 
                     // Compute differences.
-                    const Real diff_u = (i < c.Nx-1) ? U(i, j, k) - Uex(i, j, k) : 0.0;
-                    const Real diff_v = (j < c.Ny-1) ? V(i, j, k) - Vex(i, j, k) : 0.0;
-                    const Real diff_w = (k < c.Nz-1) ? W(i, j, k) - Wex(i, j, k) : 0.0;
+                    const Real diff_u = (i < c.Nx-1) ? velocity.u(i, j, k) - exact_velocity.u(i, j, k) : 0.0;
+                    const Real diff_v = (j < c.Ny-1) ? velocity.v(i, j, k) - exact_velocity.v(i, j, k) : 0.0;
+                    const Real diff_w = (k < c.Nz-1) ? velocity.w(i, j, k) - exact_velocity.w(i, j, k) : 0.0;
 
                     // Accumulate squared differences with weights.
                     integral += weight * (diff_u * diff_u + diff_v * diff_v + diff_w * diff_w);
@@ -37,19 +36,19 @@ namespace mif {
         return std::sqrt(integral * c.dx * c.dy * c.dz);
     }
 
-    Real L1Norm(const Tensor<> &U, const Tensor<> &V, 
-                const Tensor<> &W, const Tensor<> &Uex, 
-                const Tensor<> &Vex, const Tensor<> &Wex, 
-                const mif::Constants &c) {
+    Real L1Norm(const VelocityTensor &velocity,
+                const VelocityTensor &exact_velocity) {
         double integral = 0.0;
+        const Constants &c = velocity.constants;
+
         // Iterate over the entire tensor space.
         for (std::size_t i = 0; i < c.Nx; ++i) {
             for (std::size_t j = 0; j < c.Ny; ++j) {
                 for (std::size_t k = 0; k < c.Nz; ++k) {
                     // Compute differences.
-                    const Real diff_u = (i < c.Nx-1) ? U(i, j, k) - Uex(i, j, k) : 0.0;
-                    const Real diff_v = (j < c.Ny-1) ? V(i, j, k) - Vex(i, j, k) : 0.0;
-                    const Real diff_w = (k < c.Nz-1) ? W(i, j, k) - Wex(i, j, k) : 0.0;
+                    const Real diff_u = (i < c.Nx-1) ? velocity.u(i, j, k) - exact_velocity.u(i, j, k) : 0.0;
+                    const Real diff_v = (j < c.Ny-1) ? velocity.v(i, j, k) - exact_velocity.v(i, j, k) : 0.0;
+                    const Real diff_w = (k < c.Nz-1) ? velocity.w(i, j, k) - exact_velocity.w(i, j, k) : 0.0;
 
                     // Accumulate abs differences.
                     integral += sqrt(diff_u * diff_u + diff_v * diff_v + diff_w * diff_w);
@@ -59,20 +58,20 @@ namespace mif {
         return integral * c.dx * c.dy * c.dz;
     }
 
-    Real LInfNorm(const Tensor<> &U, const Tensor<> &V, 
-                  const Tensor<> &W, const Tensor<> &Uex, 
-                  const Tensor<> &Vex, const Tensor<> &Wex, 
-                  const Constants &c)
+    Real LInfNorm(const VelocityTensor &velocity,
+                  const VelocityTensor &exact_velocity)
     {
-        double integral = 0.0;
+        Real integral = 0.0;
+        const Constants &c = velocity.constants;
+
         // Iterate over the entire tensor space.
         for (std::size_t i = 0; i < c.Nx; ++i) {
             for (std::size_t j = 0; j < c.Ny; ++j) {
                 for (std::size_t k = 0; k < c.Nz; ++k) {
                     // Compute differences.
-                    const Real diff_u = (i < c.Nx-1) ? std::abs(U(i, j, k) - Uex(i, j, k)) : 0.0;
-                    const Real diff_v = (j < c.Ny-1) ? std::abs(V(i, j, k) - Vex(i, j, k)) : 0.0;
-                    const Real diff_w = (k < c.Nz-1) ? std::abs(W(i, j, k) - Wex(i, j, k)) : 0.0;
+                    const Real diff_u = (i < c.Nx-1) ? std::abs(velocity.u(i, j, k) - exact_velocity.u(i, j, k)) : 0.0;
+                    const Real diff_v = (j < c.Ny-1) ? std::abs(velocity.v(i, j, k) - exact_velocity.v(i, j, k)) : 0.0;
+                    const Real diff_w = (k < c.Nz-1) ? std::abs(velocity.w(i, j, k) - exact_velocity.w(i, j, k)) : 0.0;
 
                     if (diff_u > integral) {
                         integral = diff_u;

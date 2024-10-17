@@ -3,13 +3,7 @@
 //
 
 #include "Timestep.h"
-#include <cassert>
-#include "BoundaryConditions.h"
-#include "Constants.h"
 #include "MomentumEquation.h"
-#include "FunctionHelpers.h"
-#include "Tensor.h"
-#include "VelocityComponent.h"
 
 namespace mif {
     constexpr Real c2 = (8.0 / 15.0);
@@ -21,122 +15,81 @@ namespace mif {
     constexpr Real b3 = (3.0 / 4.0);
 
     // Perform the first stage of a single step of an explicit RK3 method for a single point of a single component.
-    template <VelocityComponent component> inline Real
-    compute_Y2(const Tensor<> &u, const Tensor<> &v, const Tensor<> &w, 
-               const std::function<Real(Real, Real, Real, Real)> &forcing_term,
-               Real current_time, const Constants &constants, 
-               size_t i, size_t j, size_t k) {
-        const Real initial_term = choose_component<component>(u, v, w)(i,j,k);
-        return initial_term + 
-               constants.dt * a21 * calculate_momentum_rhs_with_forcing<component>(u, v, w, i, j, k, function_at_time(forcing_term, current_time), constants);
+    VelocityTensor::IndexVectorFunction
+    compute_Y2(const VelocityTensor &U, 
+               const VectorFunction &forcing_term_t_n) {
+        const Real dt = U.constants.dt;
+        VelocityTensor::IndexVectorFunction rhs = calculate_momentum_rhs_with_forcing(U, forcing_term_t_n);
+        VelocityTensor::IndexVectorFunction identity = VelocityTensor::IndexVectorFunction::identity(U);
+        return identity + rhs * dt * a21;
     }
 
     // Perform the second stage of a single step of an explicit RK3 method for a single point of a single component.
-    template <VelocityComponent component> inline Real
-    compute_Y3(const Tensor<> &u, const Tensor<> &v, const Tensor<> &w, 
-               const Tensor<> &Y2_u, const Tensor<> &Y2_v, const Tensor<> &Y2_w,
-               const std::function<Real(Real, Real, Real, Real)> &forcing_term,
-               Real current_time, const Constants &constants, 
-               size_t i, size_t j, size_t k) {
-        const Real time_1 = current_time + c2*constants.dt;
-        const Real initial_term = choose_component<component>(u, v, w)(i,j,k);
-        return initial_term + 
-               constants.dt * a31 * calculate_momentum_rhs_with_forcing<component>(u, v, w, i, j, k, function_at_time(forcing_term, current_time), constants) +
-               constants.dt * a32 * calculate_momentum_rhs_with_forcing<component>(Y2_u, Y2_v, Y2_w, i, j, k, function_at_time(forcing_term, time_1), constants);
+    VelocityTensor::IndexVectorFunction
+    compute_Y3(const VelocityTensor &U, 
+               const VelocityTensor &Y2, 
+               const VectorFunction &forcing_term_t_n,
+               const VectorFunction &forcing_term_time_1) {
+        const Real dt = U.constants.dt;
+        VelocityTensor::IndexVectorFunction rhs_1 = calculate_momentum_rhs_with_forcing(U, forcing_term_t_n);
+        VelocityTensor::IndexVectorFunction rhs_2 = calculate_momentum_rhs_with_forcing(Y2, forcing_term_time_1);
+        VelocityTensor::IndexVectorFunction identity = VelocityTensor::IndexVectorFunction::identity(U);
+        return identity + rhs_1 * dt * a31 + rhs_2 * dt * a32;
     }
 
     // Perform the third stage of a single step of an explicit RK3 method for a single point of a single component.
-    template <VelocityComponent component> inline Real
-    compute_new_u(const Tensor<> &u, const Tensor<> &v, const Tensor<> &w,
-                  const Tensor<> &Y3_u, const Tensor<> &Y3_v, const Tensor<> &Y3_w,
-                  const std::function<Real(Real, Real, Real, Real)> &forcing_term,
-                  Real current_time, const Constants &constants, 
-                  size_t i, size_t j, size_t k) {
-        const Real time_2 = current_time + c3*constants.dt;
-        const Real initial_term = choose_component<component>(u, v, w)(i,j,k);
-        return initial_term + 
-               constants.dt * b1 * calculate_momentum_rhs_with_forcing<component>(u, v, w, i, j, k, function_at_time(forcing_term, current_time), constants) + 
-               constants.dt * b3 * calculate_momentum_rhs_with_forcing<component>(Y3_u, Y3_v, Y3_w, i, j, k, function_at_time(forcing_term, time_2), constants);
+    VelocityTensor::IndexVectorFunction
+    compute_new_u(const VelocityTensor &U, 
+                  const VelocityTensor &Y3, 
+                  const VectorFunction &forcing_term_t_n,
+                  const VectorFunction &forcing_term_time_2) {
+        const Real dt = U.constants.dt;
+        VelocityTensor::IndexVectorFunction rhs_1 = calculate_momentum_rhs_with_forcing(U, forcing_term_t_n);
+        VelocityTensor::IndexVectorFunction rhs_2 = calculate_momentum_rhs_with_forcing(Y3, forcing_term_time_2);
+        VelocityTensor::IndexVectorFunction identity = VelocityTensor::IndexVectorFunction::identity(U);
+        return identity + rhs_1 * dt * b1 + rhs_2 * dt * b3;
     }
 
-    void timestep(Tensor<> &u, Tensor<> &v, Tensor<> &w, 
-                  Tensor<> &u_buffer1, Tensor<> &v_buffer1, Tensor<> &w_buffer1,
-                  Tensor<> &u_buffer2, Tensor<> &v_buffer2, Tensor<> &w_buffer2, 
-                  const std::function<Real(Real, Real, Real, Real)> &u_exact,
-                  const std::function<Real(Real, Real, Real, Real)> &v_exact,
-                  const std::function<Real(Real, Real, Real, Real)> &w_exact, 
-                  const std::function<Real(Real, Real, Real, Real)> &forcing_term_u,
-                  const std::function<Real(Real, Real, Real, Real)> &forcing_term_v,
-                  const std::function<Real(Real, Real, Real, Real)> &forcing_term_w,
-                  Real current_time,
-                  const Constants &constants) {
-        const Real time_1 = current_time + c2*constants.dt;
-        const Real time_2 = current_time + c3*constants.dt;
-        const Real final_time = current_time + constants.dt;
+    void timestep(VelocityTensor &velocity,
+                  VelocityTensor &velocity_buffer1,
+                  VelocityTensor &velocity_buffer2,
+                  const TimeVectorFunction &exact_velocity,
+                  const TimeVectorFunction &forcing_term,
+                  Real t_n) {
+        const Constants &constants = velocity.constants;
+        const Real time_1 = t_n + c2*constants.dt;
+        const Real time_2 = t_n + c3*constants.dt;
+        const Real final_time = t_n + constants.dt;
+        VectorFunction forcing_term_t_n = forcing_term.set_time(t_n);
+        VectorFunction forcing_term_time_1 = forcing_term.set_time(time_1);
+        VectorFunction forcing_term_time_2 = forcing_term.set_time(time_2);
 
         // Stage 1.
         // Apply Dirichlet boundary conditions.
-        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer1, function_at_time(u_exact, time_1), function_at_time(v_exact, time_1), function_at_time(w_exact, time_1), constants);
-        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer1, function_at_time(u_exact, time_1), function_at_time(v_exact, time_1), function_at_time(w_exact, time_1), constants);
-        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer1, function_at_time(u_exact, time_1), function_at_time(v_exact, time_1), function_at_time(w_exact, time_1), constants);
+        velocity_buffer1.apply_all_dirichlet_bc(exact_velocity.set_time(time_1));
 
         // Compute the solution inside the domain.
-        const auto compute_Y2_all_u = [&u, &v, &w, &forcing_term_u, &current_time, &constants](Tensor<>& tensor, size_t i, size_t j, size_t k) {
-            tensor(i,j,k) = compute_Y2<VelocityComponent::u>(u, v, w, forcing_term_u, current_time, constants, i, j, k);
-        };
-        const auto compute_Y2_all_v = [&u, &v, &w, &forcing_term_v, &current_time, &constants](Tensor<>& tensor, size_t i, size_t j, size_t k) {
-            tensor(i,j,k) = compute_Y2<VelocityComponent::v>(u, v, w, forcing_term_v, current_time, constants, i, j, k);
-        };
-        const auto compute_Y2_all_w = [&u, &v, &w, &forcing_term_w, &current_time, &constants](Tensor<>& tensor, size_t i, size_t j, size_t k) {
-            tensor(i,j,k) = compute_Y2<VelocityComponent::w>(u, v, w, forcing_term_w, current_time, constants, i, j, k);
-        };
-        apply_on_internal_points<VelocityComponent::u>(u_buffer1, compute_Y2_all_u);
-        apply_on_internal_points<VelocityComponent::v>(v_buffer1, compute_Y2_all_v);
-        apply_on_internal_points<VelocityComponent::w>(w_buffer1, compute_Y2_all_w);
+        VelocityTensor::IndexVectorFunction compute_Y2_func = compute_Y2(velocity, forcing_term_t_n);
+        velocity_buffer1.set(compute_Y2_func, false);
 
         // Stage 2.
         // Apply Dirichlet boundary conditions.
-        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer2, function_at_time(u_exact, time_2), function_at_time(v_exact, time_2), function_at_time(w_exact, time_2), constants);
-        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer2, function_at_time(u_exact, time_2), function_at_time(v_exact, time_2), function_at_time(w_exact, time_2), constants);
-        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer2, function_at_time(u_exact, time_2), function_at_time(v_exact, time_2), function_at_time(w_exact, time_2), constants);
+        velocity_buffer2.apply_all_dirichlet_bc(exact_velocity.set_time(time_2));
 
         // Compute the solution inside the domain.
-        const auto compute_Y3_all_u = [&u, &v, &w, &u_buffer1, &v_buffer1, &w_buffer1, &forcing_term_u, &current_time, &constants](Tensor<>& tensor, size_t i, size_t j, size_t k) {
-            tensor(i,j,k) = compute_Y3<VelocityComponent::u>(u, v, w, u_buffer1, v_buffer1, w_buffer1, forcing_term_u, current_time, constants, i, j, k);
-        };
-        const auto compute_Y3_all_v = [&u, &v, &w, &u_buffer1, &v_buffer1, &w_buffer1, &forcing_term_v, &current_time, &constants](Tensor<>& tensor, size_t i, size_t j, size_t k) {
-            tensor(i,j,k) = compute_Y3<VelocityComponent::v>(u, v, w, u_buffer1, v_buffer1, w_buffer1, forcing_term_v, current_time, constants, i, j, k);
-        };
-        const auto compute_Y3_all_w = [&u, &v, &w, &u_buffer1, &v_buffer1, &w_buffer1, &forcing_term_w, &current_time, &constants](Tensor<>& tensor, size_t i, size_t j, size_t k) {
-            tensor(i,j,k) = compute_Y3<VelocityComponent::w>(u, v, w, u_buffer1, v_buffer1, w_buffer1, forcing_term_w, current_time, constants, i, j, k);
-        };
-        apply_on_internal_points<VelocityComponent::u>(u_buffer2, compute_Y3_all_u);
-        apply_on_internal_points<VelocityComponent::v>(v_buffer2, compute_Y3_all_v);
-        apply_on_internal_points<VelocityComponent::w>(w_buffer2, compute_Y3_all_w);
+        VelocityTensor::IndexVectorFunction compute_Y3_func = compute_Y3(velocity, velocity_buffer1, forcing_term_t_n, forcing_term_time_1);
+        velocity_buffer2.set(compute_Y3_func, false);
 
         // Stage 3.
         // Apply Dirichlet boundary conditions.
-        apply_all_dirichlet_bc<VelocityComponent::u>(u_buffer1, function_at_time(u_exact, final_time), function_at_time(v_exact, final_time), function_at_time(w_exact, final_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::v>(v_buffer1, function_at_time(u_exact, final_time), function_at_time(v_exact, final_time), function_at_time(w_exact, final_time), constants);
-        apply_all_dirichlet_bc<VelocityComponent::w>(w_buffer1, function_at_time(u_exact, final_time), function_at_time(v_exact, final_time), function_at_time(w_exact, final_time), constants);
+        velocity_buffer1.apply_all_dirichlet_bc(exact_velocity.set_time(final_time));
 
         // Compute the solution inside the domain.
-        const auto compute_new_u_all_u = [&u, &v, &w, &u_buffer2, &v_buffer2, &w_buffer2, &forcing_term_u, &current_time, &constants](Tensor<>& tensor, size_t i, size_t j, size_t k) {
-            tensor(i,j,k) = compute_new_u<VelocityComponent::u>(u, v, w, u_buffer2, v_buffer2, w_buffer2, forcing_term_u, current_time, constants, i, j, k);
-        };
-        const auto compute_new_u_all_v = [&u, &v, &w, &u_buffer2, &v_buffer2, &w_buffer2, &forcing_term_v, &current_time, &constants](Tensor<>& tensor, size_t i, size_t j, size_t k) {
-            tensor(i,j,k) = compute_new_u<VelocityComponent::v>(u, v, w, u_buffer2, v_buffer2, w_buffer2, forcing_term_v, current_time, constants, i, j, k);
-        };
-        const auto compute_new_u_all_w = [&u, &v, &w, &u_buffer2, &v_buffer2, &w_buffer2, &forcing_term_w, &current_time, &constants](Tensor<>& tensor, size_t i, size_t j, size_t k) {
-            tensor(i,j,k) = compute_new_u<VelocityComponent::w>(u, v, w, u_buffer2, v_buffer2, w_buffer2, forcing_term_w, current_time, constants, i, j, k);
-        };
-        apply_on_internal_points<VelocityComponent::u>(u_buffer1, compute_new_u_all_u);
-        apply_on_internal_points<VelocityComponent::v>(v_buffer1, compute_new_u_all_v);
-        apply_on_internal_points<VelocityComponent::w>(w_buffer1, compute_new_u_all_w);
+        VelocityTensor::IndexVectorFunction compute_new_u_func = compute_new_u(velocity, velocity_buffer2, forcing_term_t_n, forcing_term_time_2);
+        velocity_buffer1.set(compute_new_u_func, false);
 
         // Put the solution in the original tensors.
-        u.swap_data(u_buffer1);
-        v.swap_data(v_buffer1);
-        w.swap_data(w_buffer1);
+        velocity.swap_data(velocity_buffer1);
     }
+
 }

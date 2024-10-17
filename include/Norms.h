@@ -1,26 +1,18 @@
 #ifndef NORMS_H
 #define NORMS_H
 
-#include <cmath>
-#include "Constants.h"
-#include "Tensor.h"
+#include "VelocityTensor.h"
 
 namespace mif {
 
-    Real L2Norm(const Tensor<> &U, const Tensor<> &V, 
-                const Tensor<> &W, const Tensor<> &Uex, 
-                const Tensor<> &Vex, const Tensor<> &Wex, 
-                const Constants &c);
+    Real L2Norm(const VelocityTensor &velocity,
+                const VelocityTensor &exact_velocity);
 
-    Real L1Norm(const Tensor<> &U, const Tensor<> &V, 
-                const Tensor<> &W, const Tensor<> &Uex, 
-                const Tensor<> &Vex, const Tensor<> &Wex, 
-                const mif::Constants &c);
+    Real L1Norm(const VelocityTensor &velocity,
+                const VelocityTensor &exact_velocity);
 
-    Real LInfNorm(const Tensor<> &U, const Tensor<> &V, 
-                  const Tensor<> &W, const Tensor<> &Uex, 
-                  const Tensor<> &Vex, const Tensor<> &Wex, 
-                  const Constants &c);
+    Real LInfNorm(const VelocityTensor &velocity,
+                  const VelocityTensor &exact_velocity);
 
 } // mif
 

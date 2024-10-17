@@ -36,6 +36,12 @@ namespace mif {
             const Real one_over_dx2_Re;
             const Real one_over_dy2_Re;
             const Real one_over_dz2_Re;
+            const Real dx_over_2;
+            const Real dy_over_2;
+            const Real dz_over_2;
+            const Real one_over_dx;
+            const Real one_over_dy;
+            const Real one_over_dz;
 
             // Constructor.
             Constants(size_t Nx, size_t Ny, size_t Nz, Real x_size, Real y_size, Real z_size, Real Re, Real final_time, unsigned int num_time_steps);
