@@ -10,15 +10,16 @@
 // directions, respectively.
 
 // We're suggesting the compiler to inline these functions, since they're very small and called many times.
-// TODO: Assess wether or not using the () operator of the Tensor class has an impact on performance with
+// TODO: Assess whether or not using the () operator of the Tensor class has an impact on performance with
 // respect to accessing the data directly.
 
 namespace mif
 {
 
-    // Compute the diffusion term in the momentum equation for a component of velocity.
+    // Compute the diffusion term in the momentum equation for a given velocity component.
+    // This is mainly used in the momentum equation calculation in order to reduce code duplication.
     inline Real calculate_diffusion_term(const StaggeredTensor *component, 
-                                         const size_t i, const size_t j, const size_t k) {  // Grid point.
+                                         const size_t i, const size_t j, const size_t k) {
         const Constants &constants = component->constants;
 
         const Real result =
@@ -32,12 +33,12 @@ namespace mif
     // The momentum equation is composed by two terms: convection and diffusion.
     //  -  (u * ∇) u = u ∂u/∂x + v ∂u/∂y + w ∂u/∂z
     //  -  1/Re * ∇²u = 1/Re * (∂²u/∂x² + ∂²u/∂y² + ∂²u/∂z²)
+
     // TODO: I'm not sure if these are the actual names of the terms. If you agree, feel free to remove this comment.
     // In each function, the convection term is calculated first, followed by the diffusion term. Their results are
     // then algebraically summed up and returned.
-
     inline Real calculate_momentum_rhs_u(const VelocityTensor &velocity, // Velocity field.
-                                         const size_t i, const size_t j, const size_t k) {  // Grid point.
+                                         const size_t i, const size_t j, const size_t k) {
         const Constants &constants = velocity.constants;
         const UTensor &u = velocity.u;
         const VTensor &v = velocity.v;
@@ -59,9 +60,9 @@ namespace mif
                 -(w(i, j, k) + w(i, j, k-1) + w(i+1, j, k) + w(i+1, j, k-1)) *
                 (u(i, j, k+1) - u(i, j, k-1)) * constants.one_over_8_dz;
 
+        // TERM: 1/Re * (∂²u/∂x² + ∂²u/∂y² + ∂²u/∂z²)
+        // We use a second-order central difference scheme to approximate the second derivatives.
         const Real diffusion_term = calculate_diffusion_term(velocity.components[0], i, j, k);
-            // TERM: 1/Re * (∂²u/∂x² + ∂²u/∂y² + ∂²u/∂z²)
-            // We use a second-order central difference scheme to approximate the second derivatives.
 
         return convection_term + diffusion_term;
     }
@@ -69,7 +70,7 @@ namespace mif
 
     // Calculate the right-hand side of the momentum equation for the v component.
     inline Real calculate_momentum_rhs_v(const VelocityTensor &velocity, // Velocity field.
-                                         const size_t i, const size_t j, const size_t k) {  // Grid point.
+                                         const size_t i, const size_t j, const size_t k) {
         const Constants &constants = velocity.constants;
         const UTensor &u = velocity.u;
         const VTensor &v = velocity.v;
@@ -88,6 +89,7 @@ namespace mif
                 -(w(i, j, k) + w(i, j, k-1) + w(i, j+1, k) + w(i, j+1, k-1)) *
                 (v(i, j, k+1) - v(i, j, k-1)) * constants.one_over_8_dz;
 
+        // TERM: 1/Re * (∂²v/∂x² + ∂²v/∂y² + ∂²v/∂z²)
         const Real diffusion_term = calculate_diffusion_term(velocity.components[1], i, j, k);
 
         return convection_term + diffusion_term;
@@ -96,7 +98,7 @@ namespace mif
 
     // Calculate the right-hand side of the momentum equation for the w component.
     inline Real calculate_momentum_rhs_w(const VelocityTensor &velocity, // Velocity field.
-                                         const size_t i, const size_t j, const size_t k) {  // Grid point.
+                                         const size_t i, const size_t j, const size_t k) {
         const Constants &constants = velocity.constants;
         const UTensor &u = velocity.u;
         const VTensor &v = velocity.v;
@@ -114,6 +116,7 @@ namespace mif
                 // TERM: w ∂w/∂z
                 - w(i, j, k) * (w(i, j, k+1) - w(i, j, k-1)) * constants.one_over_2_dz;
 
+        // TERM: 1/Re * (∂²w/∂x² + ∂²w/∂y² + ∂²w/∂z²)
         const Real diffusion_term = calculate_diffusion_term(velocity.components[2], i, j, k);
 
         return convection_term + diffusion_term;
@@ -121,22 +124,28 @@ namespace mif
 
 
     // Add the forcing term to the momentum equation.
-    inline Real calculate_momentum_rhs_with_forcing_u(const VelocityTensor &velocity,                   // Velocity field.
-                                                      const size_t i, const size_t j, const size_t k,   // Grid point.
-                                                      const Real time) {  
-        return calculate_momentum_rhs_u(velocity, i, j, k) + velocity.u.evaluate_function_at_index(time, i, j, k, forcing_x);
+    inline Real calculate_momentum_rhs_with_forcing_u(
+            const VelocityTensor &velocity,                   // Velocity field.
+            const size_t i, const size_t j, const size_t k,   // Grid point.
+            const Real time) {  
+        return calculate_momentum_rhs_u(velocity, i, j, k) +
+               velocity.u.evaluate_function_at_index(time, i, j, k, forcing_x);
     }
 
-    inline Real calculate_momentum_rhs_with_forcing_v(const VelocityTensor &velocity,                   // Velocity field.
-                                                      const size_t i, const size_t j, const size_t k,   // Grid point.
-                                                      const Real time) {  
-        return calculate_momentum_rhs_v(velocity, i, j, k) + velocity.v.evaluate_function_at_index(time, i, j, k, forcing_y);
+    inline Real calculate_momentum_rhs_with_forcing_v(
+            const VelocityTensor &velocity,                   // Velocity field.
+            const size_t i, const size_t j, const size_t k,   // Grid point.
+            const Real time) {  
+        return calculate_momentum_rhs_v(velocity, i, j, k) +
+               velocity.v.evaluate_function_at_index(time, i, j, k, forcing_y);
     }
 
-    inline Real calculate_momentum_rhs_with_forcing_w(const VelocityTensor &velocity,                   // Velocity field.
-                                                      const size_t i, const size_t j, const size_t k,   // Grid point.
-                                                      const Real time) {  
-        return calculate_momentum_rhs_w(velocity, i, j, k) + velocity.w.evaluate_function_at_index(time, i, j, k, forcing_z);
+    inline Real calculate_momentum_rhs_with_forcing_w(
+            const VelocityTensor &velocity,                   // Velocity field.
+            const size_t i, const size_t j, const size_t k,   // Grid point.
+            const Real time) {  
+        return calculate_momentum_rhs_w(velocity, i, j, k) +
+        velocity.w.evaluate_function_at_index(time, i, j, k, forcing_z);
     }
 
 } // mif
