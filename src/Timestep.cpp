@@ -220,7 +220,5 @@ namespace mif {
                 }
             }
         }
-
-        // Swap buffers to finalize the step
     }
 }
