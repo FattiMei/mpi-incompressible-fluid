@@ -9,7 +9,7 @@ namespace mif {
 
     enum StaggeringStatus {x, y, z, none};
 
-    // Abstract class.
+    // Abstract class for a staggered tensor.
     class StaggeredTensor: public Tensor<Real, 3U, size_t> {
       public:
         StaggeredTensor(const Constants &constants, const std::array<size_t, 3U> &in_dimensions, const StaggeringStatus &staggering):
@@ -40,6 +40,7 @@ namespace mif {
         const StaggeringStatus staggering;
     };
 
+    // Tensor staggered in the x direction.
     class UTensor: public StaggeredTensor {
       public:
         UTensor(const Constants &constants): 
@@ -56,6 +57,7 @@ namespace mif {
         }
     };
 
+    // Tensor staggered in the y direction.
     class VTensor: public StaggeredTensor {
       public:
         VTensor(const Constants &constants): 
@@ -72,6 +74,7 @@ namespace mif {
         }
     };
 
+    // Tensor staggered in the z direction.
     class WTensor: public StaggeredTensor {
       public:
         WTensor(const Constants &constants):  
@@ -88,6 +91,7 @@ namespace mif {
         }
     };
 
+    // A collection of 3 tensors representing the 3 velocity components.
     class VelocityTensor {
       public:
 
@@ -99,9 +103,12 @@ namespace mif {
 
         VelocityTensor(const Constants &constants);
 
+        // Swap this tensor's data with another's. Done in constant time.
         void swap_data(VelocityTensor &other);
 
-        #define ITERATE(tensor, function, include_border, args...) {                                        \
+        // Set the values of a component of velocity calculating a function over all of its points, or 
+        // all internal points if include_border is false.
+        #define VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(tensor, function, include_border, args...) {        \
             size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;                                \
             const std::array<size_t, 3> &sizes = tensor.sizes();                                            \
             if constexpr (include_border) {lower_limit = 0;} else {lower_limit = 1;};                       \
@@ -117,13 +124,14 @@ namespace mif {
             }                                                                                               \
         }                                                                                                   \
 
-        #define SET(velocity, f_u, f_v, f_w, include_border, args...) { \
-            ITERATE(velocity.u, f_u, include_border, args)              \
-            ITERATE(velocity.v, f_v, include_border, args)              \
-            ITERATE(velocity.w, f_w, include_border, args)              \
-        }                                                               \
+        // Set all components of the tensor in all points using the respective components of the function.
+        #define VELOCITY_TENSOR_SET_FOR_ALL_POINTS(velocity, f_u, f_v, f_w, include_border, args...) {  \
+            VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.u, f_u, include_border, args)              \
+            VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.v, f_v, include_border, args)              \
+            VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.w, f_w, include_border, args)              \
+        }                                                                                               \
 
-        // Set all components of the tensor using the respective components of the function.
+        // Set all components of the tensor in all points using the respective components of the function.
         void set(const VectorFunction &f, bool include_border);  
 
         // Apply Dirichlet boundary conditions to all components of the velocity on all boundaries.

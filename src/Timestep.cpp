@@ -59,7 +59,6 @@ namespace mif {
         COMPUTE_U_STAR(w, calculate_momentum_rhs_with_forcing_w);
     }
 
-    #include <iostream>
     void timestep(VelocityTensor &velocity,
                   VelocityTensor &velocity_buffer1,
                   VelocityTensor &velocity_buffer2,
@@ -74,21 +73,21 @@ namespace mif {
         velocity_buffer1.apply_all_dirichlet_bc(time_1);
 
         // Compute the solution inside the domain.
-        SET(velocity_buffer1, compute_Y2_u, compute_Y2_v, compute_Y2_w, false, velocity, t_n, i, j, k)
+        VELOCITY_TENSOR_SET_FOR_ALL_POINTS(velocity_buffer1, compute_Y2_u, compute_Y2_v, compute_Y2_w, false, velocity, t_n, i, j, k)
 
         // Stage 2.
         // Apply Dirichlet boundary conditions.
         velocity_buffer2.apply_all_dirichlet_bc(time_2);
 
         // Compute the solution inside the domain.
-        SET(velocity_buffer2, compute_Y3_u, compute_Y3_v, compute_Y3_w, false, velocity, velocity_buffer1, t_n, time_1, i, j, k)
+        VELOCITY_TENSOR_SET_FOR_ALL_POINTS(velocity_buffer2, compute_Y3_u, compute_Y3_v, compute_Y3_w, false, velocity, velocity_buffer1, t_n, time_1, i, j, k)
 
         // Stage 3.
         // Apply Dirichlet boundary conditions.
         velocity_buffer1.apply_all_dirichlet_bc(final_time);
 
         // Compute the solution inside the domain.
-        SET(velocity_buffer1, compute_u_star_u, compute_u_star_v, compute_u_star_w, false, velocity, velocity_buffer2, t_n, time_2, i, j, k)
+        VELOCITY_TENSOR_SET_FOR_ALL_POINTS(velocity_buffer1, compute_u_star_u, compute_u_star_v, compute_u_star_w, false, velocity, velocity_buffer2, t_n, time_2, i, j, k)
 
         // Put the solution in the original tensors.
         velocity.swap_data(velocity_buffer1);

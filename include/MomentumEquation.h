@@ -16,8 +16,8 @@
 namespace mif
 {
 
-    #include <cassert>
-    inline Real calculate_diffusion_term(const StaggeredTensor *component, // Velocity field.
+    // Compute the diffusion term in the momentum equation for a component of velocity.
+    inline Real calculate_diffusion_term(const StaggeredTensor *component, 
                                          const size_t i, const size_t j, const size_t k) {  // Grid point.
         const Constants &constants = component->constants;
 
@@ -120,6 +120,7 @@ namespace mif
     }
 
 
+    // Add the forcing term to the momentum equation.
     inline Real calculate_momentum_rhs_with_forcing_u(const VelocityTensor &velocity,                   // Velocity field.
                                                       const size_t i, const size_t j, const size_t k,   // Grid point.
                                                       const Real time) {  

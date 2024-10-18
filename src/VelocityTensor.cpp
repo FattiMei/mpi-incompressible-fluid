@@ -46,27 +46,24 @@ namespace mif {
         }
     }
 
-    #define SET_LOCAL(f, include_border, inner_f, args...)                        \
-        const size_t lower_limit = include_border ? 0 : 1;                        \
-        for (size_t component = 0; component < components.size(); component++) {  \
-            StaggeredTensor *tensor = components[component];                      \
-            const std::array<size_t, 3> &sizes = tensor->sizes();                 \
-            const auto *func = f.components[component];                           \
-            const size_t upper_limit_i = include_border ? sizes[0] : sizes[0]-1;  \
-            const size_t upper_limit_j = include_border ? sizes[1] : sizes[1]-1;  \
-            const size_t upper_limit_k = include_border ? sizes[2] : sizes[2]-1;  \
-                                                                                  \
-            for (size_t i = lower_limit; i < upper_limit_i; i++) {                \
-                for (size_t j = lower_limit; j < upper_limit_j; j++) {            \
-                    for (size_t k = lower_limit; k < upper_limit_k; k++) {        \
-                        (*tensor)(i,j,k) = inner_f(args);                         \
-                    }                                                             \
-                }                                                                 \
-            }                                                                     \
-        }                                                                         \
-
     void VelocityTensor::set(const VectorFunction &f, bool include_border) {
-        SET_LOCAL(f, include_border, tensor->evaluate_function_at_index, i, j, k, *func)
+        const size_t lower_limit = include_border ? 0 : 1;                        
+        for (size_t component = 0; component < components.size(); component++) {  
+            StaggeredTensor *tensor = components[component];                      
+            const std::array<size_t, 3> &sizes = tensor->sizes();                 
+            const auto *func = f.components[component];                           
+            const size_t upper_limit_i = include_border ? sizes[0] : sizes[0]-1;  
+            const size_t upper_limit_j = include_border ? sizes[1] : sizes[1]-1;  
+            const size_t upper_limit_k = include_border ? sizes[2] : sizes[2]-1;  
+                                                                                  
+            for (size_t i = lower_limit; i < upper_limit_i; i++) {                
+                for (size_t j = lower_limit; j < upper_limit_j; j++) {            
+                    for (size_t k = lower_limit; k < upper_limit_k; k++) {        
+                        (*tensor)(i,j,k) = tensor->evaluate_function_at_index(i,j,k,*func);                         
+                    }                                                             
+                }                                                                 
+            }                                                                     
+        }                                                                        
     }
     
     void VelocityTensor::apply_all_dirichlet_bc(Real time) {

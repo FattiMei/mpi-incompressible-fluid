@@ -6,6 +6,7 @@
 
 namespace mif {
 
+    // A collection of 3 functions with 3 Real inputs (x,y,z) and one Real output.
     class VectorFunction {
       public:
 
@@ -19,6 +20,7 @@ namespace mif {
         const std::array<const std::function<Real(Real, Real, Real)>*, 3> components;
     };
 
+    // A collection of 3 functions with 4 Real inputs (t,x,y,z) and one Real output.
     class TimeVectorFunction {
       public:
 
