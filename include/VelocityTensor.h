@@ -7,14 +7,11 @@
 
 namespace mif {
 
-    enum StaggeringStatus {x, y, z, none};
-
     // Abstract class for a staggered tensor.
     class StaggeredTensor: public Tensor<Real, 3U, size_t> {
       public:
-        StaggeredTensor(const Constants &constants, const std::array<size_t, 3U> &in_dimensions, const StaggeringStatus &staggering):
+        StaggeredTensor(const Constants &constants, const std::array<size_t, 3U> &in_dimensions):
                 constants(constants),
-                staggering(staggering),
                 Tensor(in_dimensions) {}
 
         const Constants &constants;
@@ -35,16 +32,13 @@ namespace mif {
 
         void print() const;
         void print(const std::function<bool(Real)> &filter) const;
-
-      private:
-        const StaggeringStatus staggering;
     };
 
     // Tensor staggered in the x direction.
     class UTensor: public StaggeredTensor {
       public:
         UTensor(const Constants &constants): 
-            StaggeredTensor(constants, {constants.Nx-1, constants.Ny, constants.Nz}, StaggeringStatus::x) {}
+            StaggeredTensor(constants, {constants.Nx-1, constants.Ny, constants.Nz}) {}
 
         inline Real evaluate_function_at_index(size_t i, size_t j, size_t k, 
                                                const std::function<Real(Real, Real, Real)> &f) const override {
@@ -61,7 +55,7 @@ namespace mif {
     class VTensor: public StaggeredTensor {
       public:
         VTensor(const Constants &constants): 
-            StaggeredTensor(constants, {constants.Nx, constants.Ny-1, constants.Nz}, StaggeringStatus::y) {}
+            StaggeredTensor(constants, {constants.Nx, constants.Ny-1, constants.Nz}) {}
 
         inline Real evaluate_function_at_index(size_t i, size_t j, size_t k, 
                                                const std::function<Real(Real, Real, Real)> &f) const override {
@@ -78,7 +72,7 @@ namespace mif {
     class WTensor: public StaggeredTensor {
       public:
         WTensor(const Constants &constants):  
-            StaggeredTensor(constants, {constants.Nx, constants.Ny, constants.Nz-1}, StaggeringStatus::z) {}
+            StaggeredTensor(constants, {constants.Nx, constants.Ny, constants.Nz-1}) {}
 
         inline Real evaluate_function_at_index(size_t i, size_t j, size_t k, 
                                                const std::function<Real(Real, Real, Real)> &f) const override {
