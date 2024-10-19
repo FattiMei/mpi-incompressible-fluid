@@ -41,14 +41,14 @@ namespace mif {
         components({&this->u,&this->v,&this->w}) {}
 
     void VelocityTensor::swap_data(VelocityTensor &other) {
-        for (size_t component = 0; component < components.size(); component++) {
+        for (size_t component = 0; component < 3U; component++) {
             components[component]->swap_data(*(other.components[component]));
         }
     }
 
     void VelocityTensor::set(const VectorFunction &f, bool include_border) {
         const size_t lower_limit = include_border ? 0 : 1;                        
-        for (size_t component = 0; component < components.size(); component++) {  
+        for (size_t component = 0; component < 3U; component++) {  
             StaggeredTensor *tensor = components[component];                      
             const std::array<size_t, 3> &sizes = tensor->sizes();                 
             const auto *func = f.components[component];                           
@@ -67,7 +67,7 @@ namespace mif {
     }
     
     void VelocityTensor::apply_all_dirichlet_bc(Real time) {
-        for (size_t component = 0; component < components.size(); component++) {
+        for (size_t component = 0; component < 3U; component++) {
             StaggeredTensor *tensor = components[component];
             const std::array<size_t, 3> sizes = tensor->sizes();
             const std::function<Real(Real, Real, Real, Real)> &func = 

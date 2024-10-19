@@ -49,14 +49,10 @@ int main(int argc, char* argv[]) {
                  current_time);
     }
 
-    // Compute the exact solution.
-    VelocityTensor exact_tensor(constants);
-    exact_tensor.set(exact_velocity.set_time(final_time), true);
-
     // Compute the norms of the error.
-    std::cout << L1Norm(velocity, exact_tensor) << " " << 
-                 L2Norm(velocity, exact_tensor) << " " << 
-                 LInfNorm(velocity, exact_tensor) << std::endl;
+    std::cout << ErrorL1Norm(velocity, final_time) << " " << 
+                 ErrorL2Norm(velocity, final_time) << " " << 
+                 ErrorLInfNorm(velocity, final_time) << std::endl;
 
     return 0;
 }
