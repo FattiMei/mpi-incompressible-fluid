@@ -4,6 +4,7 @@
 
 #include "Timestep.h"
 #include "MomentumEquation.h"
+#include "VelocityTensorMacros.h"
 
 namespace mif {
 
