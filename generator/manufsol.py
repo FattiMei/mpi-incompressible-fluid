@@ -14,8 +14,8 @@ def laplacian(u):
 def manufsol(*, u, v, w, p, ignore_pressure=False):
     if diff(u,x) + diff(v,y) + diff(w,z) != 0:
         sys.stderr.write('[WARNING]: the proposed manufactured solution is not divergence free, correcting\n')
-        # TODO: this does not result in 0 divergence.
-        w = -z * (diff(u,x) + diff(v,y))
+        w = sp.integrate(sp.simplify(sp.diff(u, x, 1) + sp.diff(v, y, 1)), z)  
+        
 
     if ignore_pressure:
         p = 0
