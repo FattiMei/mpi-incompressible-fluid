@@ -1,26 +1,25 @@
 #ifndef NORMS_H
 #define NORMS_H
 
-#include <cmath>
-#include "Constants.h"
-#include "Tensor.h"
+#include "VelocityTensor.h"
 
 namespace mif {
 
-    Real L2Norm(const Tensor<> &U, const Tensor<> &V, 
-                const Tensor<> &W, const Tensor<> &Uex, 
-                const Tensor<> &Vex, const Tensor<> &Wex, 
-                const Constants &c);
+    // All norms use second order schemes and assume no error on the boundaries
+    // (or equivalently Dirichlet boundary conditions on all boundaries).
+    // The error is calculated using the functions in Manufactured.h.
 
-    Real L1Norm(const Tensor<> &U, const Tensor<> &V, 
-                const Tensor<> &W, const Tensor<> &Uex, 
-                const Tensor<> &Vex, const Tensor<> &Wex, 
-                const mif::Constants &c);
+    // The L1 norm of a vector function is defined as the integral over the whole domain 
+    // of the norm of the vector.
+    Real ErrorL1Norm(const VelocityTensor &velocity, Real time);
 
-    Real LInfNorm(const Tensor<> &U, const Tensor<> &V, 
-                  const Tensor<> &W, const Tensor<> &Uex, 
-                  const Tensor<> &Vex, const Tensor<> &Wex, 
-                  const Constants &c);
+    // The L2 norm of a vector function is defined as the square root of the integral 
+    // over the whole domain of the scalar product of the function with itself.
+    Real ErrorL2Norm(const VelocityTensor &velocity, Real time);
+
+    // The Linfinity norm of a vector function is defined as the maximum value of any
+    // component of the function. 
+    Real ErrorLInfNorm(const VelocityTensor &velocity, Real time);
 
 } // mif
 

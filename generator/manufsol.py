@@ -14,22 +14,23 @@ def laplacian(u):
 def manufsol(*, u, v, w, p, ignore_pressure=False):
     if diff(u,x) + diff(v,y) + diff(w,z) != 0:
         sys.stderr.write('[WARNING]: the proposed manufactured solution is not divergence free, correcting\n')
-        w = -z * (diff(u,x) + diff(v,y))
+        w = sp.integrate(sp.simplify(sp.diff(u, x, 1) + sp.diff(v, y, 1)), z)  
+        
 
     if ignore_pressure:
         p = 0
 
-    fx = sp.simplify(diff(u,t) + u*diff(u,x) + v*diff(u,y) + w*diff(u,z) + diff(p,x) - laplacian(u)/Re + diff(p,x))
-    fy = sp.simplify(diff(v,t) + u*diff(v,x) + v*diff(v,y) + w*diff(v,z) + diff(p,y) - laplacian(v)/Re + diff(p,y))
-    fz = sp.simplify(diff(w,t) + u*diff(w,x) + v*diff(w,y) + w*diff(w,z) + diff(p,z) - laplacian(w)/Re + diff(p,z))
+    fx = sp.simplify(diff(u,t) + u*diff(u,x) + v*diff(u,y) + w*diff(u,z) + diff(p,x) - laplacian(u)/Re)
+    fy = sp.simplify(diff(v,t) + u*diff(v,x) + v*diff(v,y) + w*diff(v,z) + diff(p,y) - laplacian(v)/Re)
+    fz = sp.simplify(diff(w,t) + u*diff(w,x) + v*diff(w,y) + w*diff(w,z) + diff(p,z) - laplacian(w)/Re)
 
     return (u,v,w), (fx,fy,fz)
 
 
 if __name__ == '__main__':
-    u = sp.sin(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
-    v = sp.cos(x) * sp.sin(y) * sp.sin(z) * sp.sin(t)
-    w = 2 * sp.cos(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
+    u = sp.sin(x)*sp.cos(y)*sp.sin(z)*sp.sin(t)
+    v = sp.cos(x)*sp.sin(y)*sp.sin(z)*sp.sin(t)
+    w = 2*sp.cos(x)*sp.cos(y)*sp.cos(z)*sp.sin(t)
 
     # don't set the pressure to zero or constant otherwise the generated function signature will be screwed
     p = x*y

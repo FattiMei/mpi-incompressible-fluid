@@ -8,9 +8,9 @@ Needed to insert the manufactured solution (Both u as vector and P).
 - Gives the forcing term to insert in the solver to do the check of convergence
 '''
 # Definition of functions u, P
-u = x**3
-v = x**3
-w = x**3
+u = sp.sin(x)*sp.cos(y)*sp.sin(z)*sp.sin(t)
+v = sp.cos(x)*sp.sin(y)*sp.sin(z)*sp.sin(t)
+w = 2*sp.cos(x)*sp.cos(y)*sp.cos(z)*sp.sin(t)
 P = x*y
 # Re = 10e+5
 
