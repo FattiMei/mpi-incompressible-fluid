@@ -13,7 +13,7 @@ namespace mif {
     // setting Dirichlet boundary conditions.
     void timestep(VelocityTensor &velocity,
                   VelocityTensor &velocity_buffer1,
-                  VelocityTensor &velocity_buffer2,
+                  std::vector<std::array<Real, 3>> rhs_buffer,
                   Real t_n);
 
 } // mif

@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     // Create the velocity tensors.
     VelocityTensor velocity(constants);
     VelocityTensor velocity_buffer1(constants);
-    VelocityTensor velocity_buffer2(constants);
+    std::vector<std::array<Real, 3>> rhs_buffer(constants.Nx * constants.Ny * constants.Nz);
 
     // Set the initial conditions.
     TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
@@ -43,9 +43,9 @@ int main(int argc, char* argv[]) {
         const Real current_time = time_step*constants.dt;
 
         // Update the solution inside the mesh.
-        timestep(velocity, 
-                 velocity_buffer1, 
-                 velocity_buffer2,
+        timestep(velocity,
+                 velocity_buffer1,
+                 rhs_buffer,
                  current_time);
     }
 
