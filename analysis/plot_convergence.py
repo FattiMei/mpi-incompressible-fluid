@@ -54,16 +54,29 @@ x = []
 y = []
 for i in range(num_tests):
     x.append(2**i)
-    y.append(1.0/2**(2*i)*linf_errors[0])
+    y.append(1.0/2**(2*i)*5*10**-8)
 
-plt.loglog(x, l1_errors, label="L1")
-plt.loglog(x, l2_errors, label="L2")
-plt.loglog(x, linf_errors, label="Linf")
-plt.loglog(x, y, label="Delta^2")
+# Plot the errors as a log-log plot.
+# Plot the l1_errors, l2_errors, and linf_errors.
+# Make sure that the known data points are marked
+# as dots on the plot.
+plt.figure()
+plt.plot(x, l1_errors, label="L1 Norm")
+plt.plot(x, l2_errors, label="L2 Norm")
+plt.plot(x, linf_errors, label="Linf Norm")
 
-plt.title("Convergence order")
-plt.xlabel("Delta")
+# Plot the second order convergence line reference
+# as a dotted line.
+plt.plot(x, y, ":", label="Second order reference")
+
+plt.scatter(x, l1_errors)
+plt.scatter(x, l2_errors)
+plt.scatter(x, linf_errors)
+plt.xscale("log")
+plt.yscale("log")
+plt.xlabel("Variable-proportional deltas")
 plt.ylabel("Error")
 plt.legend()
-plt.savefig("convergence_order.png")
+plt.title("Convergence order analysis")
 plt.show()
+plt.savefig("convergence_order.png")
