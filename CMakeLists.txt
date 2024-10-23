@@ -3,6 +3,12 @@ project(mpi_incompressible_fluid)
 
 
 find_package(Python3 REQUIRED)
+find_package(benchmark)
+
+
+if (benchmark_FOUND)
+	set(BENCH_OK TRUE)
+endif()
 
 
 set(CMAKE_CXX_STANDARD 23)
@@ -17,6 +23,7 @@ endif ()
 
 set(EXE_NAME "mif")
 set(CONVERGENCE_TEST_EXE_NAME "convergence_test")
+set(BENCHMARK_EXE_NAME "benchmark")
 
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(SOURCE_DIR  "${CMAKE_SOURCE_DIR}/src")
@@ -46,6 +53,17 @@ target_link_libraries(${EXE_NAME} PRIVATE miflib)
 
 add_executable(${CONVERGENCE_TEST_EXE_NAME} "${TEST_DIR}/convergence.cpp")
 target_link_libraries(${CONVERGENCE_TEST_EXE_NAME} PRIVATE miflib)
+
+if (${BENCH_OK})
+	add_executable(${BENCHMARK_EXE_NAME} "${TEST_DIR}/benchmark.cpp")
+	target_link_libraries(${BENCHMARK_EXE_NAME} PRIVATE miflib benchmark::benchmark)
+
+	add_custom_target(
+		bench
+		DEPENDS ${BENCHMARK_EXE_NAME}
+		COMMAND ./${BENCHMARK_EXE_NAME}
+	)
+endif()
 
 add_executable(tensor_usage_test test/tensor_usage_test.cpp)
 
