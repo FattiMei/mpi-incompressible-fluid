@@ -61,7 +61,7 @@ if (${BENCH_OK})
 	add_custom_target(
 		bench
 		DEPENDS ${BENCHMARK_EXE_NAME}
-		COMMAND ./${BENCHMARK_EXE_NAME}
+		COMMAND ./${BENCHMARK_EXE_NAME} --benchmark_counters_tabular=true
 	)
 endif()
 

@@ -51,8 +51,12 @@ static void timestepper(benchmark::State &state) {
 	}
 
 	state.counters["DoF"] = Nx*Ny*Nz;
+	state.counters["perf"] = benchmark::Counter(
+		state.counters["DoF"],
+		benchmark::Counter::kIsIterationInvariantRate | benchmark::Counter::kInvert
+	);
 }
 
 
-BENCHMARK(timestepper)->RangeMultiplier(2)->Range(32, 256)->Unit(benchmark::kSecond);
+BENCHMARK(timestepper)->RangeMultiplier(2)->Range(32, 256)->Arg(300)->Arg(400)->Unit(benchmark::kSecond);
 BENCHMARK_MAIN();
