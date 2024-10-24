@@ -30,6 +30,7 @@ namespace mif {
 
         // Compute the solution inside the domain.
         {
+            const auto &vel = velocity;
             {
                 size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
                 const std::array<size_t, 3> &sizes = velocity_buffer1.u.sizes();
@@ -37,14 +38,17 @@ namespace mif {
                 upper_limit_x = sizes[0] - 1;
                 upper_limit_y = sizes[1] - 1;
                 upper_limit_z = sizes[2] - 1;
+                #pragma GCC ivdep
                 for (size_t i = lower_limit; i < upper_limit_x; i++) {
+                    #pragma GCC ivdep
                     for (size_t j = lower_limit; j < upper_limit_y; j++) {
+                        #pragma GCC ivdep
                         for (size_t k = lower_limit; k < upper_limit_z; k++) {
                             const Real dt = velocity.constants.dt;
                             const Real rhs = calculate_momentum_rhs_with_forcing_u(
-                                    velocity, i, j, k, t_n);
+                                    vel, i, j, k, t_n);
                             rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny][0] = rhs;
-                            velocity_buffer1.u(i, j, k) = velocity.u(i, j, k) + dt * a21 *
+                            velocity_buffer1.u(i, j, k) = vel.u(i, j, k) + dt * a21 *
                                                                                 rhs;
                         }
                     }
@@ -57,14 +61,17 @@ namespace mif {
                 upper_limit_x = sizes[0] - 1;
                 upper_limit_y = sizes[1] - 1;
                 upper_limit_z = sizes[2] - 1;
+                #pragma GCC ivdep
                 for (size_t i = lower_limit; i < upper_limit_x; i++) {
+                    #pragma GCC ivdep
                     for (size_t j = lower_limit; j < upper_limit_y; j++) {
+                        #pragma GCC ivdep
                         for (size_t k = lower_limit; k < upper_limit_z; k++) {
                             const Real dt = velocity.constants.dt;
                             const Real rhs = calculate_momentum_rhs_with_forcing_v(
-                                    velocity, i, j, k, t_n);
+                                    vel, i, j, k, t_n);
                             rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny][1] = rhs;
-                            velocity_buffer1.v(i, j, k) = velocity.v(i, j, k) + dt * a21 *
+                            velocity_buffer1.v(i, j, k) = vel.v(i, j, k) + dt * a21 *
                                                                                 rhs;
                         }
                     }
@@ -77,15 +84,17 @@ namespace mif {
                 upper_limit_x = sizes[0] - 1;
                 upper_limit_y = sizes[1] - 1;
                 upper_limit_z = sizes[2] - 1;
+                #pragma GCC ivdep
                 for (size_t i = lower_limit; i < upper_limit_x; i++) {
+                    #pragma GCC ivdep
                     for (size_t j = lower_limit; j < upper_limit_y; j++) {
+                        #pragma GCC ivdep
                         for (size_t k = lower_limit; k < upper_limit_z; k++) {
-                            const Real dt = velocity.constants.dt;;
+                            const Real dt = vel.constants.dt;;
                             const Real rhs = calculate_momentum_rhs_with_forcing_w(
-                                    velocity, i, j, k, t_n);
+                                    vel, i, j, k, t_n);
                             rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny][2] = rhs;
-                            velocity_buffer1.w(i, j, k) = velocity.w(i, j, k) + dt * a21 *
-                                                                                rhs;
+                            velocity_buffer1.w(i, j, k) = vel.w(i, j, k) + dt * a21 * rhs;
                         }
                     }
                 }
@@ -98,6 +107,9 @@ namespace mif {
 
         // Compute the solution inside the domain.
         {
+
+
+            const auto &vel = velocity_buffer1;
             {
                 size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
                 const std::array<size_t, 3> &sizes = velocity.u.sizes();
@@ -105,8 +117,11 @@ namespace mif {
                 upper_limit_x = sizes[0] - 1;
                 upper_limit_y = sizes[1] - 1;
                 upper_limit_z = sizes[2] - 1;
+                #pragma GCC ivdep
                 for (size_t i = lower_limit; i < upper_limit_x; i++) {
+                    #pragma GCC ivdep
                     for (size_t j = lower_limit; j < upper_limit_y; j++) {
+                        #pragma GCC ivdep
                         for (size_t k = lower_limit; k < upper_limit_z; k++) {
                             const Real dt = velocity.constants.dt;
                             const Real rhs = rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny][0];
@@ -117,7 +132,7 @@ namespace mif {
                                                                               rhs +
                                                                               a32 *
                                                                               calculate_momentum_rhs_with_forcing_u(
-                                                                                      velocity_buffer1, i, j, k,
+                                                                                      vel, i, j, k,
                                                                                       time_1));
                         }
                     }
@@ -130,8 +145,11 @@ namespace mif {
                 upper_limit_x = sizes[0] - 1;
                 upper_limit_y = sizes[1] - 1;
                 upper_limit_z = sizes[2] - 1;
+                #pragma GCC ivdep
                 for (size_t i = lower_limit; i < upper_limit_x; i++) {
+                    #pragma GCC ivdep
                     for (size_t j = lower_limit; j < upper_limit_y; j++) {
+                        #pragma GCC ivdep
                         for (size_t k = lower_limit; k < upper_limit_z; k++) {
                             const Real dt = velocity.constants.dt;
                             const Real rhs = rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny][1];
@@ -142,7 +160,7 @@ namespace mif {
                                                                               rhs +
                                                                               a32 *
                                                                               calculate_momentum_rhs_with_forcing_v(
-                                                                                      velocity_buffer1, i, j, k,
+                                                                                      vel, i, j, k,
                                                                                       time_1));
 
                         }
@@ -156,8 +174,11 @@ namespace mif {
                 upper_limit_x = sizes[0] - 1;
                 upper_limit_y = sizes[1] - 1;
                 upper_limit_z = sizes[2] - 1;
+                #pragma GCC ivdep
                 for (size_t i = lower_limit; i < upper_limit_x; i++) {
+                    #pragma GCC ivdep
                     for (size_t j = lower_limit; j < upper_limit_y; j++) {
+                        #pragma GCC ivdep
                         for (size_t k = lower_limit; k < upper_limit_z; k++) {
                             const Real dt = velocity.constants.dt;
                             const Real rhs = rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny][2];
@@ -168,7 +189,7 @@ namespace mif {
                                                                               rhs +
                                                                               a32 *
                                                                               calculate_momentum_rhs_with_forcing_w(
-                                                                                      velocity_buffer1, i, j, k,
+                                                                                      vel, i, j, k,
                                                                                       time_1));
 
                         }
@@ -183,6 +204,8 @@ namespace mif {
 
         // Compute the solution inside the domain.
         {
+
+            const auto &vel = velocity;
             {
                 size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
                 const std::array<size_t, 3> &sizes = velocity_buffer1.u.sizes();
@@ -190,57 +213,69 @@ namespace mif {
                 upper_limit_x = sizes[0] - 1;
                 upper_limit_y = sizes[1] - 1;
                 upper_limit_z = sizes[2] - 1;
+                #pragma GCC ivdep
                 for (size_t i = lower_limit; i < upper_limit_x; i++) {
+                    #pragma GCC ivdep
                     for (size_t j = lower_limit; j < upper_limit_y; j++) {
+                        #pragma GCC ivdep
                         for (size_t k = lower_limit; k < upper_limit_z; k++) {
-                            const Real dt = velocity.constants.dt;
+                            const Real dt = vel.constants.dt;
                             const Real rhs = rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny][0];
                             velocity_buffer1.u(i, j, k) = rhs + dt * (
                                     b3 *
                                     calculate_momentum_rhs_with_forcing_u(
-                                            velocity, i, j, k,
+                                            vel, i, j, k,
                                             time_2));
                         }
                     }
                 }
             }
             {
+
                 size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
                 const std::array<size_t, 3> &sizes = velocity_buffer1.v.sizes();
                 lower_limit = 1;
                 upper_limit_x = sizes[0] - 1;
                 upper_limit_y = sizes[1] - 1;
                 upper_limit_z = sizes[2] - 1;
+                #pragma GCC ivdep
                 for (size_t i = lower_limit; i < upper_limit_x; i++) {
+                    #pragma GCC ivdep
                     for (size_t j = lower_limit; j < upper_limit_y; j++) {
+                        #pragma GCC ivdep
                         for (size_t k = lower_limit; k < upper_limit_z; k++) {
-                            const Real dt = velocity.constants.dt;
+                            const Real dt = vel.constants.dt;
                             const Real rhs = rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny][1];
                             velocity_buffer1.v(i, j, k) = rhs + dt * (
                                     b3 *
                                     calculate_momentum_rhs_with_forcing_v(
-                                            velocity, i, j, k,
+                                            vel, i, j, k,
                                             time_2));
                         }
                     }
                 }
             }
             {
+                //in this region velocity is constant
+
                 size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
                 const std::array<size_t, 3> &sizes = velocity_buffer1.w.sizes();
                 lower_limit = 1;
                 upper_limit_x = sizes[0] - 1;
                 upper_limit_y = sizes[1] - 1;
                 upper_limit_z = sizes[2] - 1;
+                #pragma GCC ivdep
                 for (size_t i = lower_limit; i < upper_limit_x; i++) {
+                    #pragma GCC ivdep
                     for (size_t j = lower_limit; j < upper_limit_y; j++) {
+                        #pragma GCC ivdep
                         for (size_t k = lower_limit; k < upper_limit_z; k++) {
-                            const Real dt = velocity.constants.dt;
+                            const Real dt = vel.constants.dt;
                             const Real rhs = rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny][2];
                             velocity_buffer1.w(i, j, k) = rhs + dt * (
                                     b3 *
                                     calculate_momentum_rhs_with_forcing_w(
-                                            velocity, i, j, k,
+                                            vel, i, j, k,
                                             time_2));
                         }
                     }
