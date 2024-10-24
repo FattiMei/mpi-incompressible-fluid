@@ -32,9 +32,10 @@ int main() {
 
 		VelocityTensor velocity(constants);
 		VelocityTensor velocity_buffer1(constants);
-		VelocityTensor velocity_buffer2(constants);
+        std::vector<std::array<Real, 3>> rhs_buffer(constants.Nx * constants.Ny * constants.Nz);
 
-		TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
+
+        TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
 		velocity.set(exact_velocity.set_time(0.0), true);
 
 		TimeVectorFunction forcing_term(forcing_x, forcing_y, forcing_z);
@@ -45,7 +46,7 @@ int main() {
 			timestep(
 				velocity,
 				velocity_buffer1,
-				velocity_buffer2,
+                rhs_buffer,
 				t
 			);
 		}
