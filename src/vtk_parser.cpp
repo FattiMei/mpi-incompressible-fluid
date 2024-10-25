@@ -123,47 +123,179 @@ namespace vtk {
         close(fd);
         //parse data consider vtk endianess (big endian) unfurtunatly
         #if ENDIANESS == 0
-        for (std::size_t i = 0; i < Nx; i++) {
-            for (std::size_t j = 0; j < Ny; j++) {
-                for (std::size_t k = 0; k < Nz; k++) {
+        for (std::size_t i = 0; i < Nx - 1; i++) {
+            for (std::size_t j = 0; j < Ny - 1; j++) {
+                for (std::size_t k = 0; k < Nz - 1; k++) {
 
                     //data position
-                    int pos = (i * Ny * Nz + j * Nz + k) * 3 * type_size + global_pos;
+                    size_t pos = (i * Ny * Nz + j * Nz + k) * 3 * type_size + global_pos;
                     //parse x component
                     if (type_size == 4) {
                         uint32_t x = *(uint32_t *) (data + pos);
                         x = bswap_32(x);
+                        uint32_t xplusone = *(uint32_t *) (data + pos + 4 * 3);
+                        xplusone = bswap_32(xplusone);
+                        Real x_real = static_cast<Real>(*reinterpret_cast<float *>(&x));
+                        Real xplusone_real = static_cast<Real>(*reinterpret_cast<float *>(&xplusone));// it's ugly, but it works, maybe we could use bit_cast or a union or direcly memcpy
+                        Real avg = (x_real + xplusone_real) * 0.5;
+
+
+
                         velocity_u(i, j,
-                                   k) = static_cast<Real>(*reinterpret_cast<float *>(&x));// it's ugly, but it works, maybe we could use bit_cast or a union or direcly memcpy
+                                   k) = avg;
                     } else {
                         uint64_t x = *(uint64_t *) (data + pos);
                         x = bswap_64(x);
-                        velocity_u(i, j, k) = static_cast<Real>(*reinterpret_cast<double *>(&x));
+                        uint64_t xplusone = *(uint64_t *) (data + pos + 8 * 3);
+                        xplusone = bswap_64(xplusone);
+                        Real x_real = static_cast<Real>(*reinterpret_cast<double *>(&x));
+                        Real xplusone_real = static_cast<Real>(*reinterpret_cast<double *>(&xplusone));
+                        Real avg = (x_real + xplusone_real) * 0.5;
+                        velocity_u(i, j, k) = avg;
+
+
+
+
                     }
                     //parse y component
                     if (type_size == 4) {
                         uint32_t y = *(uint32_t *) (data + pos + 4);
                         y = bswap_32(y);
-                        velocity_v(i, j, k) = static_cast<Real>(*reinterpret_cast<float *>(&y));
+                        uint32_t yplusone = *(uint32_t *) (data + pos + 4 * 3 + 4);
+                        yplusone = bswap_32(yplusone);
+                        Real y_real = static_cast<Real>(*reinterpret_cast<float *>(&y));
+                        Real yplusone_real = static_cast<Real>(*reinterpret_cast<float *>(&yplusone));
+                        Real avg = (y_real + yplusone_real) * 0.5;
+                        velocity_v(i, j, k) = avg;
                     } else {
                         uint64_t y = *(uint64_t *) (data + pos + 8);
                         y = bswap_64(y);
-                        velocity_v(i, j, k) = static_cast<Real>(*reinterpret_cast<double *>(&y));
+                        uint64_t yplusone = *(uint64_t *) (data + pos + 8 * 3 + 8);
+                        yplusone = bswap_64(yplusone);
+                        Real y_real = static_cast<Real>(*reinterpret_cast<double *>(&y));
+                        Real yplusone_real = static_cast<Real>(*reinterpret_cast<double *>(&yplusone));
+                        Real avg = (y_real + yplusone_real) * 0.5;
+                        velocity_v(i, j, k) = avg;
+
                     }
                     //parse z component
                     if (type_size == 4) {
                         uint32_t z = *(uint32_t *) (data + pos + 8);
                         z = bswap_32(z);
-                        velocity_w(i, j, k) = static_cast<Real>(*reinterpret_cast<float *>(&z));
+                        uint32_t zplusone = *(uint32_t *) (data + pos + 4 * 3 + 8);
+                        zplusone = bswap_32(zplusone);
+                        Real z_real = static_cast<Real>(*reinterpret_cast<float *>(&z));
+                        Real zplusone_real = static_cast<Real>(*reinterpret_cast<float *>(&zplusone));
+                        Real avg = (z_real + zplusone_real) * 0.5;
+                        velocity_w(i, j, k) = avg;
+
                     } else {
                         uint64_t z = *(uint64_t *) (data + pos + 16);
                         z = bswap_64(z);
-                        velocity_w(i, j, k) = static_cast<Real>(*reinterpret_cast<double *>(&z));
+                        uint64_t zplusone = *(uint64_t *) (data + pos + 8 * 3 + 16);
+                        zplusone = bswap_64(zplusone);
+                        Real z_real = static_cast<Real>(*reinterpret_cast<double *>(&z));
+                        Real zplusone_real = static_cast<Real>(*reinterpret_cast<double *>(&zplusone));
+                        Real avg = (z_real + zplusone_real) * 0.5;
+                        velocity_w(i, j, k) = avg;
 
                     }
                 }
             }
         }
+        //last pass for u component
+        for (std::size_t i = Nx - 2; i < Nx - 1; ++i) {
+            for (std::size_t j = 0; j < Ny; j++) {
+                for (std::size_t k = 0; k < Nz; k++) {
+                    size_t pos = (i * Ny * Nz + j * Nz + k) * 3 * type_size + global_pos;
+                    //parse x component
+                    if (type_size == 4) {
+                        uint32_t x = *(uint32_t *) (data + pos);
+                        x = bswap_32(x);
+                        uint32_t xplusone = *(uint32_t *) (data + pos + 4 * 3);
+                        xplusone = bswap_32(xplusone);
+                        Real x_real = static_cast<Real>(*reinterpret_cast<float *>(&x));
+                        Real xplusone_real = static_cast<Real>(*reinterpret_cast<float *>(&xplusone));// it's ugly, but it works, maybe we could use bit_cast or a union or direcly memcpy
+                        Real avg = (x_real + xplusone_real) * 0.5;
+
+
+                        velocity_u(i, j,
+                                   k) = avg;
+                    } else {
+                        uint64_t x = *(uint64_t *) (data + pos);
+                        x = bswap_64(x);
+                        uint64_t xplusone = *(uint64_t *) (data + pos + 8 * 3);
+                        xplusone = bswap_64(xplusone);
+                        Real x_real = static_cast<Real>(*reinterpret_cast<double *>(&x));
+                        Real xplusone_real = static_cast<Real>(*reinterpret_cast<double *>(&xplusone));
+                        Real avg = (x_real + xplusone_real) * 0.5;
+                        velocity_u(i, j, k) = avg;
+                    }
+                }
+            }
+        }
+
+        //last pass for v component
+        for (std::size_t i = 0; i < Nx; ++i) {
+            for (std::size_t j = Ny - 2; j < Ny - 1; j++) {
+                for (std::size_t k = 0; k < Nz; k++) {
+                    size_t pos = (i * Ny * Nz + j * Nz + k) * 3 * type_size + global_pos;
+                    //parse y component
+                    if (type_size == 4) {
+                        uint32_t y = *(uint32_t *) (data + pos + 4);
+                        y = bswap_32(y);
+                        uint32_t yplusone = *(uint32_t *) (data + pos + 4 * 3 + 4);
+                        yplusone = bswap_32(yplusone);
+                        Real y_real = static_cast<Real>(*reinterpret_cast<float *>(&y));
+                        Real yplusone_real = static_cast<Real>(*reinterpret_cast<float *>(&yplusone));
+                        Real avg = (y_real + yplusone_real) * 0.5;
+                        velocity_v(i, j, k) = avg;
+                    } else {
+                        uint64_t y = *(uint64_t *) (data + pos + 8);
+                        y = bswap_64(y);
+                        uint64_t yplusone = *(uint64_t *) (data + pos + 8 * 3 + 8);
+                        yplusone = bswap_64(yplusone);
+                        Real y_real = static_cast<Real>(*reinterpret_cast<double *>(&y));
+                        Real yplusone_real = static_cast<Real>(*reinterpret_cast<double *>(&yplusone));
+                        Real avg = (y_real + yplusone_real) * 0.5;
+                        velocity_v(i, j, k) = avg;
+
+                    }
+                }
+            }
+        }
+
+        //last pass for w component
+        for (std::size_t i = 0; i < Nx; ++i) {
+            for (std::size_t j = 0; j < Ny; j++) {
+                for (std::size_t k = Nz - 2; k < Nz - 1; k++) {
+                    size_t pos = (i * Ny * Nz + j * Nz + k) * 3 * type_size + global_pos;
+                    //parse z component
+                    if (type_size == 4) {
+                        uint32_t z = *(uint32_t *) (data + pos + 8);
+                        z = bswap_32(z);
+                        uint32_t zplusone = *(uint32_t *) (data + pos + 4 * 3 + 8);
+                        zplusone = bswap_32(zplusone);
+                        Real z_real = static_cast<Real>(*reinterpret_cast<float *>(&z));
+                        Real zplusone_real = static_cast<Real>(*reinterpret_cast<float *>(&zplusone));
+                        Real avg = (z_real + zplusone_real) * 0.5;
+                        velocity_w(i, j, k) = avg;
+
+                    } else {
+                        uint64_t z = *(uint64_t *) (data + pos + 16);
+                        z = bswap_64(z);
+                        uint64_t zplusone = *(uint64_t *) (data + pos + 8 * 3 + 16);
+                        zplusone = bswap_64(zplusone);
+                        Real z_real = static_cast<Real>(*reinterpret_cast<double *>(&z));
+                        Real zplusone_real = static_cast<Real>(*reinterpret_cast<double *>(&zplusone));
+                        Real avg = (z_real + zplusone_real) * 0.5;
+                        velocity_w(i, j, k) = avg;
+
+                    }
+                }
+            }
+        }
+
         #else
         //TODO: implement big endian, probably not needed
         throw std::runtime_error("Big endian not implemented");
@@ -178,8 +310,6 @@ namespace vtk {
         //We should parse the pressure, probably we will use the same vtk so it will be implemented later inside the same fors
 
 
-
-        //TODO: implement the staggering of the velocity field
 
 
 
