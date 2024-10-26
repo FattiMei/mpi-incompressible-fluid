@@ -13,8 +13,19 @@ constexpr Real deltat = 1e-4;
 
 using namespace mif;
 
+static void clear_cache_line() {
+  // Determine the size of a large array (e.g., 100MB), typically larger than L3
+  // cache size
+  constexpr size_t cache_clear_size = 100 * 1024 * 1024; // 100 MB
+  std::vector<char> cache_clear(cache_clear_size, 1);
+  // Access the large array to evict cache lines
+  for (std::size_t i = 0; i < cache_clear_size; ++i) {
+    cache_clear[i] = i % 256;
+  }
+}
 
 static void timestepper(benchmark::State &state) {
+  clear_cache_line();
 	const size_t Nx = state.range(0);
 	const size_t Ny = Nx;
 	const size_t Nz = Nx;
@@ -58,5 +69,5 @@ static void timestepper(benchmark::State &state) {
 }
 
 
-BENCHMARK(timestepper)->RangeMultiplier(2)->Range(32, 256)->Arg(300)->Arg(400)->Unit(benchmark::kSecond);
+BENCHMARK(timestepper)->RangeMultiplier(2)->Range(32, 512)->Unit(benchmark::kSecond);
 BENCHMARK_MAIN();
