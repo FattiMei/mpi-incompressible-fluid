@@ -13,13 +13,13 @@
 #endif
 
 
-namespace vtk {
+
 
     //buffer as char array
     char buffer[BUFFER_SIZE];
     std::size_t buffer_cursor = 1024;
     size_t global_pos = 0;
-
+namespace vtk {
     void read_line(int fd, std::string &line) {
         line = "";
         char c;
@@ -27,7 +27,7 @@ namespace vtk {
             buffer_cursor = 0;
             read(fd, buffer, BUFFER_SIZE);
         }
-        while (buffer[buffer_cursor] != '\n' || buffer[buffer_cursor] == '\0') {
+        while (buffer[buffer_cursor] != '\n' && buffer[buffer_cursor] != '\0') {
             c = buffer[buffer_cursor];
             line += c;
             buffer_cursor++;
@@ -42,7 +42,6 @@ namespace vtk {
         global_pos++;
     }
 
-    //read file with posix functions
     void parse(const std::string &filename, Tensor<> &velocity_u, Tensor<> &velocity_v, Tensor<> &velocity_w,
                Tensor<> &pressure) {
         //open file
@@ -112,8 +111,7 @@ namespace vtk {
             type_size = 8;
         //discard lookup table
         read_line(fd, line);
-        //map data to a big buffer, size is Nx*Ny*Nz*3*type (3 is for the 3 components of the velocity)
-        std::size_t size = Nx * Ny * Nz * 3 * type_size;
+        std::size_t size = Nx * Ny * Nz * 3 * type_size + global_pos;
         char *data = (char *) mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
 
         if (data == MAP_FAILED)
@@ -135,8 +133,8 @@ namespace vtk {
                         x = bswap_32(x);
                         uint32_t xplusone = *(uint32_t *) (data + pos + 4 * 3);
                         xplusone = bswap_32(xplusone);
-                        Real x_real = static_cast<Real>(*reinterpret_cast<float *>(&x));
-                        Real xplusone_real = static_cast<Real>(*reinterpret_cast<float *>(&xplusone));// it's ugly, but it works, maybe we could use bit_cast or a union or direcly memcpy
+                        Real x_real = static_cast<Real>(std::bit_cast<float>(x));
+                        Real xplusone_real = static_cast<Real>(std::bit_cast<float>(xplusone));
                         Real avg = (x_real + xplusone_real) * 0.5;
 
 
@@ -148,8 +146,8 @@ namespace vtk {
                         x = bswap_64(x);
                         uint64_t xplusone = *(uint64_t *) (data + pos + 8 * 3);
                         xplusone = bswap_64(xplusone);
-                        Real x_real = static_cast<Real>(*reinterpret_cast<double *>(&x));
-                        Real xplusone_real = static_cast<Real>(*reinterpret_cast<double *>(&xplusone));
+                        Real x_real = static_cast<Real>(std::bit_cast<double>(x));
+                        Real xplusone_real = static_cast<Real>(std::bit_cast<double>(xplusone));
                         Real avg = (x_real + xplusone_real) * 0.5;
                         velocity_u(i, j, k) = avg;
 
@@ -163,8 +161,8 @@ namespace vtk {
                         y = bswap_32(y);
                         uint32_t yplusone = *(uint32_t *) (data + pos + 4 * 3 + 4);
                         yplusone = bswap_32(yplusone);
-                        Real y_real = static_cast<Real>(*reinterpret_cast<float *>(&y));
-                        Real yplusone_real = static_cast<Real>(*reinterpret_cast<float *>(&yplusone));
+                        Real y_real = static_cast<Real>(std::bit_cast<float>(y));
+                        Real yplusone_real = static_cast<Real>(std::bit_cast<float>(yplusone));
                         Real avg = (y_real + yplusone_real) * 0.5;
                         velocity_v(i, j, k) = avg;
                     } else {
@@ -172,8 +170,8 @@ namespace vtk {
                         y = bswap_64(y);
                         uint64_t yplusone = *(uint64_t *) (data + pos + 8 * 3 + 8);
                         yplusone = bswap_64(yplusone);
-                        Real y_real = static_cast<Real>(*reinterpret_cast<double *>(&y));
-                        Real yplusone_real = static_cast<Real>(*reinterpret_cast<double *>(&yplusone));
+                        Real y_real = static_cast<Real>(std::bit_cast<double>(y));
+                        Real yplusone_real = static_cast<Real>(std::bit_cast<double>(yplusone));
                         Real avg = (y_real + yplusone_real) * 0.5;
                         velocity_v(i, j, k) = avg;
 
@@ -184,8 +182,8 @@ namespace vtk {
                         z = bswap_32(z);
                         uint32_t zplusone = *(uint32_t *) (data + pos + 4 * 3 + 8);
                         zplusone = bswap_32(zplusone);
-                        Real z_real = static_cast<Real>(*reinterpret_cast<float *>(&z));
-                        Real zplusone_real = static_cast<Real>(*reinterpret_cast<float *>(&zplusone));
+                        Real z_real = static_cast<Real>(std::bit_cast<float>(z));
+                        Real zplusone_real = static_cast<Real>(std::bit_cast<float>(zplusone));
                         Real avg = (z_real + zplusone_real) * 0.5;
                         velocity_w(i, j, k) = avg;
 
@@ -194,8 +192,8 @@ namespace vtk {
                         z = bswap_64(z);
                         uint64_t zplusone = *(uint64_t *) (data + pos + 8 * 3 + 16);
                         zplusone = bswap_64(zplusone);
-                        Real z_real = static_cast<Real>(*reinterpret_cast<double *>(&z));
-                        Real zplusone_real = static_cast<Real>(*reinterpret_cast<double *>(&zplusone));
+                        Real z_real = static_cast<Real>(std::bit_cast<double>(z));
+                        Real zplusone_real = static_cast<Real>(std::bit_cast<double>(zplusone));
                         Real avg = (z_real + zplusone_real) * 0.5;
                         velocity_w(i, j, k) = avg;
 
@@ -214,8 +212,8 @@ namespace vtk {
                         x = bswap_32(x);
                         uint32_t xplusone = *(uint32_t *) (data + pos + 4 * 3);
                         xplusone = bswap_32(xplusone);
-                        Real x_real = static_cast<Real>(*reinterpret_cast<float *>(&x));
-                        Real xplusone_real = static_cast<Real>(*reinterpret_cast<float *>(&xplusone));// it's ugly, but it works, maybe we could use bit_cast or a union or direcly memcpy
+                        Real x_real = static_cast<Real>(std::bit_cast<float>(x));
+                        Real xplusone_real = static_cast<Real>(std::bit_cast<float>(xplusone));
                         Real avg = (x_real + xplusone_real) * 0.5;
 
 
@@ -226,8 +224,8 @@ namespace vtk {
                         x = bswap_64(x);
                         uint64_t xplusone = *(uint64_t *) (data + pos + 8 * 3);
                         xplusone = bswap_64(xplusone);
-                        Real x_real = static_cast<Real>(*reinterpret_cast<double *>(&x));
-                        Real xplusone_real = static_cast<Real>(*reinterpret_cast<double *>(&xplusone));
+                        Real x_real = static_cast<Real>(std::bit_cast<double>(x));
+                        Real xplusone_real = static_cast<Real>(std::bit_cast<double>(xplusone));
                         Real avg = (x_real + xplusone_real) * 0.5;
                         velocity_u(i, j, k) = avg;
                     }
@@ -246,8 +244,8 @@ namespace vtk {
                         y = bswap_32(y);
                         uint32_t yplusone = *(uint32_t *) (data + pos + 4 * 3 + 4);
                         yplusone = bswap_32(yplusone);
-                        Real y_real = static_cast<Real>(*reinterpret_cast<float *>(&y));
-                        Real yplusone_real = static_cast<Real>(*reinterpret_cast<float *>(&yplusone));
+                        Real y_real = static_cast<Real>(std::bit_cast<float>(y));
+                        Real yplusone_real = static_cast<Real>(std::bit_cast<float>(yplusone));
                         Real avg = (y_real + yplusone_real) * 0.5;
                         velocity_v(i, j, k) = avg;
                     } else {
@@ -255,7 +253,7 @@ namespace vtk {
                         y = bswap_64(y);
                         uint64_t yplusone = *(uint64_t *) (data + pos + 8 * 3 + 8);
                         yplusone = bswap_64(yplusone);
-                        Real y_real = static_cast<Real>(*reinterpret_cast<double *>(&y));
+                        Real y_real = static_cast<Real>(std::bit_cast<double>(y));
                         Real yplusone_real = static_cast<Real>(*reinterpret_cast<double *>(&yplusone));
                         Real avg = (y_real + yplusone_real) * 0.5;
                         velocity_v(i, j, k) = avg;
@@ -276,8 +274,8 @@ namespace vtk {
                         z = bswap_32(z);
                         uint32_t zplusone = *(uint32_t *) (data + pos + 4 * 3 + 8);
                         zplusone = bswap_32(zplusone);
-                        Real z_real = static_cast<Real>(*reinterpret_cast<float *>(&z));
-                        Real zplusone_real = static_cast<Real>(*reinterpret_cast<float *>(&zplusone));
+                        Real z_real = static_cast<Real>(std::bit_cast<float>(z));
+                        Real zplusone_real = static_cast<Real>(std::bit_cast<float>(zplusone));
                         Real avg = (z_real + zplusone_real) * 0.5;
                         velocity_w(i, j, k) = avg;
 
@@ -286,8 +284,8 @@ namespace vtk {
                         z = bswap_64(z);
                         uint64_t zplusone = *(uint64_t *) (data + pos + 8 * 3 + 16);
                         zplusone = bswap_64(zplusone);
-                        Real z_real = static_cast<Real>(*reinterpret_cast<double *>(&z));
-                        Real zplusone_real = static_cast<Real>(*reinterpret_cast<double *>(&zplusone));
+                        Real z_real = static_cast<Real>(std::bit_cast<double>(z));
+                        Real zplusone_real = static_cast<Real>(std::bit_cast<double>(zplusone));
                         Real avg = (z_real + zplusone_real) * 0.5;
                         velocity_w(i, j, k) = avg;
 
@@ -302,7 +300,6 @@ namespace vtk {
         #endif
         //unmap file
         munmap(data, size);
-        //debug print all the x component
 
 
 
