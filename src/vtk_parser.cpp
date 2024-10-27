@@ -16,26 +16,16 @@
 
 
     //buffer as char array
-    char buffer[BUFFER_SIZE];
     std::size_t buffer_cursor = 1024;
     size_t global_pos = 0;
 namespace vtk {
-    void read_line(int fd, std::string &line) {
-        line = "";
+    void read_line(std::string &line, char *data) {
+        line = "";//TODO: return directly the pointer to the data at position, instead of copying it to a string 
         char c;
-        if (buffer_cursor == 1024) {
-            buffer_cursor = 0;
-            read(fd, buffer, BUFFER_SIZE);
-        }
-        while (buffer[buffer_cursor] != '\n' && buffer[buffer_cursor] != '\0') {
-            c = buffer[buffer_cursor];
+        while (data[global_pos] != '\n' && data[global_pos] != '\0') {//TODO: reverse this loop into a do while
+            c = data[global_pos];
             line += c;
-            buffer_cursor++;
             global_pos++;
-            if (buffer_cursor == 1024) {
-                buffer_cursor = 0;
-                read(fd, buffer, BUFFER_SIZE);
-            }
         }
         line += '\n';
         buffer_cursor++;
@@ -43,34 +33,29 @@ namespace vtk {
     }
 
     void parse(const std::string &filename, Tensor<> &velocity_u, Tensor<> &velocity_v, Tensor<> &velocity_w,
-               Tensor<> &pressure) {
+               Tensor<> &pressure) { /*TODO:
+            change this to create the tensors inside the function,
+         since we shouldn't know the size of the tensors before parsing the file*/
         //open file
         int fd = -1;
         fd = open(filename.c_str(), O_RDONLY);
         if (fd == -1)
             throw std::runtime_error("Error opening file");
+        struct stat st;
+        fstat(fd, &st);
+        std::size_t size = st.st_size;
+        char *data = (char *) mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
+        if (data == MAP_FAILED)
+            throw std::runtime_error("Error mapping file");
+        printf("Mapped file\n");
 
-        /* # vtk DataFile Version 2.0
-         testsolver output of last time iteration
-         BINARY
-         DATASET STRUCTURED_POINTS
-         DIMENSIONS 50 50 50
-         SPACING 0.02 0.02 0.02
-         ORIGIN 0.0 0.0 0.0
-         POINT_DATA 125000
-         SCALARS velocity float 3
-         LOOKUP_TABLE default*/
-        //read header of file and save dimensions and spacing and origin (origin is not used for now at least)
-        //discard first 4 lines
         std::string line;
         for (int i = 0; i < 4; i++) {
-            read_line(fd, line);
+            read_line(line, data);
         }
 
-        //read dimensions
-        read_line(fd, line);
+        read_line(line, data);
         char *token = strtok((char *) line.c_str(), " ");
-        //discard first token "DIMENSIONS"
         token = strtok(NULL, " ");
         std::size_t Nx = std::atol(token);
         token = strtok(NULL, " ");
@@ -78,8 +63,7 @@ namespace vtk {
         token = strtok(NULL, " ");
         std::size_t Nz = std::atol(token);
         printf("Nx: %lu, Ny: %lu, Nz: %lu\n", Nx, Ny, Nz);
-        //read spacing
-        read_line(fd, line);
+        read_line(line, data);
         token = strtok((char *) line.c_str(), " ");
         //discard first token "SPACING"
         token = strtok(NULL, " ");
@@ -90,9 +74,8 @@ namespace vtk {
         Real dz = std::atof(token);
         printf("dx: %f, dy: %f, dz: %f\n", dx, dy, dz);
         //discard origin
-        read_line(fd, line);
-        //assert that point data is Nx*Ny*Nz
-        read_line(fd, line);
+        read_line(line, data);
+        read_line(line, data);
         token = strtok((char *) line.c_str(), " ");
         //discard first token "POINT_DATA"
         token = strtok(NULL, " ");
@@ -100,7 +83,7 @@ namespace vtk {
         if (point_data != Nx * Ny * Nz)
             throw std::runtime_error("Point data is not equal to Nx*Ny*Nz");
         //check if is float or double
-        read_line(fd, line);
+        read_line(line, data);
         token = strtok((char *) line.c_str(), " ");
         token = strtok(NULL, " ");
         token = strtok(NULL, " ");
@@ -110,21 +93,13 @@ namespace vtk {
         else if (strcmp(token, "double") == 0)
             type_size = 8;
         //discard lookup table
-        read_line(fd, line);
-        std::size_t size = Nx * Ny * Nz * 3 * type_size + global_pos;
-        char *data = (char *) mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
-
-        if (data == MAP_FAILED)
-            throw std::runtime_error("Error mapping file");
-        printf("Mapped file\n");
-        //close file
+        read_line(line, data);        //close file
         close(fd);
         //parse data consider vtk endianess (big endian) unfurtunatly
         #if ENDIANESS == 0
         for (std::size_t i = 0; i < Nx - 1; i++) {
             for (std::size_t j = 0; j < Ny - 1; j++) {
                 for (std::size_t k = 0; k < Nz - 1; k++) {
-
                     //data position
                     size_t pos = (i * Ny * Nz + j * Nz + k) * 3 * type_size + global_pos;
                     //parse x component
@@ -136,9 +111,6 @@ namespace vtk {
                         Real x_real = static_cast<Real>(std::bit_cast<float>(x));
                         Real xplusone_real = static_cast<Real>(std::bit_cast<float>(xplusone));
                         Real avg = (x_real + xplusone_real) * 0.5;
-
-
-
                         velocity_u(i, j,
                                    k) = avg;
                     } else {
@@ -150,9 +122,6 @@ namespace vtk {
                         Real xplusone_real = static_cast<Real>(std::bit_cast<double>(xplusone));
                         Real avg = (x_real + xplusone_real) * 0.5;
                         velocity_u(i, j, k) = avg;
-
-
-
 
                     }
                     //parse y component
@@ -295,27 +264,14 @@ namespace vtk {
         }
 
         #else
-        //TODO: implement big endian, probably not needed
+        //TODO: implement big endian, probably not needed as the target machine will be le
         throw std::runtime_error("Big endian not implemented");
         #endif
+        size_t pos = global_pos + 3 * type_size * (Nx) * (Ny) * (Nz) + 1;
+        printf("Next line: %s\n", &data[pos]);
+        //TODO: parse pressure, should be easier since we don't need to average the values
         //unmap file
         munmap(data, size);
-
-
-
-
-        //We should parse the pressure, probably we will use the same vtk so it will be implemented later inside the same fors
-
-
-
-
-
-
-
-
-
-
-
     }
 }
 
