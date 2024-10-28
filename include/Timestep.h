@@ -16,6 +16,6 @@ namespace mif {
                   std::vector<std::array<Real, 3>> rhs_buffer,
                   Real t_n);
 
-} // mif
+} // namespace mif
 
 #endif // TIMESTEP_H
