@@ -12,7 +12,8 @@ endif()
 
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
+	-funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
 
 
 if(NOT DEFINED VERBOSE)
