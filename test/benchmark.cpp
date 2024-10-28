@@ -31,9 +31,8 @@ static void timestepper(benchmark::State &state) {
   const Constants constants(Nx, Ny, Nz, Lx, Ly, Lz, Reynolds, deltat, 1);
 
   VelocityTensor velocity(constants);
-  VelocityTensor velocity_buffer1(constants);
-  std::vector<std::array<Real, 3>> rhs_buffer(constants.Nx * constants.Ny *
-                                              constants.Nz);
+  VelocityTensor velocity_buffer(constants);
+  VelocityTensor rhs_buffer(constants);
 
   TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
   velocity.set(exact_velocity.set_time(0.0), true);
@@ -44,7 +43,7 @@ static void timestepper(benchmark::State &state) {
   for (auto _ : state) {
     const Real t = step * constants.dt;
 
-    timestep(velocity, velocity_buffer1, rhs_buffer, t);
+    timestep(velocity, velocity_buffer, rhs_buffer, t);
 
     ++step;
   }

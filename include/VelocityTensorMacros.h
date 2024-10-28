@@ -1,10 +1,9 @@
 #ifndef VELOCITY_TENSOR_MACROS_H
 #define VELOCITY_TENSOR_MACROS_H
 
-// Set the values of a component of velocity calculating a function over
-// all of its points, or all internal points if include_border is false.
-#define VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(tensor, function,              \
-                                                include_border, args...)       \
+// Execute "CODE" over all points for a velocity component, or over all internal 
+// points if include_border is false.
+#define VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(tensor, include_border, CODE)  \
   {                                                                            \
     size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;           \
     const std::array<size_t, 3> &sizes = tensor.sizes();                       \
@@ -31,11 +30,18 @@
     for (size_t i = lower_limit; i < upper_limit_x; i++) {                     \
       for (size_t j = lower_limit; j < upper_limit_y; j++) {                   \
         for (size_t k = lower_limit; k < upper_limit_z; k++) {                 \
-          tensor(i, j, k) = function(args);                                    \
+          CODE                                                                 \
         }                                                                      \
       }                                                                        \
     }                                                                          \
   }
+
+// Set the values of a component of velocity calculating a function over
+// all of its points, or all internal points if include_border is false.
+#define VELOCITY_TENSOR_FUNCTION_ON_ALL_POINTS(tensor, function,               \
+                                               include_border, args...)        \
+  VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(tensor, include_border,              \
+  tensor(i, j, k) = function(args);)
 
 // Set all components of the tensor in all points using the respective
 // components of the function.
