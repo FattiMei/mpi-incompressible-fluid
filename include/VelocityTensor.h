@@ -22,8 +22,8 @@ namespace mif {
     class StaggeredTensor: public Tensor<Real, 3U, size_t> {
       public:
         StaggeredTensor(const Constants &constants, const std::array<size_t, 3U> &in_dimensions):
-                constants(constants),
-                Tensor(in_dimensions) {}
+                Tensor(in_dimensions),
+                constants(constants) {}
 
         const Constants &constants;
 

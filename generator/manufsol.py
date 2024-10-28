@@ -32,7 +32,7 @@ if __name__ == '__main__':
     w = 2*sp.cos(x)*sp.cos(y)*sp.cos(z)*sp.sin(t)
 
     # don't set the pressure to zero or constant otherwise the generated function signature will be screwed
-    p = x*y
+    p = sp.sin(t)*x*y*z
 
     # for current testing purpuoses we ignore the pressure term
     (u,v,w), (fx,fy,fz) = manufsol(u=u,v=v,w=w,p=p,ignore_pressure=True)

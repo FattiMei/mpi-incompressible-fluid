@@ -4,12 +4,12 @@
 namespace mif {
 
     Constants::Constants(size_t Nx, size_t Ny, size_t Nz, Real x_size, Real y_size, Real z_size, Real Re, Real final_time, unsigned int num_time_steps): 
-            Nx(Nx), Ny(Ny), Nz(Nz), 
             x_size(x_size), y_size(y_size), z_size(z_size), 
+            Nx(Nx), Ny(Ny), Nz(Nz), 
             Re(Re),
             final_time(final_time), num_time_steps(num_time_steps),
-            dx(x_size/(Nx-1)), dy(y_size/(Ny-1)), dz(z_size/(Nz-1)),
             dt(final_time / num_time_steps),
+            dx(x_size/(Nx-1)), dy(y_size/(Ny-1)), dz(z_size/(Nz-1)),
             row_size(Nx), matrix_size(Nx*Ny),
             one_over_2_dx(1/(2*dx)), one_over_2_dy(1/(2*dy)), one_over_2_dz(1/(2*dz)),
             one_over_8_dx(1/(8*dx)), one_over_8_dy(1/(8*dy)), one_over_8_dz(1/(8*dz)),
