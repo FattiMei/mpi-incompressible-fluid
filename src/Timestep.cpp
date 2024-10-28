@@ -4,6 +4,7 @@
 
 #include "Timestep.h"
 #include "MomentumEquation.h"
+#include "VelocityTensorMacros.h"
 
 namespace mif {
 
@@ -15,7 +16,48 @@ constexpr Real a32 = (5.0 / 12.0);
 constexpr Real b1 = (1.0 / 4.0);
 constexpr Real b3 = (3.0 / 4.0);
 
-void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer1,
+// Compute a component of Y2 (first step of the method).
+#define COMPUTE_COMPONENT_Y2(component) {                                                   \
+  VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                        \
+    const Real dt = velocity.constants.dt;                                                  \
+    const Real rhs =                                                                        \
+        calculate_momentum_rhs_with_forcing_##component(velocity, i, j, k, t_n);            \
+    rhs_buffer.component(i,j,k) = rhs;                                                      \
+    velocity_buffer.component(i, j, k) = velocity.component(i, j, k) + dt * a21 * rhs;     \
+  )                                                                                         \
+}
+
+// Compute a component of Y3 (second step of the method).
+#define COMPUTE_COMPONENT_Y3(component) {                                                   \
+  VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                        \
+    const Real dt = velocity.constants.dt;                                                  \
+    const Real rhs = rhs_buffer.component(i,j,k);                                           \
+    rhs_buffer.component(i,j,k) = velocity.component(i, j, k) + dt * (b1 * rhs);            \
+    velocity.component(i, j, k) = velocity.component(i, j, k) +                             \
+              dt * (a31 * rhs + a32 * calculate_momentum_rhs_with_forcing_##component(      \
+                                            velocity_buffer, i, j, k, time_1));            \
+  )                                                                                         \
+}
+
+// Compute a component of U* (third and last step of the method).
+#define COMPUTE_COMPONENT_U_STAR(component) {                                               \
+  VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                        \
+    const Real dt = velocity.constants.dt;                                                  \
+    const Real rhs = rhs_buffer.component(i,j,k);                                           \
+    velocity_buffer.component(i, j, k) = rhs + dt * (b3 *                                  \
+              calculate_momentum_rhs_with_forcing_##component(velocity, i, j, k, time_2));  \
+  )                                                                                         \
+}
+
+// Compute all components of Y2/Y3/U*.
+// "step" should be Y2, Y3 or U_STAR.
+#define COMPUTE_STEP(step) {  \
+  COMPUTE_COMPONENT_##step(u) \
+  COMPUTE_COMPONENT_##step(v) \
+  COMPUTE_COMPONENT_##step(w) \
+}
+
+void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
               VelocityTensor &rhs_buffer, Real t_n) {
   const Constants &constants = velocity.constants;
   const Real time_1 = t_n + c2 * constants.dt;
@@ -24,208 +66,27 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer1,
 
   // Stage 1.
   // Apply Dirichlet boundary conditions.
-  velocity_buffer1.apply_all_dirichlet_bc(time_1);
+  velocity_buffer.apply_all_dirichlet_bc(time_1);
 
   // Compute the solution inside the domain.
-  {
-    {
-      size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
-      const std::array<size_t, 3> &sizes = velocity_buffer1.u.sizes();
-      lower_limit = 1;
-      upper_limit_x = sizes[0] - 1;
-      upper_limit_y = sizes[1] - 1;
-      upper_limit_z = sizes[2] - 1;
-      for (size_t i = lower_limit; i < upper_limit_x; i++) {
-        for (size_t j = lower_limit; j < upper_limit_y; j++) {
-          for (size_t k = lower_limit; k < upper_limit_z; k++) {
-            const Real dt = velocity.constants.dt;
-            const Real rhs =
-                calculate_momentum_rhs_with_forcing_u(velocity, i, j, k, t_n);
-            rhs_buffer.u(i,j,k) = rhs;
-            velocity_buffer1.u(i, j, k) = velocity.u(i, j, k) + dt * a21 * rhs;
-          }
-        }
-      }
-    }
-    {
-      size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
-      const std::array<size_t, 3> &sizes = velocity_buffer1.v.sizes();
-      lower_limit = 1;
-      upper_limit_x = sizes[0] - 1;
-      upper_limit_y = sizes[1] - 1;
-      upper_limit_z = sizes[2] - 1;
-      for (size_t i = lower_limit; i < upper_limit_x; i++) {
-        for (size_t j = lower_limit; j < upper_limit_y; j++) {
-          for (size_t k = lower_limit; k < upper_limit_z; k++) {
-            const Real dt = velocity.constants.dt;
-            const Real rhs =
-                calculate_momentum_rhs_with_forcing_v(velocity, i, j, k, t_n);
-            rhs_buffer.v(i,j,k) = rhs;
-            velocity_buffer1.v(i, j, k) = velocity.v(i, j, k) + dt * a21 * rhs;
-          }
-        }
-      }
-    }
-    {
-      size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
-      const std::array<size_t, 3> &sizes = velocity_buffer1.w.sizes();
-      lower_limit = 1;
-      upper_limit_x = sizes[0] - 1;
-      upper_limit_y = sizes[1] - 1;
-      upper_limit_z = sizes[2] - 1;
-      for (size_t i = lower_limit; i < upper_limit_x; i++) {
-        for (size_t j = lower_limit; j < upper_limit_y; j++) {
-          for (size_t k = lower_limit; k < upper_limit_z; k++) {
-            const Real dt = velocity.constants.dt;
-            ;
-            const Real rhs =
-                calculate_momentum_rhs_with_forcing_w(velocity, i, j, k, t_n);
-            rhs_buffer.w(i,j,k) = rhs;
-            velocity_buffer1.w(i, j, k) = velocity.w(i, j, k) + dt * a21 * rhs;
-          }
-        }
-      }
-    }
-  }
+  COMPUTE_STEP(Y2)
 
   // Stage 2.
   // Apply Dirichlet boundary conditions.
   velocity.apply_all_dirichlet_bc(time_2);
 
   // Compute the solution inside the domain.
-  {
-    {
-      size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
-      const std::array<size_t, 3> &sizes = velocity.u.sizes();
-      lower_limit = 1;
-      upper_limit_x = sizes[0] - 1;
-      upper_limit_y = sizes[1] - 1;
-      upper_limit_z = sizes[2] - 1;
-      for (size_t i = lower_limit; i < upper_limit_x; i++) {
-        for (size_t j = lower_limit; j < upper_limit_y; j++) {
-          for (size_t k = lower_limit; k < upper_limit_z; k++) {
-            const Real dt = velocity.constants.dt;
-            const Real rhs = rhs_buffer.u(i,j,k);
-            rhs_buffer.u(i,j,k) = velocity.u(i, j, k) + dt * (b1 * rhs);
-            velocity.u(i, j, k) =
-                velocity.u(i, j, k) +
-                dt * (a31 * rhs + a32 * calculate_momentum_rhs_with_forcing_u(
-                                            velocity_buffer1, i, j, k, time_1));
-          }
-        }
-      }
-    }
-    {
-      size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
-      const std::array<size_t, 3> &sizes = velocity.v.sizes();
-      lower_limit = 1;
-      upper_limit_x = sizes[0] - 1;
-      upper_limit_y = sizes[1] - 1;
-      upper_limit_z = sizes[2] - 1;
-      for (size_t i = lower_limit; i < upper_limit_x; i++) {
-        for (size_t j = lower_limit; j < upper_limit_y; j++) {
-          for (size_t k = lower_limit; k < upper_limit_z; k++) {
-            const Real dt = velocity.constants.dt;
-            const Real rhs = rhs_buffer.v(i,j,k);
-            rhs_buffer.v(i,j,k) = velocity.v(i, j, k) + dt * (b1 * rhs);
-            velocity.v(i, j, k) =
-                velocity.v(i, j, k) +
-                dt * (a31 * rhs + a32 * calculate_momentum_rhs_with_forcing_v(
-                                            velocity_buffer1, i, j, k, time_1));
-          }
-        }
-      }
-    }
-    {
-      size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
-      const std::array<size_t, 3> &sizes = velocity.w.sizes();
-      lower_limit = 1;
-      upper_limit_x = sizes[0] - 1;
-      upper_limit_y = sizes[1] - 1;
-      upper_limit_z = sizes[2] - 1;
-      for (size_t i = lower_limit; i < upper_limit_x; i++) {
-        for (size_t j = lower_limit; j < upper_limit_y; j++) {
-          for (size_t k = lower_limit; k < upper_limit_z; k++) {
-            const Real dt = velocity.constants.dt;
-            const Real rhs = rhs_buffer.w(i,j,k);
-            rhs_buffer.w(i,j,k) = velocity.w(i, j, k) + dt * (b1 * rhs);
-            velocity.w(i, j, k) =
-                velocity.w(i, j, k) +
-                dt * (a31 * rhs + a32 * calculate_momentum_rhs_with_forcing_w(
-                                            velocity_buffer1, i, j, k, time_1));
-          }
-        }
-      }
-    }
-  }
+  COMPUTE_STEP(Y3)
 
   // Stage 3. u_n
   // Apply Dirichlet boundary conditions.
-  velocity_buffer1.apply_all_dirichlet_bc(final_time);
+  velocity_buffer.apply_all_dirichlet_bc(final_time);
 
   // Compute the solution inside the domain.
-  {
-    {
-      size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
-      const std::array<size_t, 3> &sizes = velocity_buffer1.u.sizes();
-      lower_limit = 1;
-      upper_limit_x = sizes[0] - 1;
-      upper_limit_y = sizes[1] - 1;
-      upper_limit_z = sizes[2] - 1;
-      for (size_t i = lower_limit; i < upper_limit_x; i++) {
-        for (size_t j = lower_limit; j < upper_limit_y; j++) {
-          for (size_t k = lower_limit; k < upper_limit_z; k++) {
-            const Real dt = velocity.constants.dt;
-            const Real rhs = rhs_buffer.u(i,j,k);
-            velocity_buffer1.u(i, j, k) =
-                rhs + dt * (b3 * calculate_momentum_rhs_with_forcing_u(
-                                     velocity, i, j, k, time_2));
-          }
-        }
-      }
-    }
-    {
-      size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
-      const std::array<size_t, 3> &sizes = velocity_buffer1.v.sizes();
-      lower_limit = 1;
-      upper_limit_x = sizes[0] - 1;
-      upper_limit_y = sizes[1] - 1;
-      upper_limit_z = sizes[2] - 1;
-      for (size_t i = lower_limit; i < upper_limit_x; i++) {
-        for (size_t j = lower_limit; j < upper_limit_y; j++) {
-          for (size_t k = lower_limit; k < upper_limit_z; k++) {
-            const Real dt = velocity.constants.dt;
-            const Real rhs = rhs_buffer.v(i,j,k);
-            velocity_buffer1.v(i, j, k) =
-                rhs + dt * (b3 * calculate_momentum_rhs_with_forcing_v(
-                                     velocity, i, j, k, time_2));
-          }
-        }
-      }
-    }
-    {
-      size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;
-      const std::array<size_t, 3> &sizes = velocity_buffer1.w.sizes();
-      lower_limit = 1;
-      upper_limit_x = sizes[0] - 1;
-      upper_limit_y = sizes[1] - 1;
-      upper_limit_z = sizes[2] - 1;
-      for (size_t i = lower_limit; i < upper_limit_x; i++) {
-        for (size_t j = lower_limit; j < upper_limit_y; j++) {
-          for (size_t k = lower_limit; k < upper_limit_z; k++) {
-            const Real dt = velocity.constants.dt;
-            const Real rhs = rhs_buffer.w(i,j,k);
-            velocity_buffer1.w(i, j, k) =
-                rhs + dt * (b3 * calculate_momentum_rhs_with_forcing_w(
-                                     velocity, i, j, k, time_2));
-          }
-        }
-      }
-    }
-  }
+  COMPUTE_STEP(U_STAR)
 
   // Put the solution in the original tensors.
-  velocity.swap_data(velocity_buffer1);
+  velocity.swap_data(velocity_buffer);
 }
 
 } // namespace mif

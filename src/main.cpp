@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 
   // Create the velocity tensors.
   VelocityTensor velocity(constants);
-  VelocityTensor velocity_buffer1(constants);
+  VelocityTensor velocity_buffer(constants);
   VelocityTensor rhs_buffer(constants);
 
   // Set the initial conditions.
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     const Real current_time = time_step * constants.dt;
 
     // Update the solution inside the mesh.
-    timestep(velocity, velocity_buffer1, rhs_buffer, current_time);
+    timestep(velocity, velocity_buffer, rhs_buffer, current_time);
   }
 
   // Compute the norms of the error.

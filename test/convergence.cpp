@@ -22,7 +22,7 @@ int main() {
     const Constants constants(Nx, Ny, Nz, Lx, Ly, Lz, Reynolds, T, ntime_steps);
 
     VelocityTensor velocity(constants);
-    VelocityTensor velocity_buffer1(constants);
+    VelocityTensor velocity_buffer(constants);
     VelocityTensor rhs_buffer(constants);
 
     TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
@@ -33,7 +33,7 @@ int main() {
     for (int step = 0; step < ntime_steps; ++step) {
       const Real t = step * constants.dt;
 
-      timestep(velocity, velocity_buffer1, rhs_buffer, t);
+      timestep(velocity, velocity_buffer, rhs_buffer, t);
     }
 
     std::cout << constants.dx << ',' << constants.dt << ','
