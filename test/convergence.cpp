@@ -23,8 +23,7 @@ int main() {
 
     VelocityTensor velocity(constants);
     VelocityTensor velocity_buffer1(constants);
-    std::vector<std::array<Real, 3>> rhs_buffer(constants.Nx * constants.Ny *
-                                                constants.Nz);
+    VelocityTensor rhs_buffer(constants);
 
     TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
     velocity.set(exact_velocity.set_time(0.0), true);

@@ -16,7 +16,7 @@ constexpr Real b1 = (1.0 / 4.0);
 constexpr Real b3 = (3.0 / 4.0);
 
 void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer1,
-              std::vector<std::array<Real, 3>> rhs_buffer, Real t_n) {
+              VelocityTensor &rhs_buffer, Real t_n) {
   const Constants &constants = velocity.constants;
   const Real time_1 = t_n + c2 * constants.dt;
   const Real time_2 = t_n + c3 * constants.dt;
@@ -41,8 +41,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer1,
             const Real dt = velocity.constants.dt;
             const Real rhs =
                 calculate_momentum_rhs_with_forcing_u(velocity, i, j, k, t_n);
-            rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny]
-                      [0] = rhs;
+            rhs_buffer.u(i,j,k) = rhs;
             velocity_buffer1.u(i, j, k) = velocity.u(i, j, k) + dt * a21 * rhs;
           }
         }
@@ -61,8 +60,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer1,
             const Real dt = velocity.constants.dt;
             const Real rhs =
                 calculate_momentum_rhs_with_forcing_v(velocity, i, j, k, t_n);
-            rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny]
-                      [1] = rhs;
+            rhs_buffer.v(i,j,k) = rhs;
             velocity_buffer1.v(i, j, k) = velocity.v(i, j, k) + dt * a21 * rhs;
           }
         }
@@ -82,8 +80,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer1,
             ;
             const Real rhs =
                 calculate_momentum_rhs_with_forcing_w(velocity, i, j, k, t_n);
-            rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny]
-                      [2] = rhs;
+            rhs_buffer.w(i,j,k) = rhs;
             velocity_buffer1.w(i, j, k) = velocity.w(i, j, k) + dt * a21 * rhs;
           }
         }
@@ -108,10 +105,8 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer1,
         for (size_t j = lower_limit; j < upper_limit_y; j++) {
           for (size_t k = lower_limit; k < upper_limit_z; k++) {
             const Real dt = velocity.constants.dt;
-            const Real rhs = rhs_buffer[k + j * constants.Nz +
-                                        i * constants.Nz * constants.Ny][0];
-            rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny]
-                      [0] = velocity.u(i, j, k) + dt * (b1 * rhs);
+            const Real rhs = rhs_buffer.u(i,j,k);
+            rhs_buffer.u(i,j,k) = velocity.u(i, j, k) + dt * (b1 * rhs);
             velocity.u(i, j, k) =
                 velocity.u(i, j, k) +
                 dt * (a31 * rhs + a32 * calculate_momentum_rhs_with_forcing_u(
@@ -131,10 +126,8 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer1,
         for (size_t j = lower_limit; j < upper_limit_y; j++) {
           for (size_t k = lower_limit; k < upper_limit_z; k++) {
             const Real dt = velocity.constants.dt;
-            const Real rhs = rhs_buffer[k + j * constants.Nz +
-                                        i * constants.Nz * constants.Ny][1];
-            rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny]
-                      [1] = velocity.v(i, j, k) + dt * (b1 * rhs);
+            const Real rhs = rhs_buffer.v(i,j,k);
+            rhs_buffer.v(i,j,k) = velocity.v(i, j, k) + dt * (b1 * rhs);
             velocity.v(i, j, k) =
                 velocity.v(i, j, k) +
                 dt * (a31 * rhs + a32 * calculate_momentum_rhs_with_forcing_v(
@@ -154,10 +147,8 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer1,
         for (size_t j = lower_limit; j < upper_limit_y; j++) {
           for (size_t k = lower_limit; k < upper_limit_z; k++) {
             const Real dt = velocity.constants.dt;
-            const Real rhs = rhs_buffer[k + j * constants.Nz +
-                                        i * constants.Nz * constants.Ny][2];
-            rhs_buffer[k + j * constants.Nz + i * constants.Nz * constants.Ny]
-                      [2] = velocity.w(i, j, k) + dt * (b1 * rhs);
+            const Real rhs = rhs_buffer.w(i,j,k);
+            rhs_buffer.w(i,j,k) = velocity.w(i, j, k) + dt * (b1 * rhs);
             velocity.w(i, j, k) =
                 velocity.w(i, j, k) +
                 dt * (a31 * rhs + a32 * calculate_momentum_rhs_with_forcing_w(
@@ -185,8 +176,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer1,
         for (size_t j = lower_limit; j < upper_limit_y; j++) {
           for (size_t k = lower_limit; k < upper_limit_z; k++) {
             const Real dt = velocity.constants.dt;
-            const Real rhs = rhs_buffer[k + j * constants.Nz +
-                                        i * constants.Nz * constants.Ny][0];
+            const Real rhs = rhs_buffer.u(i,j,k);
             velocity_buffer1.u(i, j, k) =
                 rhs + dt * (b3 * calculate_momentum_rhs_with_forcing_u(
                                      velocity, i, j, k, time_2));
@@ -205,8 +195,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer1,
         for (size_t j = lower_limit; j < upper_limit_y; j++) {
           for (size_t k = lower_limit; k < upper_limit_z; k++) {
             const Real dt = velocity.constants.dt;
-            const Real rhs = rhs_buffer[k + j * constants.Nz +
-                                        i * constants.Nz * constants.Ny][1];
+            const Real rhs = rhs_buffer.v(i,j,k);
             velocity_buffer1.v(i, j, k) =
                 rhs + dt * (b3 * calculate_momentum_rhs_with_forcing_v(
                                      velocity, i, j, k, time_2));
@@ -225,8 +214,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer1,
         for (size_t j = lower_limit; j < upper_limit_y; j++) {
           for (size_t k = lower_limit; k < upper_limit_z; k++) {
             const Real dt = velocity.constants.dt;
-            const Real rhs = rhs_buffer[k + j * constants.Nz +
-                                        i * constants.Nz * constants.Ny][2];
+            const Real rhs = rhs_buffer.w(i,j,k);
             velocity_buffer1.w(i, j, k) =
                 rhs + dt * (b3 * calculate_momentum_rhs_with_forcing_w(
                                      velocity, i, j, k, time_2));
