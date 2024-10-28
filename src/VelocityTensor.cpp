@@ -35,8 +35,8 @@ void StaggeredTensor::print(const std::function<bool(Real)> &filter) const {
 }
 
 VelocityTensor::VelocityTensor(const Constants &constants)
-    : constants(constants), u(constants), v(constants), w(constants),
-      components({&this->u, &this->v, &this->w}) {}
+    : u(constants), v(constants), w(constants),
+      components({&this->u, &this->v, &this->w}), constants(constants) {}
 
 void VelocityTensor::swap_data(VelocityTensor &other) {
   for (size_t component = 0; component < 3U; component++) {
