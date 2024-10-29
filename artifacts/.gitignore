@@ -1,4 +1,1 @@
 # Keep this directory empty on purpose, but let Git track it.
-
-*  # Ignore everything in this directory.
-!.gitignore  # But keep this file.

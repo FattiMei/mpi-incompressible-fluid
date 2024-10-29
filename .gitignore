@@ -3,6 +3,9 @@ build/
 .ipynb_checkpoints/
 .vscode/
 
+artifacts/*
+!artifacts/.gitignore
+
 # Analysis script output.
 analysis/results.txt
 analysis/*.png
