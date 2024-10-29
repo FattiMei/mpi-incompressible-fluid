@@ -13,7 +13,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 23)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -mtune=native -fopenmp-simd \
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -mtune=native \
 	-funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -ffinite-math-only -flto=auto -ffast-math \
 	-faggressive-loop-optimizations -funsafe-math-optimizations -fprofile-use")
 #TODO: save profile in a know location so we can use it with multiple targets
