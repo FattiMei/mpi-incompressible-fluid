@@ -15,8 +15,6 @@
 
 
 
-    //buffer as char array
-    std::size_t buffer_cursor = 1024;
     size_t global_pos = 0;
 namespace vtk {
     void read_line(std::string &line, char *data) {
@@ -28,7 +26,6 @@ namespace vtk {
             global_pos++;
         }
         line += '\n';
-        buffer_cursor++;
         global_pos++;
     }
 
@@ -160,6 +157,7 @@ namespace vtk {
 
         #else
         //TODO: implement big endian, probably not needed as the target machine will be le
+        //probably we can just make the IF  statement inside the loop and in case omit the bswap call if the machine is big endian
         throw std::runtime_error("Big endian not implemented");
         #endif
 
