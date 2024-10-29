@@ -1,5 +1,9 @@
 build/
 artifacts/
+
 .ipynb_checkpoints/
-/.vscode/
+.vscode/
+
+# Analysis script output.
 analysis/results.txt
+analysis/*.png
