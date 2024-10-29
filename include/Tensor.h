@@ -64,12 +64,12 @@ private:
   /*!
    * The tensor dimensions
    */
-  std::vector<Type> _data;
+  alignas(32) __restrict_arr std::vector<Type> _data;
   /*!
    * Cache the strindes for indexing
    * Not saving the 1D stride as it can be retrieved with the dimensions
    */
-  std::array<DimensionsType, SpaceDim - 1> _strides;
+  alignas(32) __restrict_arr std::array<DimensionsType, SpaceDim - 1> _strides;
   /*!
    * Initialization status
    */
@@ -149,7 +149,8 @@ public:
    * Indexes dispatching is performed at compile time
    */
   template <typename T, T... Values>
-  constexpr Type operator()(const std::integer_sequence<T, Values...>) const {
+  constexpr Type operator()(const std::integer_sequence<T, Values...>) __restrict__
+  const {
     constexpr unsigned size = integer_sequence_size<T, Values...>::value;
     static_assert(size > 0 && size < 4,
                   "Minimum one index and maximum 3 indexes allowed");

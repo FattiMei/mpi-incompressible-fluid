@@ -12,9 +12,13 @@ endif()
 
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
-	-funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -mtune=native -fopenmp-simd \
+	-funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -ffinite-math-only -flto=auto -ffast-math \
+	-faggressive-loop-optimizations -funsafe-math-optimizations -fprofile-use")
+#TODO: save profile in a know location so we can use it with multiple targets
+#TODO: make the profile generation automatic when running the benchmark target before compiling the actual target, better if we can check if the profile is up to date or not and only regenerate it if needed
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 
 if(NOT DEFINED VERBOSE)
     set(VERBOSE "FALSE")
