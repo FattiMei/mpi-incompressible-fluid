@@ -1,7 +1,11 @@
+#include <cassert>
 #include <iostream>
 #include <Tensor.h>
 
 int main(int argc, char *argv[]) {
+  assert(argc == 1);
+  (void) argv; // Suppress warning
+
   const std::size_t depth = 2;
   const std::size_t rows = 2;
   const std::size_t cols = 2;
