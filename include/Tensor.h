@@ -84,15 +84,15 @@ public:
    * Constructor
    * @param in_dimensions The tensor dimensions defining its dimension
    */
-  Tensor(const std::array<DimensionsType, SpaceDim> &in_dimensions)
+  Tensor(const std::array<DimensionsType, SpaceDim> &in_dimensions, const Constants &constants)
       : _dimensions(in_dimensions),
-        _data(std::accumulate(in_dimensions.begin(), in_dimensions.end(),
-                              static_cast<DimensionsType>(1),
-                              std::multiplies<DimensionsType>()),
-              static_cast<Type>(0)) {
+        _data() {
     resize<false>(in_dimensions);
+      //TODO: bad practice
+      _data.resize(constants.Nx * constants.Ny * constants.Nz);
   }
-  /*!
+
+        /*!
    * Swap this tensor's data with another tensor's, without moving data in
    * memory.
    * @param other The tensor whose data to be swapped with this tensor's.
