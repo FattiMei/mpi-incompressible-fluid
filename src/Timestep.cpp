@@ -167,6 +167,7 @@ constexpr Real b3 = (3.0 / 4.0);
 
     }
 
+
     void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
                   VelocityTensor &rhs_buffer, Real t_n) {
   const Constants &constants = velocity.constants;
