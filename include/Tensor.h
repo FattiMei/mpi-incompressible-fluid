@@ -61,21 +61,22 @@ private:
    * The data buffer
    */
   std::array<DimensionsType, SpaceDim> _dimensions;
-  /*!
-   * The tensor dimensions
-   */
-  alignas(32) __restrict_arr std::vector<Type> _data;
-  /*!
-   * Cache the strindes for indexing
-   * Not saving the 1D stride as it can be retrieved with the dimensions
-   */
+        /*!
+         * Cache the strindes for indexing
+         * Not saving the 1D stride as it can be retrieved with the dimensions
+         */
   alignas(32) __restrict_arr std::array<DimensionsType, SpaceDim - 1> _strides;
   /*!
    * Initialization status
    */
   bool initialized = false;
 
-public:
+    protected:
+/*!
+ * The tensor dimensions
+ */
+        alignas(32) __restrict_arr std::vector<Type> _data;
+    public:
   /*!
    * A flag to retrieve the total data count contained in the underlying buffer
    */
@@ -84,12 +85,13 @@ public:
    * Constructor
    * @param in_dimensions The tensor dimensions defining its dimension
    */
-  Tensor(const std::array<DimensionsType, SpaceDim> &in_dimensions, const Constants &constants)
+  Tensor(const std::array<DimensionsType, SpaceDim> &in_dimensions)
       : _dimensions(in_dimensions),
-        _data() {
+        _data(std::accumulate(in_dimensions.begin(), in_dimensions.end(),
+                              static_cast<DimensionsType>(1),
+                              std::multiplies<DimensionsType>()),
+              static_cast<Type>(0)) {
     resize<false>(in_dimensions);
-      //TODO: bad practice
-      _data.resize(constants.Nx * constants.Ny * constants.Nz);
   }
 
         /*!
@@ -149,7 +151,7 @@ public:
    * Indexes dispatching is performed at compile time
    */
   template <typename T, T... Values>
-  constexpr Type operator()(const std::integer_sequence<T, Values...>) __restrict__
+  constexpr Type operator()(const std::integer_sequence<T, Values...>)
   const {
     constexpr unsigned size = integer_sequence_size<T, Values...>::value;
     static_assert(size > 0 && size < 4,

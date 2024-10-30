@@ -20,12 +20,43 @@ namespace mif {
  * @param in_dimensions The dimensions of the tensor.
  */
 class StaggeredTensor : public Tensor<Real, 3U, size_t> {
+private:
+    std::array<std::size_t, 3> _dimensions;
 public:
   StaggeredTensor(const Constants &constants,
                   const std::array<size_t, 3U> &in_dimensions)
-          : Tensor(in_dimensions, constants), constants(constants) {}
+          : Tensor({
+                           constants.Nx, constants.Ny, constants.Nz //decouple the real dimension from the indexing
+                   }) {
+      _dimensions = in_dimensions;
+      this->constants = &constants;
+  }
 
-  const Constants &constants;
+
+    //overload the () operator
+
+    constexpr Real operator()(const size_t i, const size_t j,
+                              const size_t k) __restrict__
+    const {
+        return _data[i * constants->Ny * constants->Nz + j * constants->Nz + k];
+    }
+
+    /*!
+     * Retrieve a reference of an element stored inside the tensor
+     * Indexes dispatching is performed at compile time
+     */
+
+    constexpr Real &operator()(const size_t i, const size_t j,
+                               const size_t k) {
+        return _data[i * constants->Ny * constants->Nz + j * constants->Nz + k];
+    }
+
+    std::array<std::size_t, 3> const &sizes() const {
+        return _dimensions;
+    }
+
+
+    const Constants *constants = nullptr;
 
   /*!
    * Evaluate the function f, depending on x,y,z, on an index of this
@@ -60,15 +91,15 @@ public:
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.dx * i + constants.dx_over_2, constants.dy * j,
-             constants.dz * k);
+      return f(constants->dx * i + constants->dx_over_2, constants->dy * j,
+               constants->dz * k);
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.dx * i + constants.dx_over_2, constants.dy * j,
-             constants.dz * k);
+      return f(time, constants->dx * i + constants->dx_over_2, constants->dy * j,
+               constants->dz * k);
   }
 };
 
@@ -82,15 +113,15 @@ public:
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.dx * i, constants.dy * j + constants.dy_over_2,
-             constants.dz * k);
+      return f(constants->dx * i, constants->dy * j + constants->dy_over_2,
+               constants->dz * k);
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.dx * i, constants.dy * j + constants.dy_over_2,
-             constants.dz * k);
+      return f(time, constants->dx * i, constants->dy * j + constants->dy_over_2,
+               constants->dz * k);
   }
 };
 
@@ -104,15 +135,15 @@ public:
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.dx * i, constants.dy * j,
-             constants.dz * k + constants.dz_over_2);
+      return f(constants->dx * i, constants->dy * j,
+               constants->dz * k + constants->dz_over_2);
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.dx * i, constants.dy * j,
-             constants.dz * k + constants.dz_over_2);
+      return f(time, constants->dx * i, constants->dy * j,
+               constants->dz * k + constants->dz_over_2);
   }
 };
 

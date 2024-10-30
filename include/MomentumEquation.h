@@ -21,7 +21,7 @@ namespace mif {
 inline Real calculate_diffusion_term(const StaggeredTensor *component,
                                      const size_t i, const size_t j,
                                      const size_t k) {
-  const Constants &constants = component->constants;
+        const Constants &constants = *component->constants;
 
   const Real result = ((*component)(i + 1, j, k) - 2 * (*component)(i, j, k) +
                        (*component)(i - 1, j, k)) *
