@@ -36,7 +36,7 @@ public:
     //overload the () operator
 
     constexpr Real operator()(const size_t i, const size_t j,
-                              const size_t k) __restrict__
+                              const size_t k) 
     const {
         return _data[i * constants->Ny * constants->Nz + j * constants->Nz + k];
     }
