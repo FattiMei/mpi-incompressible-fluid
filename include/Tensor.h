@@ -65,7 +65,7 @@ private:
          * Cache the strindes for indexing
          * Not saving the 1D stride as it can be retrieved with the dimensions
          */
-  alignas(32) __restrict_arr std::array<DimensionsType, SpaceDim - 1> _strides;
+   std::array<DimensionsType, SpaceDim - 1> _strides;
   /*!
    * Initialization status
    */
@@ -75,7 +75,7 @@ private:
 /*!
  * The tensor dimensions
  */
-        alignas(32) __restrict_arr std::vector<Type> _data;
+        std::vector<Type> _data;
     public:
   /*!
    * A flag to retrieve the total data count contained in the underlying buffer
