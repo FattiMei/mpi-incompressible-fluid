@@ -38,7 +38,7 @@
 
 // Set the values of a component of velocity calculating a function over
 // all of its points, or all internal points if include_border is false.
-#define VELOCITY_TENSOR_FUNCTION_ON_ALL_POINTS(tensor, function,               \
+/*#define VELOCITY_TENSOR_FUNCTION_ON_ALL_POINTS(tensor, function,               \
                                                include_border, args...)        \
   VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(tensor, include_border,              \
   tensor(i, j, k) = function(args);)
@@ -54,6 +54,6 @@
                                             args)                              \
     VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.w, f_w, include_border,   \
                                             args)                              \
-  }
+  }*/
 
 #endif // VELOCITY_TENSOR_MACROS_H
