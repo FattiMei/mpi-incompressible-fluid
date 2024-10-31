@@ -63,9 +63,9 @@ constexpr Real b3 = (3.0 / 4.0);
     const Constants &constants = velocity.constants;
 
     auto max_velocity = -1.0;
-    for (size_t i = 0; i < constants.Nx; i++) {
-      for (size_t j = 0; j < constants.Ny; j++) {
-        for (size_t k = 0; k < constants.Nz; k++) {
+    for (size_t i = 0; i < constants.Nx - 1; i++) {
+      for (size_t j = 0; j < constants.Ny - 1; j++) {
+        for (size_t k = 0; k < constants.Nz - 1; k++) {
           max_velocity = std::abs(std::max(max_velocity,
                                            std::max(std::abs(velocity.u(i, j, k)),
                                                     std::max(std::abs(velocity.v(i, j, k)),
