@@ -14,7 +14,7 @@ using namespace mif;
 int main() {
   std::cout << "deltax,deltat,l1,l2,linf" << std::endl;
 double target_cfl = 0.5;
-  for (int N = 256, ntime_steps = 64; N < 1024; N*=2, ntime_steps *= 2) {
+  for (int N = 256, ntime_steps = 64; N < 1024; N *= 2, ntime_steps *= 2) {
     const size_t Nx = N + 1;
     const size_t Ny = Nx;
     const size_t Nz = Nx;
@@ -31,19 +31,19 @@ double target_cfl = 0.5;
     velocity.set(exact_velocity.set_time(0.0), true);
 
     TimeVectorFunction forcing_term(forcing_x, forcing_y, forcing_z);
-       Real t = 0.0;
-       size_t step = 0;
+    Real t = 0.0;
+    size_t step = 0;
     Real last_dt = constants.dt;
-      for (;t<T; ) {
-          //prnt t every 100 iterations
-          step++;
-            if(step % 100 == 0){
-                std::cout << "t = " << t << std::endl;
-            }
+    for (; t < T;) {
+      //prnt t every 100 iterations
+      step++;
+      if (step % 100 == 0) {
+        std::cout << "t = " << t << std::endl;
+      }
 
 
-      last_dt=timestep(velocity, velocity_buffer, rhs_buffer, t,target_cfl,last_dt);
-        t+=last_dt;
+      last_dt=timestep(velocity, velocity_buffer, rhs_buffer, t, target_cfl, last_dt);
+      t += last_dt;
     }
 
     std::cout << constants.dx << ',' << constants.dt << ','

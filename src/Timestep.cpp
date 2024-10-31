@@ -6,6 +6,7 @@
 #include "MomentumEquation.h"
 #include "VelocityTensorMacros.h"
 #include <cmath>
+
 namespace mif {
 
 constexpr Real c2 = (8.0 / 15.0);
@@ -57,31 +58,26 @@ constexpr Real b3 = (3.0 / 4.0);
   COMPUTE_COMPONENT_##step(w) \
 }
 
-Real timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
-              VelocityTensor &rhs_buffer, Real t_n,Real target_cfl,Real last_dt) {
-
+  Real timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
+                VelocityTensor &rhs_buffer, Real t_n,Real target_cfl,Real last_dt) {
     const Constants &constants = velocity.constants;
 
-  //print cfl condition to check if the timestep is stable
-  auto max_velocity = -1.0;
-  for(size_t i = 0; i < constants.Nx; i++){
-    for(size_t j = 0; j < constants.Ny; j++){
-      for(size_t k = 0; k < constants.Nz; k++){
-        max_velocity = std::abs(std::max(max_velocity, std::max(std::abs(velocity.u(i,j,k)), std::max(std::abs(velocity.v(i,j,k)), std::abs(velocity.w(i,j,k))))));
+    auto max_velocity = -1.0;
+    for (size_t i = 0; i < constants.Nx; i++) {
+      for (size_t j = 0; j < constants.Ny; j++) {
+        for (size_t k = 0; k < constants.Nz; k++) {
+          max_velocity = std::abs(std::max(max_velocity,
+                                           std::max(std::abs(velocity.u(i, j, k)),
+                                                    std::max(std::abs(velocity.v(i, j, k)),
+                                                             std::abs(velocity.w(i, j, k))))));
+        }
       }
     }
-  }
-  /*  std::cout << "CFL condition: " << max_velocity * constants.dt / constants.dx << std::endl;
-  //prnt what iis the target condition
-    std::cout << "Target CFL condition: " << 0.5 << std::endl;*/
+    /*  std::cout << "CFL condition: " << max_velocity * constants.dt / constants.dx << std::endl;
+      std::cout << "Target CFL condition: " << 0.5 << std::endl;*/
 
-    //compute the dt to reach the target condition
-  Real target_dt =constants.dx * target_cfl / max_velocity;
-
-  //limit variance to 2*last_dt and 0.5 last dt
-  Real dt = std::clamp(target_dt,0.5*last_dt,2.0*last_dt);
-
-
+    Real target_dt = constants.dx * target_cfl / max_velocity;
+    Real dt = std::clamp(target_dt, 0.5 * last_dt, 2.0 * last_dt);
 
 
     const Real time_1 = t_n + c2 * dt;
@@ -89,26 +85,23 @@ Real timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
     const Real final_time = t_n + dt;
 
 
-
-
-
-  // Stage 1.
+    // Stage 1.
   // Apply Dirichlet boundary conditions.
   velocity_buffer.apply_all_dirichlet_bc(time_1);
 
   // Compute the solution inside the domain.
-  COMPUTE_STEP(Y2)
+    COMPUTE_STEP(Y2)
 
-  // Stage 2.
-  // Apply Dirichlet boundary conditions.
-  velocity.apply_all_dirichlet_bc(time_2);
+    // Stage 2.
+    // Apply Dirichlet boundary conditions.
+    velocity.apply_all_dirichlet_bc(time_2);
 
   // Compute the solution inside the domain.
   COMPUTE_STEP(Y3)
 
   // Stage 3. u_n
   // Apply Dirichlet boundary conmy rk do not converge n time, t dfiverge the more timestep putditions.
-  velocity_buffer.apply_all_dirichlet_bc(final_time);
+    velocity_buffer.apply_all_dirichlet_bc(final_time);
 
   // Compute the solution inside the domain.
   COMPUTE_STEP(U_STAR)
