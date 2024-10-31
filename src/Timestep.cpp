@@ -5,7 +5,7 @@
 #include "Timestep.h"
 #include "MomentumEquation.h"
 #include "VelocityTensorMacros.h"
-
+#include <cmath>
 namespace mif {
 
 constexpr Real c2 = (8.0 / 15.0);
@@ -19,7 +19,7 @@ constexpr Real b3 = (3.0 / 4.0);
 // Compute a component of Y2 (first step of the method).
 #define COMPUTE_COMPONENT_Y2(component) {                                                   \
   VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                        \
-    const Real dt = velocity.constants.dt;                                                  \
+                                                 \
     const Real rhs =                                                                        \
         calculate_momentum_rhs_with_forcing_##component(velocity, i, j, k, t_n);            \
     rhs_buffer.component(i,j,k) = rhs;                                                      \
@@ -30,7 +30,7 @@ constexpr Real b3 = (3.0 / 4.0);
 // Compute a component of Y3 (second step of the method).
 #define COMPUTE_COMPONENT_Y3(component) {                                                   \
   VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                        \
-    const Real dt = velocity.constants.dt;                                                  \
+                                                   \
     const Real rhs = rhs_buffer.component(i,j,k);                                           \
     rhs_buffer.component(i,j,k) = velocity.component(i, j, k) + dt * (b1 * rhs);            \
     velocity.component(i, j, k) = velocity.component(i, j, k) +                             \
@@ -42,7 +42,7 @@ constexpr Real b3 = (3.0 / 4.0);
 // Compute a component of U* (third and last step of the method).
 #define COMPUTE_COMPONENT_U_STAR(component) {                                               \
   VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                        \
-    const Real dt = velocity.constants.dt;                                                  \
+                                                     \
     const Real rhs = rhs_buffer.component(i,j,k);                                           \
     velocity_buffer.component(i, j, k) = rhs + dt * (b3 *                                  \
               calculate_momentum_rhs_with_forcing_##component(velocity, i, j, k, time_2));  \
@@ -57,12 +57,40 @@ constexpr Real b3 = (3.0 / 4.0);
   COMPUTE_COMPONENT_##step(w) \
 }
 
-void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
-              VelocityTensor &rhs_buffer, Real t_n) {
-  const Constants &constants = velocity.constants;
-  const Real time_1 = t_n + c2 * constants.dt;
-  const Real time_2 = t_n + c3 * constants.dt;
-  const Real final_time = t_n + constants.dt;
+Real timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
+              VelocityTensor &rhs_buffer, Real t_n,Real target_cfl,Real last_dt) {
+
+    const Constants &constants = velocity.constants;
+
+  //print cfl condition to check if the timestep is stable
+  auto max_velocity = -1.0;
+  for(size_t i = 0; i < constants.Nx; i++){
+    for(size_t j = 0; j < constants.Ny; j++){
+      for(size_t k = 0; k < constants.Nz; k++){
+        max_velocity = std::abs(std::max(max_velocity, std::max(std::abs(velocity.u(i,j,k)), std::max(std::abs(velocity.v(i,j,k)), std::abs(velocity.w(i,j,k))))));
+      }
+    }
+  }
+  /*  std::cout << "CFL condition: " << max_velocity * constants.dt / constants.dx << std::endl;
+  //prnt what iis the target condition
+    std::cout << "Target CFL condition: " << 0.5 << std::endl;*/
+
+    //compute the dt to reach the target condition
+  Real target_dt =constants.dx * target_cfl / max_velocity;
+
+  //limit variance to 2*last_dt and 0.5 last dt
+  Real dt = std::clamp(target_dt,0.5*last_dt,2.0*last_dt);
+
+
+
+
+    const Real time_1 = t_n + c2 * dt;
+    const Real time_2 = t_n + c3 * dt;
+    const Real final_time = t_n + dt;
+
+
+
+
 
   // Stage 1.
   // Apply Dirichlet boundary conditions.
@@ -79,7 +107,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   COMPUTE_STEP(Y3)
 
   // Stage 3. u_n
-  // Apply Dirichlet boundary conditions.
+  // Apply Dirichlet boundary conmy rk do not converge n time, t dfiverge the more timestep putditions.
   velocity_buffer.apply_all_dirichlet_bc(final_time);
 
   // Compute the solution inside the domain.
@@ -87,6 +115,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
 
   // Put the solution in the original tensors.
   velocity.swap_data(velocity_buffer);
+  return dt;
 }
 
 } // namespace mif
