@@ -202,7 +202,7 @@ public:
    * @param k third dimension index
    */
   constexpr Type operator()(const DimensionsType i, const DimensionsType j,
-                            const DimensionsType k) const {
+                            const DimensionsType k) const noexcept {
     return _data[i * _strides[0] + j * _strides[1] + k];
   }
   /*!
@@ -212,7 +212,7 @@ public:
    * @param k third dimension index
    */
   constexpr Type &operator()(const DimensionsType i, const DimensionsType j,
-                             const DimensionsType k) {
+                             const DimensionsType k) noexcept {
     return _data[i * _strides[0] + j * _strides[1] + k];
   }
   /*!

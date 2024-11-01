@@ -1,14 +1,17 @@
-#ifndef MANUFACTURED__H
-#define MANUFACTURED__H
+#ifndef MANUFACTURED_HH
+#define MANUFACTURED_HH
+#include <Real.h>
+#include <cmath>
+extern Real Reynolds;
 
-extern double Reynolds;
 
-double u_exact(double t, double x, double y, double z);
-double v_exact(double t, double x, double y, double z);
-double w_exact(double t, double x, double y, double z);
-double p_exact(double t, double x, double y, double z);
-double forcing_x(double t, double x, double y, double z);
-double forcing_y(double t, double x, double y, double z);
-double forcing_z(double t, double x, double y, double z);
+const Real u_exact(Real t, Real x, Real y, Real z) noexcept;
+const Real v_exact(Real t, Real x, Real y, Real z)noexcept;
+const Real w_exact(Real t, Real x, Real y, Real z)noexcept;
 
-#endif // MANUFACTURED__H
+const Real p_exact(Real t, Real x, Real y, Real z) noexcept;
+const Real forcing_x(Real t, Real x, Real y, Real z) noexcept;
+const Real forcing_y(Real t, Real x, Real y, Real z)noexcept;
+const Real forcing_z(Real t, Real x, Real y, Real z)noexcept;
+
+#endif // MANUFACTURED_HH

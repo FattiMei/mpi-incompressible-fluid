@@ -41,7 +41,7 @@ void StaggeredTensor::print(const std::function<bool(Real)> &filter) const {
         components({&this->u,&this->v,&this->w}),
         constants(constants) {}
 
-void VelocityTensor::swap_data(VelocityTensor &other) {
+void VelocityTensor::swap_data(VelocityTensor &other) noexcept{
   for (size_t component = 0; component < 3U; component++) {
     components[component]->swap_data(*(other.components[component]));
   }
@@ -68,16 +68,39 @@ void VelocityTensor::set(const VectorFunction &f, bool include_border) {
   }
 }
 
+  void VelocityTensor::set(const TimeVectorFunction &f, bool include_border,Real time) {
+  const size_t lower_limit = include_border ? 0 : 1;
+  for (size_t component = 0; component < 3U; component++) {
+    StaggeredTensor *tensor = components[component];
+    const std::array<size_t, 3> &sizes = tensor->sizes();
+    const auto *func = f.components[component];
+    const size_t upper_limit_i = include_border ? sizes[0] : sizes[0] - 1;
+    const size_t upper_limit_j = include_border ? sizes[1] : sizes[1] - 1;
+    const size_t upper_limit_k = include_border ? sizes[2] : sizes[2] - 1;
+
+    for (size_t i = lower_limit; i < upper_limit_i; i++) {
+      for (size_t j = lower_limit; j < upper_limit_j; j++) {
+ #pragma GCC ivdep
+        for (size_t k = lower_limit; k < upper_limit_k; k++) {
+          (*tensor)(i, j, k) =
+              tensor->evaluate_function_at_index(time,i, j, k, *func);
+        }
+      }
+    }
+  }
+}
+
 void VelocityTensor::apply_all_dirichlet_bc(Real time) {
   for (size_t component = 0; component < 3U; component++) {
     StaggeredTensor *tensor = components[component];
     const std::array<size_t, 3> sizes = tensor->sizes();
-    const std::function<Real(Real, Real, Real, Real)> &func =
+   const Real (*func)(Real, Real, Real,Real) noexcept=
         (component == 0) ? u_exact : (component == 1 ? v_exact : w_exact);
 
     // Face 1: z=0
     if (component == 2) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
+ #pragma GCC ivdep
         for (size_t j = 1; j < constants.Ny - 1; j++) {
           const Real w_at_boundary =
               func(time, i * constants.dx, j * constants.dy, 0);
@@ -94,6 +117,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       }
     } else {
       for (size_t i = 0; i < sizes[0]; i++) {
+ #pragma GCC ivdep
         for (size_t j = 0; j < sizes[1]; j++) {
           (*tensor)(i, j, 0) =
               tensor->evaluate_function_at_index(time, i, j, 0, func);
@@ -104,6 +128,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     // Face 2: z=z_max
     if (component == 2) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
+ #pragma GCC ivdep
         for (size_t j = 1; j < constants.Ny - 1; j++) {
           const Real w_at_boundary =
               func(time, i * constants.dx, j * constants.dy, constants.z_size);
@@ -123,6 +148,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       }
     } else {
       for (size_t i = 0; i < sizes[0]; i++) {
+ #pragma GCC ivdep
         for (size_t j = 0; j < sizes[1]; j++) {
           (*tensor)(i, j, constants.Nz - 1) =
               tensor->evaluate_function_at_index(time, i, j, constants.Nz - 1,
@@ -134,6 +160,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     // Face 3: y=0
     if (component == 1) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
+ #pragma GCC ivdep
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real v_at_boundary =
               func(time, i * constants.dx, 0, k * constants.dz);
@@ -150,6 +177,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       }
     } else {
       for (size_t i = 0; i < sizes[0]; i++) {
+ #pragma GCC ivdep
         for (size_t k = 0; k < sizes[2]; k++) {
           (*tensor)(i, 0, k) =
               tensor->evaluate_function_at_index(time, i, 0, k, func);
@@ -160,6 +188,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     // Face 4: y=y_max
     if (component == 1) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
+ #pragma GCC ivdep
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real v_at_boundary =
               func(time, i * constants.dx, constants.y_size, k * constants.dz);
@@ -179,6 +208,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       }
     } else {
       for (size_t i = 0; i < sizes[0]; i++) {
+ #pragma GCC ivdep
         for (size_t k = 0; k < sizes[2]; k++) {
           (*tensor)(i, constants.Ny - 1, k) =
               tensor->evaluate_function_at_index(time, i, constants.Ny - 1, k,
@@ -190,6 +220,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     // Face 5: x=0
     if (component == 0) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
+ #pragma GCC ivdep
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real u_at_boundary =
               func(time, 0, j * constants.dy, k * constants.dz);
@@ -206,6 +237,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       }
     } else {
       for (size_t j = 0; j < sizes[1]; j++) {
+ #pragma GCC ivdep
         for (size_t k = 0; k < sizes[2]; k++) {
           (*tensor)(0, j, k) =
               tensor->evaluate_function_at_index(time, 0, j, k, func);
@@ -216,6 +248,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     // Face 6: x=x_max
     if (component == 0) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
+ #pragma GCC ivdep
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real u_at_boundary =
               func(time, constants.x_size, j * constants.dy, k * constants.dz);
@@ -235,6 +268,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       }
     } else {
       for (size_t j = 0; j < sizes[1]; j++) {
+ #pragma GCC ivdep
         for (size_t k = 0; k < sizes[2]; k++) {
           (*tensor)(constants.Nx - 1, j, k) =
               tensor->evaluate_function_at_index(time, constants.Nx - 1, j, k,

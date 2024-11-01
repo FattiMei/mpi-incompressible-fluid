@@ -5,7 +5,7 @@ namespace mif {
 
 Constants::Constants(size_t Nx, size_t Ny, size_t Nz, Real x_size, Real y_size,
                      Real z_size, Real Re, Real final_time,
-                     unsigned int num_time_steps)
+                     unsigned int num_time_steps) noexcept
     : x_size(x_size), y_size(y_size), z_size(z_size), Nx(Nx), Ny(Ny), Nz(Nz), 
       Re(Re), final_time(final_time), num_time_steps(num_time_steps),
       dt(final_time / num_time_steps), dx(x_size / (Nx - 1)), 

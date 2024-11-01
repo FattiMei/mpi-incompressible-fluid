@@ -6,7 +6,7 @@
 
 namespace mif {
 
-#define Real double
+#define Real float
 
 } // namespace mif
 

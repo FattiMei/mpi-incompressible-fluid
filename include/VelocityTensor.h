@@ -37,13 +37,13 @@ public:
    * @param f The function to evaluate.
    * @param constants An object containing information on the domain.
    */
-  virtual inline Real evaluate_function_at_index(
+  virtual inline Real __attribute__((nothrow)) evaluate_function_at_index(
       size_t i, size_t j, size_t k,
-      const std::function<Real(Real, Real, Real)> &f) const = 0;
+      const Real (*f)(Real, Real, Real) noexcept) const noexcept = 0;
 
-  virtual inline Real evaluate_function_at_index(
+  virtual inline Real __attribute__((nothrow)) evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
-      const std::function<Real(Real, Real, Real, Real)> &f) const = 0;
+      const Real (*f)(Real, Real, Real,Real) noexcept) const noexcept = 0;
 
   // A debug function to print the tensor.
   void print() const;
@@ -57,18 +57,18 @@ public:
       : StaggeredTensor(constants,
                         {constants.Nx - 1, constants.Ny, constants.Nz}) {}
 
-  inline Real evaluate_function_at_index(
+  inline Real __attribute__((nothrow)) evaluate_function_at_index(
       size_t i, size_t j, size_t k,
-      const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.dx * i + constants.dx_over_2, constants.dy * j,
-             constants.dz * k);
+      const Real (*f)(Real, Real, Real) noexcept) const noexcept override {
+      return f(constants.dx * i + constants.dx_over_2, constants.dy * j,
+               constants.dz * k);
   }
 
-  inline Real evaluate_function_at_index(
+  Real __attribute__((nothrow )) evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
-      const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.dx * i + constants.dx_over_2, constants.dy * j,
-             constants.dz * k);
+      const Real (*f)(Real, Real, Real,Real) noexcept) const noexcept override {
+      return f(time, constants.dx * i + constants.dx_over_2, constants.dy * j,
+               constants.dz * k);
   }
 };
 
@@ -81,16 +81,16 @@ public:
 
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
-      const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.dx * i, constants.dy * j + constants.dy_over_2,
-             constants.dz * k);
+      const Real (*f)(Real, Real, Real) noexcept) const noexcept override {
+      return f(constants.dx * i, constants.dy * j + constants.dy_over_2,
+               constants.dz * k);
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
-      const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.dx * i, constants.dy * j + constants.dy_over_2,
-             constants.dz * k);
+      const Real (*f)(Real, Real, Real,Real) noexcept) const noexcept override {
+      return f(time, constants.dx * i, constants.dy * j + constants.dy_over_2,
+               constants.dz * k);
   }
 };
 
@@ -99,20 +99,21 @@ class WTensor : public StaggeredTensor {
 public:
   WTensor(const Constants &constants)
       : StaggeredTensor(constants,
-                        {constants.Nx, constants.Ny, constants.Nz - 1}) {}
-
-  inline Real evaluate_function_at_index(
-      size_t i, size_t j, size_t k,
-      const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.dx * i, constants.dy * j,
-             constants.dz * k + constants.dz_over_2);
+                        {constants.Nx, constants.Ny, constants.Nz - 1}) {
   }
 
-  inline Real evaluate_function_at_index(
+  inline Real __attribute__((nothrow )) evaluate_function_at_index(
+      size_t i, size_t j, size_t k,
+      const Real (*f)(Real, Real, Real) noexcept) const noexcept override {
+      return f(constants.dx * i, constants.dy * j,
+               constants.dz * k + constants.dz_over_2);
+  }
+
+  inline Real __attribute__((nothrow )) evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
-      const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.dx * i, constants.dy * j,
-             constants.dz * k + constants.dz_over_2);
+      const Real (*f)(Real, Real, Real,Real) noexcept) const noexcept override {
+      return f(time, constants.dx * i, constants.dy * j,
+               constants.dz * k + constants.dz_over_2);
   }
 };
 
@@ -135,15 +136,17 @@ public:
 
   // Swap this tensor's data with another's in constant time by swapping
   // pointers.
-  void swap_data(VelocityTensor &other);
+  void swap_data(VelocityTensor &other) noexcept;
 
   // Set all components of the tensor in all points using the respective
   // components of the function.
   void set(const VectorFunction &f, bool include_border);
 
+  void set(const TimeVectorFunction &f, bool include_border, float time);
+
   // Apply Dirichlet boundary conditions to all components of the velocity
   // on all boundaries. The function assumes the velocity field is
-  // divergence free.
+  // divergence-free.
   void apply_all_dirichlet_bc(Real time);
 };
 
