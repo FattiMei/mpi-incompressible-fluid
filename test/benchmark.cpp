@@ -3,7 +3,7 @@
 #include "Timestep.h"
 #include <benchmark/benchmark.h>
 
-double Reynolds = 1e6;
+Real Reynolds = 1e6;
 constexpr Real Lx = 1.0;
 constexpr Real Ly = 1.0;
 constexpr Real Lz = 1.0;
@@ -35,16 +35,18 @@ static void timestepper(benchmark::State &state) {
   VelocityTensor rhs_buffer(constants);
 
   TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
-  velocity.set(exact_velocity.set_time(0.0), true);
+  velocity.set(exact_velocity, true, 0.);
 
   TimeVectorFunction forcing_term(forcing_x, forcing_y, forcing_z);
 
   int step = 0;
+  Real t = 0.0;
+  Real last_t = 1e-6;
   for (auto _ : state) {
-    const Real t = step * constants.dt;
+    Real target_cfl = 0.5;
 
-    timestep(velocity, velocity_buffer, rhs_buffer, t);
-
+    last_t = timestep(velocity, velocity_buffer, rhs_buffer, t, target_cfl, last_t);
+    t += deltat;
     ++step;
   }
 

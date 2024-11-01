@@ -19,6 +19,7 @@ public:
   const Real Re;
   const Real final_time;
   const unsigned int num_time_steps;
+    Real max_velocity;
 
   // Derived constants (computed here once for efficiency).
   const Real dt;
@@ -45,7 +46,7 @@ public:
 
   // Constructor.
   Constants(size_t Nx, size_t Ny, size_t Nz, Real x_size, Real y_size,
-            Real z_size, Real Re, Real final_time, unsigned int num_time_steps);
+            Real z_size, Real Re, Real final_time, unsigned int num_time_steps) noexcept;
 };
 
 } // namespace mif

@@ -33,7 +33,7 @@ Real compute_error(
             (velocity.v(i, j - 1, k) + velocity.v(i, j, k)) / 2.0;
         const Real interpolated_w =
             (velocity.w(i, j, k - 1) + velocity.w(i, j, k)) / 2.0;
-        const Real u_error = u_exact(time, x, y, z) - interpolated_u;
+        const Real u_error = u_exact( time,x, y, z) - interpolated_u;
         const Real v_error = v_exact(time, x, y, z) - interpolated_v;
         const Real w_error = w_exact(time, x, y, z) - interpolated_w;
 

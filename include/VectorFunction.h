@@ -14,14 +14,14 @@ namespace mif {
 // output. This can be seen as a single function from R^3 to R^3.
 class VectorFunction {
 public:
-  VectorFunction(const std::function<Real(Real, Real, Real)> f_u,
-                 const std::function<Real(Real, Real, Real)> f_v,
-                 const std::function<Real(Real, Real, Real)> f_w);
+  VectorFunction(const  Real (*f_u)(Real, Real, Real)noexcept,
+                 const  Real (*f_v)(Real, Real, Real)noexcept,
+                 const  Real (*f_w)(Real, Real, Real)noexcept);
 
-  const std::function<Real(Real, Real, Real)> f_u;
-  const std::function<Real(Real, Real, Real)> f_v;
-  const std::function<Real(Real, Real, Real)> f_w;
-  const std::array<const std::function<Real(Real, Real, Real)> *, 3> components;
+  const  Real (*f_u)(Real, Real, Real)noexcept;
+  const Real (*f_v)(Real, Real, Real)noexcept;
+  const  Real (*f_w)(Real, Real, Real)noexcept;
+  const std::array<const Real (**)(Real, Real, Real) noexcept, 3> components;
 };
 
 // A collection of 3 functions with 4 Real inputs (t,x,y,z) and one Real
@@ -29,19 +29,21 @@ public:
 // used to represent a time-dependent vector field.
 class TimeVectorFunction {
 public:
-  TimeVectorFunction(const std::function<Real(Real, Real, Real, Real)> f_u,
-                     const std::function<Real(Real, Real, Real, Real)> f_v,
-                     const std::function<Real(Real, Real, Real, Real)> f_w);
+    Real time;
+    TimeVectorFunction(const  Real (*f_u)(Real, Real, Real,Real)noexcept,
+                   const  Real (*f_v)(Real, Real, Real,Real)noexcept,
+                   const  Real (*f_w)(Real, Real, Real,Real)noexcept);
 
-  const std::function<Real(Real, Real, Real, Real)> f_u;
-  const std::function<Real(Real, Real, Real, Real)> f_v;
-  const std::function<Real(Real, Real, Real, Real)> f_w;
-  const std::array<const std::function<Real(Real, Real, Real, Real)> *, 3>
+   const  Real (*f_u)(Real, Real, Real,Real)noexcept;
+    const  Real (*f_v)(Real, Real, Real,Real)noexcept;
+    const  Real (*f_w)(Real, Real, Real,Real)noexcept;
+  const std::array<const Real (**)(Real, Real, Real,Real) noexcept, 3>
       components;
 
   // This method projects the TimeVectorFunction to a VectorFunction at a
   // given time, by removing the time dependency.
-  VectorFunction set_time(Real time) const;
+  // VectorFunction set_time(Real time) const;
+
 };
 
 } // namespace mif
