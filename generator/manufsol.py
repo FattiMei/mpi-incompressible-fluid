@@ -65,8 +65,16 @@ if __name__ == '__main__':
 
     for function_name, code in codegen_result:
         # Change the function signature to use `const Real` and `noexcept`
-        modified_code = str(code).replace('double', 'Real').replace('Real z)', 'Real z)noexcept')
+        modified_code = str(code).replace('double', 'Real').replace('Real z)', 'Real z)noexcept').replace('Real x',
+                                                                                                          'const Real x').replace(
+            'Real y', 'const Real y').replace('Real z', 'const Real z').replace('Real t', 'const Real t')
         output_code += modified_code + '\n\n'
+
+    import re
+
+    output_code = re.sub(
+        r'(Real\s\w+\(const Real\s\w+,\sconst Real\s\w+,\sconst Real\s\w+,\sconst Real\s\w+\)noexcept)', r'const \1',
+        output_code)
 
     # Print the modified C code
     print(output_code)
