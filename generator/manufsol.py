@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     # Change the return type and argument types in the generated C code
     # Modify the generated code for compatibility with the specified format
-    output_code = "#define sin sinf\n#define cos cosf\n#define pow(x, y) x*x\n"
+    output_code = ""
 
     for function_name, code in codegen_result:
         # Change the function signature to use `const Real` and `noexcept`
