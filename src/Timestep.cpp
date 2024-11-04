@@ -17,19 +17,18 @@ namespace mif {
     constexpr Real b1 = (1.0 / 4.0);
     constexpr Real b3 = (3.0 / 4.0);
 
-
-    Real timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
+Real timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
                   VelocityTensor &rhs_buffer, Real t_n,Real target_cfl,Real last_dt) {
         const Constants &constants = velocity.constants;
 
         float max_velocity = -1.0;
         for (size_t i = 0; i < constants.Nx - 2; i++) {
             for (size_t j = 0; j < constants.Ny - 2; j++) {
-#pragma GCC ivdep
+#pragma omp simd
                 for (size_t k = 0; k < constants.Nz - 2; k++) {
                     max_velocity = std::max(max_velocity, std::abs(velocity.u(i, j, k)));
                     max_velocity = std::max(max_velocity, std::abs(velocity.v(i, j, k)));
-                    max_velocity = std::max(max_velocity, std::abs(velocity.w(i, j, k)));
+   1                 max_velocity = std::max(max_velocity, std::abs(velocity.w(i, j, k)));
                 }
             }
         }
@@ -58,7 +57,7 @@ namespace mif {
                     upper_limit_z = sizes[2] - 1;
                     for (size_t i = lower_limit; i < upper_limit_x; i++) {
                         for (size_t j = lower_limit; j < upper_limit_y; j++) {
-#pragma GCC ivdep
+#pragma omp simd
                             for (size_t k = lower_limit; k < upper_limit_z; k++) {
                                 const Real rhs = calculate_momentum_rhs_with_forcing_u(velocity, i, j, k, t_n);
                                 rhs_buffer.u(i, j, k) = rhs;
@@ -77,7 +76,7 @@ namespace mif {
                     upper_limit_z = sizes[2] - 1;
                     for (size_t i = lower_limit; i < upper_limit_x; i++) {
                         for (size_t j = lower_limit; j < upper_limit_y; j++) {
-#pragma GCC ivdep
+#pragma omp simd
                             for (size_t k = lower_limit; k < upper_limit_z; k++) {
                                 const Real rhs = calculate_momentum_rhs_with_forcing_v(velocity, i, j, k, t_n);
                                 rhs_buffer.v(i, j, k) = rhs;
@@ -96,7 +95,7 @@ namespace mif {
                     upper_limit_z = sizes[2] - 1;
                     for (size_t i = lower_limit; i < upper_limit_x; i++) {
                         for (size_t j = lower_limit; j < upper_limit_y; j++) {
-#pragma GCC ivdep
+#pragma omp simd
                             for (size_t k = lower_limit; k < upper_limit_z; k++) {
                                 const Real rhs = calculate_momentum_rhs_with_forcing_w(velocity, i, j, k, t_n);
                                 rhs_buffer.w(i, j, k) = rhs;
@@ -124,7 +123,7 @@ namespace mif {
                     upper_limit_z = sizes[2] - 1;
                     for (size_t i = lower_limit; i < upper_limit_x; i++) {
                         for (size_t j = lower_limit; j < upper_limit_y; j++) {
-#pragma GCC ivdep
+#pragma omp simd
                             for (size_t k = lower_limit; k < upper_limit_z; k++) {
                                 const Real rhs = rhs_buffer.u(i, j, k);
                                 rhs_buffer.u(i, j, k) = velocity.u(i, j, k) + dt * (b1 * rhs);
@@ -146,7 +145,7 @@ namespace mif {
                     upper_limit_z = sizes[2] - 1;
                     for (size_t i = lower_limit; i < upper_limit_x; i++) {
                         for (size_t j = lower_limit; j < upper_limit_y; j++) {
-#pragma GCC ivdep
+#pragma omp simd
                             for (size_t k = lower_limit; k < upper_limit_z; k++) {
                                 const Real rhs = rhs_buffer.v(i, j, k);
                                 rhs_buffer.v(i, j, k) = velocity.v(i, j, k) + dt * (b1 * rhs);
@@ -168,7 +167,7 @@ namespace mif {
                     upper_limit_z = sizes[2] - 1;
                     for (size_t i = lower_limit; i < upper_limit_x; i++) {
                         for (size_t j = lower_limit; j < upper_limit_y; j++) {
-#pragma GCC ivdep
+#pragma omp simd
                             for (size_t k = lower_limit; k < upper_limit_z; k++) {
                                 const Real rhs = rhs_buffer.w(i, j, k);
                                 rhs_buffer.w(i, j, k) = velocity.w(i, j, k) + dt * (b1 * rhs);
@@ -199,7 +198,7 @@ namespace mif {
                     upper_limit_z = sizes[2] - 1;
                     for (size_t i = lower_limit; i < upper_limit_x; i++) {
                         for (size_t j = lower_limit; j < upper_limit_y; j++) {
-#pragma GCC ivdep
+#pragma omp simd
                             for (size_t k = lower_limit; k < upper_limit_z; k++) {
                                 const Real rhs = rhs_buffer.u(i, j, k);
                                 velocity_buffer.u(i, j, k) = rhs + dt * (b3 * calculate_momentum_rhs_with_forcing_u(
@@ -218,7 +217,7 @@ namespace mif {
                     upper_limit_z = sizes[2] - 1;
                     for (size_t i = lower_limit; i < upper_limit_x; i++) {
                         for (size_t j = lower_limit; j < upper_limit_y; j++) {
-#pragma GCC ivdep
+#pragma omp simd
                             for (size_t k = lower_limit; k < upper_limit_z; k++) {
                                 const Real rhs = rhs_buffer.v(i, j, k);
                                 velocity_buffer.v(i, j, k) = rhs + dt * (b3 * calculate_momentum_rhs_with_forcing_v(
@@ -237,7 +236,7 @@ namespace mif {
                     upper_limit_z = sizes[2] - 1;
                     for (size_t i = lower_limit; i < upper_limit_x; i++) {
                         for (size_t j = lower_limit; j < upper_limit_y; j++) {
-#pragma GCC ivdep
+#pragma omp simd
                             for (size_t k = lower_limit; k < upper_limit_z; k++) {
                                 const Real rhs = rhs_buffer.w(i, j, k);
                                 velocity_buffer.w(i, j, k) = rhs + dt * (b3 * calculate_momentum_rhs_with_forcing_w(

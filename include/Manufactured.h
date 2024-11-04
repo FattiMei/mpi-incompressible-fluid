@@ -2,8 +2,8 @@
 #define MANUFACTURED_HH
 #include <Real.h>
 #include <cmath>
-#define sin sinf
-#define cos cosf
+#define sin(x) sinf(x)
+#define cos(x) cosf(x)
 #define pow(x, h) x*x
 extern Real Reynolds;
 
