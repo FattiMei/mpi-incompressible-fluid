@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -mtune=native -fopenmp-simd -fopt-info-all -ftree-vectorizer-verbose=2\
-	-funroll-loops  -flto  -fno-signed-zeros -fassociative-math -freciprocal-math -ffast-math  -fpermissive -ffunction-sections -fdata-sections -fsection-anchors -mhard-float -mpc64 -mvzeroupper -mrecip=all -mtls-dialect=gnu2 -maccumulate-outgoing-args -fno-stack-protector -fpic -fPIC -mno-red-zone\
+	-funroll-loops  -flto  -fno-signed-zeros -fassociative-math -freciprocal-math -ffast-math  -fpermissive -ffunction-sections -fdata-sections -fsection-anchors -mhard-float -mpc64 -mvzeroupper -mrecip=all -mtls-dialect=gnu2 -maccumulate-outgoing-args -fno-stack-protector -fpic -fPIC\
 	-faggressive-loop-optimizations   -finline-functions  -fprofile-use -fprofile-correction  -fprofile-partial-training \
 	-floop-nest-optimize -floop-block -floop-parallelize-all  -funsafe-loop-optimizations -fwhole-program -fipa-pta  -falign-loops=32 \
 	-ftree-loop-distribution  -funroll-all-loops -fivopts -fno-zero-initialized-in-bss ")
