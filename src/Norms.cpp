@@ -78,7 +78,7 @@ Real ErrorLInfNorm(const VelocityTensor &velocity, Real time) {
   // Return the highest error yet.
   const auto reduction_operation = [](Real integral, Real u_error, Real v_error,
                                       Real w_error) {
-    return std::max({integral, u_error, v_error, w_error});
+    return std::max({integral, std::abs(u_error), std::abs(v_error), std::abs(w_error)});
   };
   return compute_error(velocity, time, reduction_operation);
 }

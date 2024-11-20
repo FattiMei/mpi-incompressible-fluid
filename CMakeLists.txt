@@ -34,6 +34,9 @@ if(NOT DEFINED VERBOSE)
 endif ()
 
 
+#add_definitions(-DOPT_CPU_CACHE)
+
+
 set(EXE_NAME "mif")
 set(CONVERGENCE_TEST_EXE_NAME "convergence_test")
 set(BENCHMARK_EXE_NAME "benchmark")
