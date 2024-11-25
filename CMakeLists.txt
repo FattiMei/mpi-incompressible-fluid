@@ -36,6 +36,8 @@ set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(SOURCE_DIR  "${CMAKE_SOURCE_DIR}/src")
 set(TEST_DIR    "${CMAKE_SOURCE_DIR}/test")
 
+set(DECOMP_DIR "${CMAKE_SOURCE_DIR}/deps/2Decomp_C")
+
 set(FORCING_TERM_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol.py)
 set(FORCING_TERM_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp)
 
@@ -54,6 +56,22 @@ add_library(
 	${FORCING_TERM_ARTIFACT}
 )
 
+
+include_directories(${DECOMP_DIR})
+add_library(
+	decomp
+	STATIC
+	${DECOMP_DIR}/C2Decomp.o
+	${DECOMP_DIR}/Alloc.o
+	${DECOMP_DIR}/TransposeX2Y.o
+	${DECOMP_DIR}/TransposeY2Z.o
+	${DECOMP_DIR}/TransposeZ2Y.o
+	${DECOMP_DIR}/TransposeY2X.o
+	${DECOMP_DIR}/MemSplitMerge.cpp
+	${DECOMP_DIR}/IO.o
+	${DECOMP_DIR}/Best2DGrid.o
+	${DECOMP_DIR}/Halo.o
+)
 
 add_executable(${EXE_NAME} "${SOURCE_DIR}/main.cpp")
 target_link_libraries(${EXE_NAME} PRIVATE miflib)
