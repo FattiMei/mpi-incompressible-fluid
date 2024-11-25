@@ -73,6 +73,7 @@ if (${BENCH_OK})
 endif()
 
 add_executable(tensor_usage_test test/tensor_usage_test.cpp)
+add_executable(fftw_test test/fftw.cpp)
 
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}
