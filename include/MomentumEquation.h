@@ -107,11 +107,11 @@ calculate_momentum_rhs_u(const VelocityTensor &velocity, // Velocity field.
       // TERM: v ∂u/∂y
       // We use a second-order central difference scheme to approximate the
       // convection term.
-      - (v(i, j, k) + v(i, j - 1, k) + v(i + 1, j, k) + v(i + 1, j - 1, k)) *
+      - (v(i, j + 1, k) + v(i, j, k) + v(i + 1, j + 1, k) + v(i + 1, j, k)) *
             (u(i, j + 1, k) - u(i, j - 1, k)) * constants.one_over_8_dy
 
       // TERM: w ∂u/∂z
-      - (w(i, j, k) + w(i, j, k - 1) + w(i + 1, j, k) + w(i + 1, j, k - 1)) *
+      - (w(i, j, k + 1) + w(i, j, k) + w(i + 1, j, k + 1) + w(i + 1, j, k)) *
             (u(i, j, k + 1) - u(i, j, k - 1)) * constants.one_over_8_dz;
 
   // TERM: 1/Re * (∂²u/∂x² + ∂²u/∂y² + ∂²u/∂z²)
@@ -172,14 +172,14 @@ calculate_momentum_rhs_v(const VelocityTensor &velocity, // Velocity field.
 #else
   const Real convection_term =
       // TERM: u ∂v/∂x
-      -(u(i, j, k) + u(i - 1, j, k) + u(i, j + 1, k) + u(i - 1, j + 1, k)) *
+      -(u(i + 1, j, k) + u(i, j, k) + u(i + 1, j + 1, k) + u(i, j + 1, k)) *
           (v(i + 1, j, k) - v(i - 1, j, k)) * constants.one_over_8_dx
 
       // TERM: v ∂v/∂y
       - v(i, j, k) * (v(i, j + 1, k) - v(i, j - 1, k)) * constants.one_over_2_dy
 
       // TERM: w ∂v/∂z
-      - (w(i, j, k) + w(i, j, k - 1) + w(i, j + 1, k) + w(i, j + 1, k - 1)) *
+      - (w(i, j, k + 1) + w(i, j, k) + w(i, j + 1, k + 1) + w(i, j + 1, k)) *
             (v(i, j, k + 1) - v(i, j, k - 1)) * constants.one_over_8_dz;
 
   // TERM: 1/Re * (∂²v/∂x² + ∂²v/∂y² + ∂²v/∂z²)
@@ -239,11 +239,11 @@ calculate_momentum_rhs_w(const VelocityTensor &velocity, // Velocity field.
 #else
   const Real convection_term =
       // TERM: u ∂w/∂x
-      -(u(i, j, k) + u(i - 1, j, k) + u(i, j, k + 1) + u(i - 1, j, k + 1)) *
+      -(u(i + 1, j, k) + u(i, j, k) + u(i + 1, j, k + 1) + u(i, j, k + 1)) *
           (w(i + 1, j, k) - w(i - 1, j, k)) * constants.one_over_8_dx
 
       // TERM: v ∂w/∂y
-      - (v(i, j, k) + v(i, j - 1, k) + v(i, j, k + 1) + v(i, j - 1, k + 1)) *
+      - (v(i, j + 1, k) + v(i, j, k) + v(i, j + 1, k + 1) + v(i, j, k + 1)) *
             (w(i, j + 1, k) - w(i, j - 1, k)) * constants.one_over_8_dy
 
       // TERM: w ∂w/∂z

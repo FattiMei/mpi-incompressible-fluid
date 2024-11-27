@@ -21,9 +21,8 @@ namespace mif {
  */
 class StaggeredTensor : public Tensor<Real, 3U, size_t> {
 public:
-  StaggeredTensor(const Constants &constants,
-                  const std::array<size_t, 3U> &in_dimensions)
-      : Tensor(in_dimensions), constants(constants) {}
+  StaggeredTensor(const Constants &constants)
+      : Tensor({constants.Nx, constants.Ny, constants.Nz}), constants(constants) {}
 
   const Constants &constants;
 
@@ -41,9 +40,28 @@ public:
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const = 0;
 
+  // Do the same, but for a function depending on time as well, as the
+  // first input.
   virtual inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const = 0;
+  
+  // Do the same, but without considering staggering.
+  inline Real evaluate_function_at_index_unstaggered(
+    size_t i, size_t j, size_t k,
+      const std::function<Real(Real, Real, Real)> &f) const {
+    return f(constants.min_x + constants.dx * i, constants.min_y + constants.dy * j,
+             constants.dz * k);
+  }
+
+  // Do the same, but without considering staggering, for a function
+  // depending on time as well.
+  inline Real evaluate_function_at_index_unstaggered(
+    Real time, size_t i, size_t j, size_t k,
+      const std::function<Real(Real, Real, Real, Real)> &f) const {
+    return f(time, constants.min_x + constants.dx * i, constants.min_y + constants.dy * j,
+             constants.dz * k);    
+  }
 
   // A debug function to print the tensor.
   void print() const;
@@ -54,21 +72,20 @@ public:
 class UTensor : public StaggeredTensor {
 public:
   UTensor(const Constants &constants)
-      : StaggeredTensor(constants,
-                        {constants.Nx - 1, constants.Ny, constants.Nz}) {}
+      : StaggeredTensor(constants) {}
 
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.min_x + constants.dx * i + constants.dx_over_2, constants.min_y + constants.dy * j,
-             constants.min_z + constants.dz * k);
+    return f(constants.min_x + constants.dx * i - constants.dx_over_2, constants.min_y + constants.dy * j,
+             constants.dz * k);
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.min_x + constants.dx * i + constants.dx_over_2, constants.min_y + constants.dy * j,
-             constants.min_z + constants.dz * k);
+    return f(time, constants.min_x + constants.dx * i - constants.dx_over_2, constants.min_y + constants.dy * j,
+             constants.dz * k);
   }
 };
 
@@ -76,21 +93,20 @@ public:
 class VTensor : public StaggeredTensor {
 public:
   VTensor(const Constants &constants)
-      : StaggeredTensor(constants,
-                        {constants.Nx, constants.Ny - 1, constants.Nz}) {}
+      : StaggeredTensor(constants) {}
 
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.min_x + constants.dx * i, constants.min_y + constants.dy * j + constants.dy_over_2,
-             constants.min_z + constants.dz * k);
+    return f(constants.min_x + constants.dx * i, constants.min_y + constants.dy * j - constants.dy_over_2,
+             constants.dz * k);
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.min_x + constants.dx * i, constants.min_y + constants.dy * j + constants.dy_over_2,
-             constants.min_z + constants.dz * k);
+    return f(time, constants.min_x + constants.dx * i, constants.min_y + constants.dy * j - constants.dy_over_2,
+             constants.dz * k);
   }
 };
 
@@ -98,21 +114,20 @@ public:
 class WTensor : public StaggeredTensor {
 public:
   WTensor(const Constants &constants)
-      : StaggeredTensor(constants,
-                        {constants.Nx, constants.Ny, constants.Nz - 1}) {}
+      : StaggeredTensor(constants) {}
 
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
     return f(constants.min_x + constants.dx * i, constants.min_y + constants.dy * j,
-             constants.min_z + constants.dz * k + constants.dz_over_2);
+             constants.dz * k - constants.dz_over_2);
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
     return f(time, constants.min_x + constants.dx * i, constants.min_y + constants.dy * j,
-             constants.min_z + constants.dz * k + constants.dz_over_2);
+             constants.dz * k - constants.dz_over_2);
   }
 };
 

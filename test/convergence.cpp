@@ -3,7 +3,7 @@
 #include "Timestep.h"
 #include <iostream>
 
-double Reynolds = 1e6;
+double Reynolds = 1e4;
 constexpr Real Lx = 1.0;
 constexpr Real Ly = 1.0;
 constexpr Real Lz = 1.0;
@@ -15,7 +15,7 @@ int main() {
   std::cout << "deltax,deltat,l1,l2,linf" << std::endl;
 
   for (int N = 32, ntime_steps = 1; N < 256; N *= 2, ntime_steps *= 2) {
-    const size_t Nx = N + 1;
+    const size_t Nx = N;
     const size_t Ny = Nx;
     const size_t Nz = Nx;
 

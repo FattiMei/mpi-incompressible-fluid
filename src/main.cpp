@@ -43,19 +43,18 @@ int main(int argc, char *argv[]) {
 
   Reynolds = Re;
 
+  /*
   if (rank == 5) {
     std::cout << "Number of processors: " << size << std::endl;
     std::cout << "My rank: " << rank << std::endl;
     std::cout << "My position (x,y): " << x_rank << " " << y_rank << std::endl;
     std::cout << "Global sizes (x,y,z): " << Nx_domains_global << " " << Ny_domains_global << " " << Nz_domains_global << std::endl;
-    std::cout << "Local sizes (x,y,z): " << constants.Nx_domains_local << " " << constants.Ny_domains_local << " " << constants.Nz_domains_local << std::endl;
+    std::cout << "Local sizes (x,y,z): " << constants.Nx_domains_local << " " << constants.Ny_domains_local << " " << constants.Nz_domains << std::endl;
     std::cout << "Local domain x: " << constants.min_x << " " << constants.max_x << std::endl;
     std::cout << "Local domain y: " << constants.min_y << " " << constants.max_y << std::endl;
-    std::cout << "Local domain z: " << constants.min_z << " " << constants.max_z << std::endl;
+    std::cout << "Local domain z: " << 0 << " " << constants.z_size << std::endl;
   }
-
-  MPI_Finalize();
-  return 0;  
+  */
 
   // Create the velocity tensors.
   VelocityTensor velocity(constants);
@@ -78,7 +77,8 @@ int main(int argc, char *argv[]) {
   }
 
   // Compute the norms of the error.
-  std::cout << ErrorL1Norm(velocity, final_time) << " "
+  std::cout << x_rank << " " << y_rank << " "
+            << ErrorL1Norm(velocity, final_time) << " "
             << ErrorL2Norm(velocity, final_time) << " "
             << ErrorLInfNorm(velocity, final_time) << std::endl;
 

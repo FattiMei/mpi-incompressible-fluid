@@ -21,18 +21,18 @@ Real compute_error(
   // boundary conditions. This also implies that the integration weights are all
   // equal.
   for (size_t i = 1; i < constants.Nx - 1; i++) {
-    const Real x = i * constants.dx;
+    const Real x = constants.min_x + i * constants.dx;
     for (size_t j = 1; j < constants.Ny - 1; j++) {
-      const Real y = j * constants.dy;
+      const Real y = constants.min_y + j * constants.dy;
       for (size_t k = 1; k < constants.Nz - 1; k++) {
         const Real z = k * constants.dz;
 
         const Real interpolated_u =
-            (velocity.u(i - 1, j, k) + velocity.u(i, j, k)) / 2.0;
+            (velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2.0;
         const Real interpolated_v =
-            (velocity.v(i, j - 1, k) + velocity.v(i, j, k)) / 2.0;
+            (velocity.v(i, j, k) + velocity.v(i, j + 1, k)) / 2.0;
         const Real interpolated_w =
-            (velocity.w(i, j, k - 1) + velocity.w(i, j, k)) / 2.0;
+            (velocity.w(i, j, k) + velocity.w(i, j, k + 1)) / 2.0;
         const Real u_error = u_exact(time, x, y, z) - interpolated_u;
         const Real v_error = v_exact(time, x, y, z) - interpolated_v;
         const Real w_error = w_exact(time, x, y, z) - interpolated_w;

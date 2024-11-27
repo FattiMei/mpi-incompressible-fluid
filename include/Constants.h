@@ -12,10 +12,10 @@ public:
   // Core constants.
   const size_t Nx_domains_global;
   const size_t Ny_domains_global;
-  const size_t Nz_domains_global;
+  const size_t Nz_domains;
   const Real x_size_global;
   const Real y_size_global;
-  const Real z_size_global;
+  const Real z_size;
   const Real Re;
   const Real final_time;
   const unsigned int num_time_steps;
@@ -47,22 +47,18 @@ public:
   const int P;
   const size_t Nx_domains_local;
   const size_t Ny_domains_local;
-  const size_t Nz_domains_local;
   const size_t Nx;
   const size_t Ny;
   const size_t Nz;
   const Real x_size_local;
   const Real y_size_local;
-  const Real z_size_local;
   const Real min_x;
   const Real max_x;
   const Real min_y;
   const Real max_y;
-  const Real min_z;
-  const Real max_z;
 
   // Constructor.
-  Constants(size_t Nx_domains_global, size_t Ny_domains_global, size_t Nz_domains_global, 
+  Constants(size_t Nx_domains_global, size_t Ny_domains_global, size_t Nz_domains, 
             Real x_size, Real y_size, Real z_size, Real Re, Real final_time, unsigned int num_time_steps,
             int Px, int Py, int x_rank, int y_rank);
 };

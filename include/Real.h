@@ -7,6 +7,7 @@
 namespace mif {
 
 #define Real double
+#define MPI_REAL MPI_DOUBLE
 
 } // namespace mif
 
