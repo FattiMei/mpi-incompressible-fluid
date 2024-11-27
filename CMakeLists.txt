@@ -10,6 +10,8 @@ pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
 include_directories(PkgConfig::FFTW)
 link_libraries(PkgConfig::FFTW)
 
+find_package(MPI REQUIRED)
+include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 if (benchmark_FOUND)
 	set(BENCH_OK TRUE)
@@ -56,14 +58,14 @@ add_library(
 
 
 add_executable(${EXE_NAME} "${SOURCE_DIR}/main.cpp")
-target_link_libraries(${EXE_NAME} PRIVATE miflib)
+target_link_libraries(${EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})
 
 add_executable(${CONVERGENCE_TEST_EXE_NAME} "${TEST_DIR}/convergence.cpp")
-target_link_libraries(${CONVERGENCE_TEST_EXE_NAME} PRIVATE miflib)
+target_link_libraries(${CONVERGENCE_TEST_EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})
 
 if (${BENCH_OK})
 	add_executable(${BENCHMARK_EXE_NAME} "${TEST_DIR}/benchmark.cpp")
-	target_link_libraries(${BENCHMARK_EXE_NAME} PRIVATE miflib benchmark::benchmark)
+	target_link_libraries(${BENCHMARK_EXE_NAME} PRIVATE miflib benchmark::benchmark ${MPI_C_LIBRARIES})
 
 	add_custom_target(
 		bench

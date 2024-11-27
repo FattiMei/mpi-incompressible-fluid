@@ -80,7 +80,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t j = 1; j < constants.Ny - 1; j++) {
           const Real w_at_boundary =
-              func(time, i * constants.dx, j * constants.dy, 0);
+              func(time, constants.min_x + i * constants.dx, constants.min_y + j * constants.dy, constants.min_z);
           const Real du_dx =
               (u.evaluate_function_at_index(time, i, j, 0, u_exact) -
                u.evaluate_function_at_index(time, i - 1, j, 0, u_exact)) *
@@ -106,7 +106,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t j = 1; j < constants.Ny - 1; j++) {
           const Real w_at_boundary =
-              func(time, i * constants.dx, j * constants.dy, constants.z_size);
+              func(time, constants.min_x + i * constants.dx, constants.min_y + j * constants.dy, constants.max_z);
           const Real du_dx = (u.evaluate_function_at_index(
                                   time, i, j, constants.Nz - 1, u_exact) -
                               u.evaluate_function_at_index(
@@ -136,7 +136,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real v_at_boundary =
-              func(time, i * constants.dx, 0, k * constants.dz);
+              func(time, constants.min_x + i * constants.dx, constants.min_y, constants.min_z + k * constants.dz);
           const Real du_dx =
               (u.evaluate_function_at_index(time, i, 0, k, u_exact) -
                u.evaluate_function_at_index(time, i - 1, 0, k, u_exact)) *
@@ -162,7 +162,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real v_at_boundary =
-              func(time, i * constants.dx, constants.y_size, k * constants.dz);
+              func(time, constants.min_x + i * constants.dx, constants.max_y, constants.min_z + k * constants.dz);
           const Real du_dx = (u.evaluate_function_at_index(
                                   time, i, constants.Ny - 1, k, u_exact) -
                               u.evaluate_function_at_index(
@@ -192,7 +192,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real u_at_boundary =
-              func(time, 0, j * constants.dy, k * constants.dz);
+              func(time, constants.min_x, constants.min_y + j * constants.dy, constants.min_z + k * constants.dz);
           const Real dv_dy =
               (v.evaluate_function_at_index(time, 0, j, k, v_exact) -
                v.evaluate_function_at_index(time, 0, j - 1, k, v_exact)) *
@@ -218,7 +218,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real u_at_boundary =
-              func(time, constants.x_size, j * constants.dy, k * constants.dz);
+              func(time, constants.max_x, constants.min_y + j * constants.dy, constants.min_z + k * constants.dz);
           const Real dv_dy = (v.evaluate_function_at_index(
                                   time, constants.Nx - 1, j, k, v_exact) -
                               v.evaluate_function_at_index(
