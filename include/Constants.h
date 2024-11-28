@@ -21,6 +21,7 @@ public:
   const unsigned int num_time_steps;
   const int Px;
   const int Py; 
+  const int rank;
   const int x_rank;
   const int y_rank;
 
@@ -59,11 +60,15 @@ public:
   const Real max_x;
   const Real min_y;
   const Real max_y;
+  const int prev_x_proc;
+  const int next_x_proc;
+  const int prev_y_proc;
+  const int next_y_proc;
 
   // Constructor.
   Constants(size_t Nx_domains_global, size_t Ny_domains_global, size_t Nz_domains, 
             Real x_size, Real y_size, Real z_size, Real Re, Real final_time, unsigned int num_time_steps,
-            int Px, int Py, int x_rank, int y_rank);
+            int Px, int Py, int rank);
 };
 
 } // namespace mif

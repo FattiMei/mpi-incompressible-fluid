@@ -1,6 +1,6 @@
 #include "VelocityTensor.h"
-#include "Manufactured.h"
 #include <iostream>
+#include "Manufactured.h"
 
 namespace mif {
 

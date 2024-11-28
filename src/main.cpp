@@ -34,27 +34,24 @@ int main(int argc, char *argv[]) {
   const int Py = size / Px;
   assert(Px * Py == size);
   assert(Px > 0 && Py > 0);
-  const int x_rank = rank % Px;
-  const int y_rank = rank / Px;
   
   const Constants constants(Nx_domains_global, Ny_domains_global, Nz_domains_global, 
                             x_size, y_size, z_size, Re, final_time, num_time_steps, 
-                            Px, Py, x_rank, y_rank);
+                            Px, Py, rank);
 
   Reynolds = Re;
 
-  /*
-  if (rank == 5) {
+  if (rank == 4) {
     std::cout << "Number of processors: " << size << std::endl;
     std::cout << "My rank: " << rank << std::endl;
-    std::cout << "My position (x,y): " << x_rank << " " << y_rank << std::endl;
+    std::cout << "My position (x,y): " << constants.x_rank << " " << constants.y_rank << std::endl;
+    std::cout << "Neighbors (lowx, highx, lowy, highy): " << constants.prev_x_proc << " " << constants.next_x_proc << " " << constants.prev_y_proc << " " << constants.next_y_proc << std::endl;
     std::cout << "Global sizes (x,y,z): " << Nx_domains_global << " " << Ny_domains_global << " " << Nz_domains_global << std::endl;
     std::cout << "Local sizes (x,y,z): " << constants.Nx_domains_local << " " << constants.Ny_domains_local << " " << constants.Nz_domains << std::endl;
     std::cout << "Local domain x: " << constants.min_x << " " << constants.max_x << std::endl;
     std::cout << "Local domain y: " << constants.min_y << " " << constants.max_y << std::endl;
     std::cout << "Local domain z: " << 0 << " " << constants.z_size << std::endl;
   }
-  */
 
   // Create the velocity tensors.
   VelocityTensor velocity(constants);
@@ -77,7 +74,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Compute the norms of the error.
-  std::cout << x_rank << " " << y_rank << " "
+  std::cout << constants.x_rank << " " << constants.y_rank << " "
             << ErrorL1Norm(velocity, final_time) << " "
             << ErrorL2Norm(velocity, final_time) << " "
             << ErrorLInfNorm(velocity, final_time) << std::endl;

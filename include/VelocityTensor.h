@@ -1,6 +1,7 @@
 #ifndef VELOCITY_TENSOR_H
 #define VELOCITY_TENSOR_H
 
+#include <mpi.h>
 #include "Constants.h"
 #include "Tensor.h"
 #include "VectorFunction.h"
@@ -22,9 +23,18 @@ namespace mif {
 class StaggeredTensor : public Tensor<Real, 3U, size_t> {
 public:
   StaggeredTensor(const std::array<size_t, 3> &in_dimensions, const Constants &constants)
-      : Tensor(in_dimensions), constants(constants) {}
+      : Tensor(in_dimensions), constants(constants) {
+    if (constants.Px > 1 || constants.Py > 1) {
+      MPI_Type_contiguous(in_dimensions[1]*in_dimensions[2], MPI_MIF_REAL, &Constant_x_slice_type);
+      MPI_Type_commit(&Constant_x_slice_type);
+      MPI_Type_vector(in_dimensions[1], in_dimensions[2], in_dimensions[0]*in_dimensions[2], MPI_MIF_REAL, &Constant_y_slice_type);
+      MPI_Type_commit(&Constant_y_slice_type);
+    }
+  }
 
   const Constants &constants;
+  MPI_Datatype Constant_x_slice_type; // A MPI datatype representing a slice with constant x coordinate.
+  MPI_Datatype Constant_y_slice_type; // A MPI datatype representing a slice with constant y coordinate.
 
   /*!
    * Evaluate the function f, depending on x,y,z, on an index of this
