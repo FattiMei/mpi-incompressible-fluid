@@ -47,6 +47,9 @@ public:
   const int P;
   const size_t Nx_domains_local;
   const size_t Ny_domains_local;
+  const size_t Nx_staggered;
+  const size_t Ny_staggered;
+  const size_t Nz_staggered;
   const size_t Nx;
   const size_t Ny;
   const size_t Nz;

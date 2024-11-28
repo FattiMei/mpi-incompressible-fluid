@@ -7,6 +7,7 @@
  */
 
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
@@ -203,6 +204,10 @@ public:
    */
   constexpr Type operator()(const DimensionsType i, const DimensionsType j,
                             const DimensionsType k) const {
+    // TODO: either remove these or make sure to compile with no assertions.
+    assert(i >= 0 && i < _dimensions[0]);
+    assert(j >= 0 && j < _dimensions[1]);
+    assert(k >= 0 && k < _dimensions[2]);
     return _data[i * _strides[0] + j * _strides[1] + k];
   }
   /*!
@@ -213,6 +218,9 @@ public:
    */
   constexpr Type &operator()(const DimensionsType i, const DimensionsType j,
                              const DimensionsType k) {
+    assert(i >= 0 && i < _dimensions[0]);
+    assert(j >= 0 && j < _dimensions[1]);
+    assert(k >= 0 && k < _dimensions[2]);
     return _data[i * _strides[0] + j * _strides[1] + k];
   }
   /*!

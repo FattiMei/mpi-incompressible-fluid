@@ -1,6 +1,8 @@
 #include "Constants.h"
 #include <cassert>
 
+#include <iostream>
+
 namespace mif {
 
 Constants::Constants(size_t Nx_domains_global, size_t Ny_domains_global, size_t Nz_domains, 
@@ -20,10 +22,11 @@ Constants::Constants(size_t Nx_domains_global, size_t Ny_domains_global, size_t 
       dx_over_2(dx / 2), dy_over_2(dy / 2), dz_over_2(dz / 2), one_over_dx(1 / dx), 
       one_over_dy(1 / dy), one_over_dz(1 / dz),
       P(Px * Py), Nx_domains_local(Nx_domains_global / Px), Ny_domains_local(Ny_domains_global / Py), 
-      Nx(Nx_domains_local + 1UL), Ny(Ny_domains_local + 1UL), Nz(Nz_domains + 1UL), 
+      Nx_staggered(Nx_domains_local + 2UL), Ny_staggered(Ny_domains_local + 2UL), Nz_staggered(Nz_domains + 2UL), 
+      Nx(x_rank == Px - 1 ? Nx_staggered - 1UL : Nx_staggered), Ny(y_rank == Py - 1 ? Ny_staggered - 1UL : Ny_staggered), Nz(Nz_staggered - 1UL),
       x_size_local(x_size_global / Px), y_size_local(y_size_global / Py),
-      min_x(x_size_local * x_rank), max_x(min_x + x_size_local),
-      min_y(y_size_local * y_rank), max_y(min_y + y_size_local) {
+      min_x(x_size_local * x_rank), max_x(min_x + x_size_local + (x_rank == Px - 1) ? 0.0 : dx),
+      min_y(y_size_local * y_rank), max_y(min_y + y_size_local + (y_rank == Py - 1) ? 0.0 : dy) {
   assert(Nx > 0 && Ny > 0 && Nz > 0);
   assert(num_time_steps > 0 && final_time > 0);
   assert(Px > 0 && Py > 0);

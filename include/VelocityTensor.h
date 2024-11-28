@@ -21,8 +21,8 @@ namespace mif {
  */
 class StaggeredTensor : public Tensor<Real, 3U, size_t> {
 public:
-  StaggeredTensor(const Constants &constants)
-      : Tensor({constants.Nx, constants.Ny, constants.Nz}), constants(constants) {}
+  StaggeredTensor(const std::array<size_t, 3> &in_dimensions, const Constants &constants)
+      : Tensor(in_dimensions), constants(constants) {}
 
   const Constants &constants;
 
@@ -72,7 +72,7 @@ public:
 class UTensor : public StaggeredTensor {
 public:
   UTensor(const Constants &constants)
-      : StaggeredTensor(constants) {}
+      : StaggeredTensor({constants.Nx_staggered, constants.Ny, constants.Nz}, constants) {}
 
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
@@ -93,7 +93,7 @@ public:
 class VTensor : public StaggeredTensor {
 public:
   VTensor(const Constants &constants)
-      : StaggeredTensor(constants) {}
+      : StaggeredTensor({constants.Nx, constants.Ny_staggered, constants.Nz}, constants) {}
 
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
@@ -114,7 +114,7 @@ public:
 class WTensor : public StaggeredTensor {
 public:
   WTensor(const Constants &constants)
-      : StaggeredTensor(constants) {}
+      : StaggeredTensor({constants.Nx, constants.Ny, constants.Nz_staggered}, constants) {}
 
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
