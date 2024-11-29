@@ -23,17 +23,22 @@ Constants::Constants(size_t Nx_domains_global, size_t Ny_domains_global, size_t 
       one_over_dy(1 / dy), one_over_dz(1 / dz),
       P(Px * Py), Nx_domains_local(Nx_domains_global / Px), Ny_domains_local(Ny_domains_global / Py), 
       Nx_staggered(Nx_domains_local + 2UL), Ny_staggered(Ny_domains_local + 2UL), Nz_staggered(Nz_domains + 2UL), 
-      Nx(x_rank == Px - 1 ? Nx_staggered - 1UL : Nx_staggered), Ny(y_rank == Py - 1 ? Ny_staggered - 1UL : Ny_staggered), Nz(Nz_staggered - 1UL),
+      Nx((x_rank == (Px - 1)) ? Nx_staggered - 1UL : Nx_staggered), Ny((y_rank == (Py - 1)) ? Ny_staggered - 1UL : Ny_staggered), Nz(Nz_staggered - 1UL),
       x_size_local(x_size_global / Px), y_size_local(y_size_global / Py),
       min_x(x_size_local * x_rank), max_x(min_x + x_size_local + ((x_rank == Px - 1) ? 0.0 : dx)),
       min_y(y_size_local * y_rank), max_y(min_y + y_size_local + ((y_rank == Py - 1) ? 0.0 : dy)),
-      prev_x_proc((x_rank == 0)? -1: rank-1), next_x_proc((x_rank == Px - 1)? -1: rank+1),
-      prev_y_proc((y_rank == 0)? -1: rank-Px), next_y_proc((y_rank == Py - 1)? -1: rank+Px) {
+      prev_proc_x((x_rank == 0)? -1: rank-1), next_proc_x((x_rank == Px - 1)? -1: rank+1),
+      prev_proc_y((y_rank == 0)? -1: rank-Px), next_proc_y((y_rank == Py - 1)? -1: rank+Px) {
   assert(Nx > 0 && Ny > 0 && Nz > 0);
   assert(num_time_steps > 0 && final_time > 0);
   assert(Px > 0 && Py > 0);
   assert(Nx_domains_local * Px == Nx_domains_global);
   assert(Ny_domains_local * Py == Ny_domains_global);
+  assert(x_rank >= 0 && x_rank < Px);
+  assert(y_rank >= 0 && y_rank < Py);
+  assert(rank >= 0 && rank < P);
+  assert(prev_proc_x >= -1 && prev_proc_x < rank && (next_proc_x == -1 || next_proc_x > rank) && next_proc_x < P);
+  assert(prev_proc_y >= -1 && prev_proc_y < rank && (next_proc_y == -1 || next_proc_y > rank) && next_proc_y < P);
 }
 
 } // namespace mif

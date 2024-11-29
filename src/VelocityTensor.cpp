@@ -1,8 +1,51 @@
 #include "VelocityTensor.h"
 #include <iostream>
 #include "Manufactured.h"
+#include "VelocityTensorMacros.h"
 
 namespace mif {
+
+StaggeredTensor::StaggeredTensor(const std::array<size_t, 3> &in_dimensions, const Constants &constants)
+      : Tensor(in_dimensions), constants(constants) {
+  if (constants.Px > 1 || constants.Py > 1) {
+    MPI_Type_contiguous(in_dimensions[1]*in_dimensions[2], MPI_MIF_REAL, &Constant_slice_type_x);
+    MPI_Type_commit(&Constant_slice_type_x);
+    MPI_Type_vector(in_dimensions[0], in_dimensions[2], in_dimensions[0]*in_dimensions[2], MPI_MIF_REAL, &Constant_slice_type_y);
+    MPI_Type_commit(&Constant_slice_type_y);
+
+    min_addr_recv_x = raw_data();
+    min_addr_recv_y = raw_data();
+    max_addr_recv_x = static_cast<Real *>(min_addr_recv_x) + in_dimensions[1]*in_dimensions[2]*(in_dimensions[0]-1);
+    max_addr_recv_y = static_cast<Real *>(min_addr_recv_y) + in_dimensions[2]*(in_dimensions[1]-1);
+    min_addr_send_x = static_cast<Real *>(min_addr_recv_x) + in_dimensions[1]*in_dimensions[2];
+    min_addr_send_y = static_cast<Real *>(min_addr_recv_y) + in_dimensions[2];
+    max_addr_send_x = static_cast<Real *>(max_addr_recv_x) - in_dimensions[1]*in_dimensions[2];
+    max_addr_send_y = static_cast<Real *>(max_addr_recv_y) - in_dimensions[2];
+  }
+}
+
+void StaggeredTensor::send_mpi_data(int base_tag) {
+  if (constants.prev_proc_x != -1) {                                                                                                                                 
+    MPI_Request request;                                                                                                                                                 
+    int outcome = MPI_Isend(min_addr_send_x, 1, Constant_slice_type_x, constants.prev_proc_x, base_tag, MPI_COMM_WORLD, &request);
+    assert(outcome == MPI_SUCCESS);
+  }                                                                                                                                                                            
+  if (constants.next_proc_x != -1) {                                                                                                                                 
+    MPI_Request request;                                                                                                                                                       
+    int outcome = MPI_Isend(max_addr_send_x, 1, Constant_slice_type_x, constants.next_proc_x, base_tag + 1, MPI_COMM_WORLD, &request);
+    assert(outcome == MPI_SUCCESS);
+  } 
+  if (constants.prev_proc_y != -1) {                                                                                                                                 
+    MPI_Request request;                                                                                                                                                       
+    int outcome = MPI_Isend(min_addr_send_y, 1, Constant_slice_type_y, constants.prev_proc_y, base_tag + 2, MPI_COMM_WORLD, &request);
+    assert(outcome == MPI_SUCCESS);
+  }                                                                                                                                                                            
+  if (constants.next_proc_y != -1) {                                                                                                                                 
+    MPI_Request request;                                                                                                                                                       
+    int outcome = MPI_Isend(max_addr_send_y, 1, Constant_slice_type_y, constants.next_proc_y, base_tag + 3, MPI_COMM_WORLD, &request);
+    assert(outcome == MPI_SUCCESS);
+  } 
+}
 
 void StaggeredTensor::print() const {
   const std::array<size_t, 3> &sizes = this->sizes();
@@ -34,12 +77,12 @@ void StaggeredTensor::print(const std::function<bool(Real)> &filter) const {
   std::cout << std::endl;
 }
 
-    VelocityTensor::VelocityTensor(const Constants &constants): 
-        u(constants),
-        v(constants),
-        w(constants),
-        components({&this->u,&this->v,&this->w}),
-        constants(constants) {}
+VelocityTensor::VelocityTensor(const Constants &constants): 
+    u(constants),
+    v(constants),
+    w(constants),
+    components({&this->u,&this->v,&this->w}),
+    constants(constants) {}
 
 void VelocityTensor::swap_data(VelocityTensor &other) {
   for (size_t component = 0; component < 3U; component++) {
@@ -68,7 +111,11 @@ void VelocityTensor::set(const VectorFunction &f, bool include_border) {
   }
 }
 
-void VelocityTensor::apply_all_dirichlet_bc(Real time) {
+void VelocityTensor::set_initial(const VectorFunction &f) {
+  set(f, false);
+}
+
+void VelocityTensor::apply_all_dirichlet_bc(Real time, int base_tag) {
   for (size_t component = 0; component < 3U; component++) {
     StaggeredTensor *tensor = components[component];
     const std::array<size_t, 3> sizes = tensor->sizes();
@@ -130,7 +177,11 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     }
 
     // Face 3: y=0
-    if (component == 1) {
+    if (constants.prev_proc_y != -1) {
+      MPI_Status status;
+      int return_code = MPI_Recv(tensor->min_addr_recv_y, 1, tensor->Constant_slice_type_y, constants.prev_proc_y, base_tag + component*4 + 3, MPI_COMM_WORLD, &status);
+      assert(return_code == 0);
+    } else if (component == 1) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real v_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, i, 0, k, func);
@@ -155,7 +206,11 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     }
 
     // Face 4: y=y_max
-    if (component == 1) {
+    if (constants.next_proc_y != -1) {
+      MPI_Status status;
+      int return_code = MPI_Recv(tensor->max_addr_recv_y, 1, tensor->Constant_slice_type_y, constants.next_proc_y, base_tag + component*4 + 2, MPI_COMM_WORLD, &status);
+      assert(return_code == 0);
+    } else if (component == 1) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real v_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, i, constants.Ny_staggered - 1, k, func);
@@ -184,7 +239,11 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     }
 
     // Face 5: x=0
-    if (component == 0) {
+    if (constants.prev_proc_x != -1) {
+      MPI_Status status;
+      int return_code = MPI_Recv(tensor->min_addr_recv_x, 1, tensor->Constant_slice_type_x, constants.prev_proc_x, base_tag + component*4 + 1, MPI_COMM_WORLD, &status);
+      assert(return_code == 0);
+    } else if (component == 0) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real u_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, 0, j, k, func);
@@ -209,7 +268,11 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     }
 
     // Face 6: x=x_max
-    if (component == 0) {
+    if (constants.next_proc_x != -1) {
+      MPI_Status status;
+      int return_code = MPI_Recv(tensor->max_addr_recv_x, 1, tensor->Constant_slice_type_x, constants.next_proc_x, base_tag + component*4, MPI_COMM_WORLD, &status);
+      assert(return_code == 0);
+    } else if (component == 0) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real u_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, constants.Nx_staggered - 1, j, k, func);

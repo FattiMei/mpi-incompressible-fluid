@@ -17,73 +17,76 @@ constexpr Real b1 = (1.0 / 4.0);
 constexpr Real b3 = (3.0 / 4.0);
 
 // Compute a component of Y2 (first step of the method).
-#define COMPUTE_COMPONENT_Y2(component) {                                                   \
+#define COMPUTE_COMPONENT_Y2(component, tag) {                                              \
   VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                        \
     const Real dt = velocity.constants.dt;                                                  \
     const Real rhs =                                                                        \
         calculate_momentum_rhs_with_forcing_##component(velocity, i, j, k, t_n);            \
     rhs_buffer.component(i,j,k) = rhs;                                                      \
-    velocity_buffer.component(i, j, k) = velocity.component(i, j, k) + dt * a21 * rhs;     \
+    velocity_buffer.component(i, j, k) = velocity.component(i, j, k) + dt * a21 * rhs;      \
   )                                                                                         \
+  velocity_buffer.component.send_mpi_data(tag);                                             \
 }
 
 // Compute a component of Y3 (second step of the method).
-#define COMPUTE_COMPONENT_Y3(component) {                                                   \
+#define COMPUTE_COMPONENT_Y3(component, tag) {                                              \
   VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                        \
     const Real dt = velocity.constants.dt;                                                  \
     const Real rhs = rhs_buffer.component(i,j,k);                                           \
     rhs_buffer.component(i,j,k) = velocity.component(i, j, k) + dt * (b1 * rhs);            \
     velocity.component(i, j, k) = velocity.component(i, j, k) +                             \
               dt * (a31 * rhs + a32 * calculate_momentum_rhs_with_forcing_##component(      \
-                                            velocity_buffer, i, j, k, time_1));            \
+                                            velocity_buffer, i, j, k, time_1));             \
   )                                                                                         \
+  velocity.component.send_mpi_data(tag);                                                    \
 }
 
 // Compute a component of U* (third and last step of the method).
-#define COMPUTE_COMPONENT_U_STAR(component) {                                               \
+#define COMPUTE_COMPONENT_U_STAR(component, tag) {                                          \
   VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                        \
     const Real dt = velocity.constants.dt;                                                  \
     const Real rhs = rhs_buffer.component(i,j,k);                                           \
-    velocity_buffer.component(i, j, k) = rhs + dt * (b3 *                                  \
+    velocity_buffer.component(i, j, k) = rhs + dt * (b3 *                                   \
               calculate_momentum_rhs_with_forcing_##component(velocity, i, j, k, time_2));  \
   )                                                                                         \
+  velocity_buffer.component.send_mpi_data(tag);                                             \
 }
 
 // Compute all components of Y2/Y3/U*.
 // "step" should be Y2, Y3 or U_STAR.
-#define COMPUTE_STEP(step) {  \
-  COMPUTE_COMPONENT_##step(u) \
-  COMPUTE_COMPONENT_##step(v) \
-  COMPUTE_COMPONENT_##step(w) \
+#define COMPUTE_STEP(step, base_tag) {                                         \
+  COMPUTE_COMPONENT_##step(u, base_tag)                                        \
+  COMPUTE_COMPONENT_##step(v, base_tag+4)                                      \
+  COMPUTE_COMPONENT_##step(w, base_tag+8)                                      \
 }
 
 void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
-              VelocityTensor &rhs_buffer, Real t_n) {
+              VelocityTensor &rhs_buffer, Real t_n, int base_tag) {
   const Constants &constants = velocity.constants;
   const Real time_1 = t_n + c2 * constants.dt;
   const Real time_2 = t_n + c3 * constants.dt;
   const Real final_time = t_n + constants.dt;
 
   // Stage 1.
-  // Apply Dirichlet boundary conditions.
-  velocity_buffer.apply_all_dirichlet_bc(time_1);
-
   // Compute the solution inside the domain.
-  COMPUTE_STEP(Y2)
+  COMPUTE_STEP(Y2, base_tag)
+
+  // Apply Dirichlet boundary conditions.
+  velocity_buffer.apply_all_dirichlet_bc(time_1, base_tag);
 
   // Stage 2.
-  // Apply Dirichlet boundary conditions.
-  velocity.apply_all_dirichlet_bc(time_2);
-
   // Compute the solution inside the domain.
-  COMPUTE_STEP(Y3)
+  COMPUTE_STEP(Y3, base_tag+12)
 
-  // Stage 3. u_n
   // Apply Dirichlet boundary conditions.
-  velocity_buffer.apply_all_dirichlet_bc(final_time);
+  velocity.apply_all_dirichlet_bc(time_2, base_tag+12);
 
+  // Stage 3.
   // Compute the solution inside the domain.
-  COMPUTE_STEP(U_STAR)
+  COMPUTE_STEP(U_STAR, base_tag+24)
+
+  // Apply Dirichlet boundary conditions.
+  velocity_buffer.apply_all_dirichlet_bc(final_time, base_tag+24);
 
   // Put the solution in the original tensors.
   velocity.swap_data(velocity_buffer);

@@ -60,10 +60,10 @@ public:
   const Real max_x;
   const Real min_y;
   const Real max_y;
-  const int prev_x_proc;
-  const int next_x_proc;
-  const int prev_y_proc;
-  const int next_y_proc;
+  const int prev_proc_x;
+  const int next_proc_x;
+  const int prev_proc_y;
+  const int next_proc_y;
 
   // Constructor.
   Constants(size_t Nx_domains_global, size_t Ny_domains_global, size_t Nz_domains, 

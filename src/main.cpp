@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Number of processors: " << size << std::endl;
     std::cout << "My rank: " << rank << std::endl;
     std::cout << "My position (x,y): " << constants.x_rank << " " << constants.y_rank << std::endl;
-    std::cout << "Neighbors (lowx, highx, lowy, highy): " << constants.prev_x_proc << " " << constants.next_x_proc << " " << constants.prev_y_proc << " " << constants.next_y_proc << std::endl;
+    std::cout << "Neighbors (lowx, highx, lowy, highy): " << constants.prev_proc_x << " " << constants.next_proc_x << " " << constants.prev_proc_y << " " << constants.next_proc_y << std::endl;
     std::cout << "Global sizes (x,y,z): " << Nx_domains_global << " " << Ny_domains_global << " " << Nz_domains_global << std::endl;
     std::cout << "Local sizes (x,y,z): " << constants.Nx_domains_local << " " << constants.Ny_domains_local << " " << constants.Nz_domains << std::endl;
     std::cout << "Local domain x: " << constants.min_x << " " << constants.max_x << std::endl;
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
   // Set the initial conditions.
   TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
-  velocity.set(exact_velocity.set_time(0.0), true);
+  velocity.set_initial(exact_velocity.set_time(0.0));
 
   // Compute the solution.
   TimeVectorFunction forcing_term(forcing_x, forcing_y, forcing_z);
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     const Real current_time = time_step * constants.dt;
 
     // Update the solution inside the mesh.
-    timestep(velocity, velocity_buffer, rhs_buffer, current_time);
+    timestep(velocity, velocity_buffer, rhs_buffer, current_time, time_step*36);
   }
 
   // Compute the norms of the error.

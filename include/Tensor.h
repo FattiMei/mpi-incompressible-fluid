@@ -102,6 +102,12 @@ public:
     this->_data.swap(other._data);
   }
   /*!
+   * Return a point to the inner vector's raw data.
+   */
+  void *raw_data() {
+    return this->_data.data();
+  }
+  /*!
    * Resize the tensor dimension
    * Currently this has to be used with caution as data will be messed up if we
    * enlarge or shrink an initialized tensor

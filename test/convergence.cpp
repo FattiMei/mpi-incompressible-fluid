@@ -26,14 +26,14 @@ int main() {
     VelocityTensor rhs_buffer(constants);
 
     TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
-    velocity.set(exact_velocity.set_time(0.0), true);
+    velocity.set_initial(exact_velocity.set_time(0.0));
 
     TimeVectorFunction forcing_term(forcing_x, forcing_y, forcing_z);
 
     for (int step = 0; step < ntime_steps; ++step) {
       const Real t = step * constants.dt;
 
-      timestep(velocity, velocity_buffer, rhs_buffer, t);
+      timestep(velocity, velocity_buffer, rhs_buffer, t, step*36);
     }
 
     std::cout << constants.dx << ',' << constants.dt << ','

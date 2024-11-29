@@ -22,19 +22,23 @@ namespace mif {
  */
 class StaggeredTensor : public Tensor<Real, 3U, size_t> {
 public:
-  StaggeredTensor(const std::array<size_t, 3> &in_dimensions, const Constants &constants)
-      : Tensor(in_dimensions), constants(constants) {
-    if (constants.Px > 1 || constants.Py > 1) {
-      MPI_Type_contiguous(in_dimensions[1]*in_dimensions[2], MPI_MIF_REAL, &Constant_x_slice_type);
-      MPI_Type_commit(&Constant_x_slice_type);
-      MPI_Type_vector(in_dimensions[1], in_dimensions[2], in_dimensions[0]*in_dimensions[2], MPI_MIF_REAL, &Constant_y_slice_type);
-      MPI_Type_commit(&Constant_y_slice_type);
-    }
-  }
+  StaggeredTensor(const std::array<size_t, 3> &in_dimensions, const Constants &constants);
+
+  // Send data to neighbouring processors using MPI.
+  // This will use the tags in [base_tag, base_tag+3].
+  void send_mpi_data(int base_tag);
 
   const Constants &constants;
-  MPI_Datatype Constant_x_slice_type; // A MPI datatype representing a slice with constant x coordinate.
-  MPI_Datatype Constant_y_slice_type; // A MPI datatype representing a slice with constant y coordinate.
+  MPI_Datatype Constant_slice_type_x; // A MPI datatype representing a slice with constant x coordinate.
+  MPI_Datatype Constant_slice_type_y; // A MPI datatype representing a slice with constant y coordinate.
+  void *min_addr_recv_x;
+  void *max_addr_recv_x;
+  void *min_addr_recv_y;
+  void *max_addr_recv_y;
+  void *min_addr_send_x;
+  void *max_addr_send_x;
+  void *min_addr_send_y;
+  void *max_addr_send_y;
 
   /*!
    * Evaluate the function f, depending on x,y,z, on an index of this
@@ -166,10 +170,13 @@ public:
   // components of the function.
   void set(const VectorFunction &f, bool include_border);
 
+  // Same as set, but meant for setting intial conditions.
+  void set_initial(const VectorFunction &f);
+
   // Apply Dirichlet boundary conditions to all components of the velocity
   // on all boundaries. The function assumes the velocity field is
   // divergence free.
-  void apply_all_dirichlet_bc(Real time);
+  void apply_all_dirichlet_bc(Real time, int base_tag);
 };
 
 } // namespace mif

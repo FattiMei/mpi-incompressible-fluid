@@ -11,8 +11,9 @@ namespace mif {
 
 // Perform a single step of an explicit RK3 method for the velocity tensors,
 // setting Dirichlet boundary conditions.
+// The "base_tag" argument must be 0 for the first call, and increase by 36 each time.
 void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
-              VelocityTensor &rhs_buffer, Real t_n);
+              VelocityTensor &rhs_buffer, Real t_n, int base_tag);
 
 } // namespace mif
 
