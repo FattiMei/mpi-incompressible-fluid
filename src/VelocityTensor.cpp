@@ -10,7 +10,7 @@ StaggeredTensor::StaggeredTensor(const std::array<size_t, 3> &in_dimensions, con
   if (constants.Px > 1 || constants.Py > 1) {
     MPI_Type_contiguous(in_dimensions[1]*in_dimensions[2], MPI_MIF_REAL, &Constant_slice_type_x);
     MPI_Type_commit(&Constant_slice_type_x);
-    MPI_Type_vector(in_dimensions[0], in_dimensions[2], in_dimensions[0]*in_dimensions[2], MPI_MIF_REAL, &Constant_slice_type_y);
+    MPI_Type_vector(in_dimensions[0], in_dimensions[2], in_dimensions[1]*in_dimensions[2], MPI_MIF_REAL, &Constant_slice_type_y);
     MPI_Type_commit(&Constant_slice_type_y);
 
     min_addr_recv_x = raw_data();
