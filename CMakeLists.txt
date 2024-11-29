@@ -21,6 +21,7 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
 	-funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto") #-DNDEBUG
+# TODO: split into Debug and Release (with -DNDEBUG in Release)
 
 
 if(NOT DEFINED VERBOSE)

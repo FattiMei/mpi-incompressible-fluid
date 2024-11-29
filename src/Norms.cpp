@@ -1,6 +1,7 @@
 #include "Norms.h"
-#include "Manufactured.h"
 #include <cmath>
+#include <mpi.h>
+#include "Manufactured.h"
 
 namespace mif {
 
@@ -81,6 +82,49 @@ Real ErrorLInfNorm(const VelocityTensor &velocity, Real time) {
     return std::max({integral, std::abs(u_error), std::abs(v_error), std::abs(w_error)});
   };
   return compute_error(velocity, time, reduction_operation);
+}
+
+// Accumulate errors by sending them to the processor with rank 0, according to reduction_operation.
+// For all other processors, the function will return -1.
+Real accumulate_error_mpi(Real local_error, const Constants &constants,
+                          const std::function<Real(Real, Real)> &reduction_operation) {
+  if (constants.P == 1) {
+    return local_error;
+  }
+
+  if (constants.rank == 0) {
+    Real global_error = local_error;
+
+    for (int rank = 1; rank < constants.P; ++rank) {
+      Real other_error;
+      MPI_Status status;
+      int outcome = MPI_Recv(&other_error, 1, MPI_MIF_REAL, rank, 0, MPI_COMM_WORLD, &status);
+      assert(outcome == MPI_SUCCESS);
+
+      global_error = reduction_operation(global_error, other_error);
+    }
+
+    return global_error;
+  } else {
+    int outcome = MPI_Send(&local_error, 1, MPI_MIF_REAL, 0, 0, MPI_COMM_WORLD);
+    assert(outcome == MPI_SUCCESS);
+    return -1;
+  }
+}
+
+Real accumulate_error_mpi_l1(Real local_error, const Constants &constants) {
+  const auto reduction_operation = [](Real local, Real global) { return local + global; };
+  return accumulate_error_mpi(local_error, constants, reduction_operation);
+}
+
+Real accumulate_error_mpi_l2(Real local_error, const Constants &constants) {
+  const auto reduction_operation = [](Real local, Real global) { return std::sqrt(local*local + global*global); };
+  return accumulate_error_mpi(local_error, constants, reduction_operation);
+}
+
+Real accumulate_error_mpi_linf(Real local_error, const Constants &constants) {
+  const auto reduction_operation = [](Real local, Real global) { return std::max({local, global}); };
+  return accumulate_error_mpi(local_error, constants, reduction_operation);
 }
 
 } // namespace mif

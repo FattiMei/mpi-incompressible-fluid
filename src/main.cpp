@@ -74,10 +74,16 @@ int main(int argc, char *argv[]) {
   }
 
   // Compute the norms of the error.
-  std::cout << constants.x_rank << " " << constants.y_rank << " "
-            << ErrorL1Norm(velocity, final_time) << " "
-            << ErrorL2Norm(velocity, final_time) << " "
-            << ErrorLInfNorm(velocity, final_time) << std::endl;
+  const Real error_l1_local = ErrorL1Norm(velocity, final_time);
+  const Real error_l2_local = ErrorL2Norm(velocity, final_time);
+  const Real error_lInf_local = ErrorLInfNorm(velocity, final_time);
+  const Real error_l1_global = accumulate_error_mpi_l1(error_l1_local, constants);
+  const Real error_l2_global = accumulate_error_mpi_l2(error_l2_local, constants);
+  const Real error_lInf_global = accumulate_error_mpi_linf(error_lInf_local, constants);
+
+  if (rank == 0) {
+    std::cout << error_l1_global << " " << error_l2_global << " " << error_lInf_global << std::endl;
+  }
 
   MPI_Finalize();
 }
