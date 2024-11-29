@@ -13,15 +13,20 @@ StaggeredTensor::StaggeredTensor(const std::array<size_t, 3> &in_dimensions, con
     MPI_Type_vector(in_dimensions[0], in_dimensions[2], in_dimensions[1]*in_dimensions[2], MPI_MIF_REAL, &Constant_slice_type_y);
     MPI_Type_commit(&Constant_slice_type_y);
 
-    min_addr_recv_x = raw_data();
-    min_addr_recv_y = raw_data();
-    max_addr_recv_x = static_cast<Real *>(min_addr_recv_x) + in_dimensions[1]*in_dimensions[2]*(in_dimensions[0]-1);
-    max_addr_recv_y = static_cast<Real *>(min_addr_recv_y) + in_dimensions[2]*(in_dimensions[1]-1);
-    min_addr_send_x = static_cast<Real *>(min_addr_recv_x) + in_dimensions[1]*in_dimensions[2];
-    min_addr_send_y = static_cast<Real *>(min_addr_recv_y) + in_dimensions[2];
-    max_addr_send_x = static_cast<Real *>(max_addr_recv_x) - in_dimensions[1]*in_dimensions[2];
-    max_addr_send_y = static_cast<Real *>(max_addr_recv_y) - in_dimensions[2];
+    recompute_mpi_addressing();
   }
+}
+
+void StaggeredTensor::recompute_mpi_addressing() {
+  const std::array<size_t, 3> &sizes = this->sizes();
+  min_addr_recv_x = raw_data();
+  min_addr_recv_y = raw_data();
+  max_addr_recv_x = static_cast<Real *>(min_addr_recv_x) + sizes[1]*sizes[2]*(sizes[0]-1);
+  max_addr_recv_y = static_cast<Real *>(min_addr_recv_y) + sizes[2]*(sizes[1]-1);
+  min_addr_send_x = static_cast<Real *>(min_addr_recv_x) + sizes[1]*sizes[2];
+  min_addr_send_y = static_cast<Real *>(min_addr_recv_y) + sizes[2];
+  max_addr_send_x = static_cast<Real *>(max_addr_recv_x) - sizes[1]*sizes[2];
+  max_addr_send_y = static_cast<Real *>(max_addr_recv_y) - sizes[2];
 }
 
 void StaggeredTensor::send_mpi_data(int base_tag) {
@@ -86,7 +91,12 @@ VelocityTensor::VelocityTensor(const Constants &constants):
 
 void VelocityTensor::swap_data(VelocityTensor &other) {
   for (size_t component = 0; component < 3U; component++) {
-    components[component]->swap_data(*(other.components[component]));
+    StaggeredTensor *old_buffer = components[component];
+    StaggeredTensor *new_buffer = (other.components[component]);
+
+    old_buffer->swap_data(*new_buffer);
+    old_buffer->recompute_mpi_addressing();
+    new_buffer->recompute_mpi_addressing();
   }
 }
 

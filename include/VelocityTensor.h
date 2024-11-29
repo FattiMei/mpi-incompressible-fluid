@@ -28,6 +28,9 @@ public:
   // This will use the tags in [base_tag, base_tag+3].
   void send_mpi_data(int base_tag);
 
+  // Recompute addresses for MPI send/receive operations after a buffer swap.
+  void recompute_mpi_addressing();
+
   const Constants &constants;
   MPI_Datatype Constant_slice_type_x; // A MPI datatype representing a slice with constant x coordinate.
   MPI_Datatype Constant_slice_type_y; // A MPI datatype representing a slice with constant y coordinate.

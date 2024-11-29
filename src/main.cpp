@@ -41,18 +41,6 @@ int main(int argc, char *argv[]) {
 
   Reynolds = Re;
 
-  if (rank == 4) {
-    std::cout << "Number of processors: " << size << std::endl;
-    std::cout << "My rank: " << rank << std::endl;
-    std::cout << "My position (x,y): " << constants.x_rank << " " << constants.y_rank << std::endl;
-    std::cout << "Neighbors (lowx, highx, lowy, highy): " << constants.prev_proc_x << " " << constants.next_proc_x << " " << constants.prev_proc_y << " " << constants.next_proc_y << std::endl;
-    std::cout << "Global sizes (x,y,z): " << Nx_domains_global << " " << Ny_domains_global << " " << Nz_domains_global << std::endl;
-    std::cout << "Local sizes (x,y,z): " << constants.Nx_domains_local << " " << constants.Ny_domains_local << " " << constants.Nz_domains << std::endl;
-    std::cout << "Local domain x: " << constants.min_x << " " << constants.max_x << std::endl;
-    std::cout << "Local domain y: " << constants.min_y << " " << constants.max_y << std::endl;
-    std::cout << "Local domain z: " << 0 << " " << constants.z_size << std::endl;
-  }
-
   // Create the velocity tensors.
   VelocityTensor velocity(constants);
   VelocityTensor velocity_buffer(constants);
@@ -63,7 +51,6 @@ int main(int argc, char *argv[]) {
   velocity.set_initial(exact_velocity.set_time(0.0));
 
   // Compute the solution.
-  TimeVectorFunction forcing_term(forcing_x, forcing_y, forcing_z);
   for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
 
     // Set the boundary conditions.
