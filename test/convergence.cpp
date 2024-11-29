@@ -33,7 +33,7 @@ int main() {
     for (int step = 0; step < ntime_steps; ++step) {
       const Real t = step * constants.dt;
 
-      timestep(velocity, velocity_buffer, rhs_buffer, t, step*36);
+      timestep(velocity, velocity_buffer, rhs_buffer, t);
     }
 
     std::cout << constants.dx << ',' << constants.dt << ','

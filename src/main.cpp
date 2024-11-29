@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     const Real current_time = time_step * constants.dt;
 
     // Update the solution inside the mesh.
-    timestep(velocity, velocity_buffer, rhs_buffer, current_time, time_step*36);
+    timestep(velocity, velocity_buffer, rhs_buffer, current_time);
   }
 
   // Compute the norms of the error.

@@ -54,14 +54,14 @@ constexpr Real b3 = (3.0 / 4.0);
 
 // Compute all components of Y2/Y3/U*.
 // "step" should be Y2, Y3 or U_STAR.
-#define COMPUTE_STEP(step, base_tag) {                                         \
-  COMPUTE_COMPONENT_##step(u, base_tag)                                        \
-  COMPUTE_COMPONENT_##step(v, base_tag+4)                                      \
-  COMPUTE_COMPONENT_##step(w, base_tag+8)                                      \
+#define COMPUTE_STEP(step) {                                          \
+  COMPUTE_COMPONENT_##step(u, 0)                                      \
+  COMPUTE_COMPONENT_##step(v, 4)                                      \
+  COMPUTE_COMPONENT_##step(w, 8)                                      \
 }
 
 void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
-              VelocityTensor &rhs_buffer, Real t_n, int base_tag) {
+              VelocityTensor &rhs_buffer, Real t_n) {
   const Constants &constants = velocity.constants;
   const Real time_1 = t_n + c2 * constants.dt;
   const Real time_2 = t_n + c3 * constants.dt;
@@ -69,24 +69,24 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
 
   // Stage 1.
   // Compute the solution inside the domain.
-  COMPUTE_STEP(Y2, base_tag)
+  COMPUTE_STEP(Y2)
 
   // Apply Dirichlet boundary conditions.
-  velocity_buffer.apply_all_dirichlet_bc(time_1, base_tag);
+  velocity_buffer.apply_all_dirichlet_bc(time_1);
 
   // Stage 2.
   // Compute the solution inside the domain.
-  COMPUTE_STEP(Y3, base_tag+12)
+  COMPUTE_STEP(Y3)
 
   // Apply Dirichlet boundary conditions.
-  velocity.apply_all_dirichlet_bc(time_2, base_tag+12);
+  velocity.apply_all_dirichlet_bc(time_2);
 
   // Stage 3.
   // Compute the solution inside the domain.
-  COMPUTE_STEP(U_STAR, base_tag+24)
+  COMPUTE_STEP(U_STAR)
 
   // Apply Dirichlet boundary conditions.
-  velocity_buffer.apply_all_dirichlet_bc(final_time, base_tag+24);
+  velocity_buffer.apply_all_dirichlet_bc(final_time);
 
   // Put the solution in the original tensors.
   velocity.swap_data(velocity_buffer);

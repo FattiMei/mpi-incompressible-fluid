@@ -43,7 +43,7 @@ static void timestepper(benchmark::State &state) {
   for (auto _ : state) {
     const Real t = step * constants.dt;
 
-    timestep(velocity, velocity_buffer, rhs_buffer, t, step*36);
+    timestep(velocity, velocity_buffer, rhs_buffer, t);
 
     ++step;
   }

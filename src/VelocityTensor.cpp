@@ -125,7 +125,7 @@ void VelocityTensor::set_initial(const VectorFunction &f) {
   set(f, false);
 }
 
-void VelocityTensor::apply_all_dirichlet_bc(Real time, int base_tag) {
+void VelocityTensor::apply_all_dirichlet_bc(Real time) {
   for (size_t component = 0; component < 3U; component++) {
     StaggeredTensor *tensor = components[component];
     const std::array<size_t, 3> sizes = tensor->sizes();
@@ -189,7 +189,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time, int base_tag) {
     // Face 3: y=0
     if (constants.prev_proc_y != -1) {
       MPI_Status status;
-      int return_code = MPI_Recv(tensor->min_addr_recv_y, 1, tensor->Constant_slice_type_y, constants.prev_proc_y, base_tag + component*4 + 3, MPI_COMM_WORLD, &status);
+      int return_code = MPI_Recv(tensor->min_addr_recv_y, 1, tensor->Constant_slice_type_y, constants.prev_proc_y, component*4 + 3, MPI_COMM_WORLD, &status);
       assert(return_code == 0);
     } else if (component == 1) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
@@ -218,7 +218,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time, int base_tag) {
     // Face 4: y=y_max
     if (constants.next_proc_y != -1) {
       MPI_Status status;
-      int return_code = MPI_Recv(tensor->max_addr_recv_y, 1, tensor->Constant_slice_type_y, constants.next_proc_y, base_tag + component*4 + 2, MPI_COMM_WORLD, &status);
+      int return_code = MPI_Recv(tensor->max_addr_recv_y, 1, tensor->Constant_slice_type_y, constants.next_proc_y, component*4 + 2, MPI_COMM_WORLD, &status);
       assert(return_code == 0);
     } else if (component == 1) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
@@ -251,7 +251,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time, int base_tag) {
     // Face 5: x=0
     if (constants.prev_proc_x != -1) {
       MPI_Status status;
-      int return_code = MPI_Recv(tensor->min_addr_recv_x, 1, tensor->Constant_slice_type_x, constants.prev_proc_x, base_tag + component*4 + 1, MPI_COMM_WORLD, &status);
+      int return_code = MPI_Recv(tensor->min_addr_recv_x, 1, tensor->Constant_slice_type_x, constants.prev_proc_x, component*4 + 1, MPI_COMM_WORLD, &status);
       assert(return_code == 0);
     } else if (component == 0) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
@@ -280,7 +280,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time, int base_tag) {
     // Face 6: x=x_max
     if (constants.next_proc_x != -1) {
       MPI_Status status;
-      int return_code = MPI_Recv(tensor->max_addr_recv_x, 1, tensor->Constant_slice_type_x, constants.next_proc_x, base_tag + component*4, MPI_COMM_WORLD, &status);
+      int return_code = MPI_Recv(tensor->max_addr_recv_x, 1, tensor->Constant_slice_type_x, constants.next_proc_x, component*4, MPI_COMM_WORLD, &status);
       assert(return_code == 0);
     } else if (component == 0) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
