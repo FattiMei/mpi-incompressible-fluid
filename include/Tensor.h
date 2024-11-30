@@ -102,7 +102,9 @@ public:
     this->_data.swap(other._data);
   }
   /*!
-   * Return a point to the inner vector's raw data.
+   * Return a point to the inner vector's raw data. This is used for recomputing
+   * MPI addressing after a swap. For more information, see
+   * recompute_mpi_addressing.
    */
   void *raw_data() {
     return this->_data.data();

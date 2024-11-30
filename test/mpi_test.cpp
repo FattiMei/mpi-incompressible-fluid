@@ -6,10 +6,17 @@
 int main(int argc, char *argv[]) {
   int rank;
   int size;
+
+  // Initialize the MPI environment.
   MPI_Init(&argc, &argv);
+  
+  // Get the rank of the current processor.
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  // Get the total number of processors.
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+  // Initialize some data to be sent and received.
   std::vector<int> data_send({rank, 10*rank, 20*rank, 
                               30*rank, 40*rank, 50*rank,
                               60*rank, 70*rank, 80*rank});
@@ -37,5 +44,6 @@ int main(int argc, char *argv[]) {
                                                     << data_receive[3] << ", " << data_receive[4] << ", " << data_receive[5] << ", " 
                                                     << data_receive[6] << ", " << data_receive[7] << ", " << data_receive[8] << std::endl;
 
+  // Finalize the MPI environment.
   MPI_Finalize();
 }

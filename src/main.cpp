@@ -11,12 +11,23 @@ double Reynolds;
 int main(int argc, char *argv[]) {
   using namespace mif;
 
+  // The rank of the current processor is the id of the processor.
   int rank;
+  
+  // The size of the communicator is the number of processors overall.
   int size;
+
+  // Initialize MPI.
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+  // Argument 1:
+  // Number of domains in the x direction globally.
+  // Argument 2:
+  // Number of time steps.
+  // Argument 3:
+  // Number of processors in the x direction.
   assert(argc == 4);
 
   // Parameters.
@@ -30,11 +41,17 @@ int main(int argc, char *argv[]) {
   constexpr Real final_time = 1e-4;
   const unsigned int num_time_steps = std::atoi(argv[2]);
 
+  // Given the number of processors in the x direction, compute the number of
+  // processors in the y direction and verify that the total number of
+  // processors is correct.
   const int Px = std::atol(argv[3]);
   const int Py = size / Px;
   assert(Px * Py == size);
   assert(Px > 0 && Py > 0);
   
+  // Note that the constants object is only constant within the scope of this
+  // particular processor. All processors will have their own subdomain
+  // on which they will compute the solution.
   const Constants constants(Nx_domains_global, Ny_domains_global, Nz_domains_global, 
                             x_size, y_size, z_size, Re, final_time, num_time_steps, 
                             Px, Py, rank);
@@ -64,6 +81,9 @@ int main(int argc, char *argv[]) {
   const Real error_l1_local = ErrorL1Norm(velocity, final_time);
   const Real error_l2_local = ErrorL2Norm(velocity, final_time);
   const Real error_lInf_local = ErrorLInfNorm(velocity, final_time);
+  
+  // The global error is computed by accumulating the errors on the processor
+  // with rank 0.
   const Real error_l1_global = accumulate_error_mpi_l1(error_l1_local, constants);
   const Real error_l2_global = accumulate_error_mpi_l2(error_l2_local, constants);
   const Real error_lInf_global = accumulate_error_mpi_linf(error_lInf_local, constants);
@@ -72,5 +92,6 @@ int main(int argc, char *argv[]) {
     std::cout << error_l1_global << " " << error_l2_global << " " << error_lInf_global << std::endl;
   }
 
+  // Finalize MPI.
   MPI_Finalize();
 }

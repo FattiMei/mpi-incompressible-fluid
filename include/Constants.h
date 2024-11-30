@@ -19,6 +19,8 @@ public:
   const Real Re;
   const Real final_time;
   const unsigned int num_time_steps;
+
+  // MPI constants.
   const int Px;
   const int Py; 
   const int rank;
@@ -45,6 +47,8 @@ public:
   const Real one_over_dx;
   const Real one_over_dy;
   const Real one_over_dz;
+
+  // Derived constants for the staggered grid.
   const int P;
   const size_t Nx_domains_local;
   const size_t Ny_domains_local;
@@ -54,12 +58,16 @@ public:
   const size_t Nx;
   const size_t Ny;
   const size_t Nz;
+
+  // Derived constants for the local domain.
   const Real x_size_local;
   const Real y_size_local;
   const Real min_x;
   const Real max_x;
   const Real min_y;
   const Real max_y;
+
+  // Derived constants for the MPI communication.
   const int prev_proc_x;
   const int next_proc_x;
   const int prev_proc_y;

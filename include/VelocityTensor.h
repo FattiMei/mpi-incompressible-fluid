@@ -28,12 +28,26 @@ public:
   // This will use the tags in [base_tag, base_tag+3].
   void send_mpi_data(int base_tag);
 
-  // Recompute addresses for MPI send/receive operations after a buffer swap.
+  // Swapping data with another tensor by flipping the buffer pointers is not
+  // enough, as the MPI addressing will be messed up. This function should be
+  // used to recompute the MPI addressing after a swap. Particularly, it
+  // updates the addresses used to send and receive data to and from
+  // neighbouring processors.
   void recompute_mpi_addressing();
 
   const Constants &constants;
-  MPI_Datatype Constant_slice_type_x; // A MPI datatype representing a slice with constant x coordinate.
-  MPI_Datatype Constant_slice_type_y; // A MPI datatype representing a slice with constant y coordinate.
+  // A MPI datatype representing a slice with constant x coordinate.
+  MPI_Datatype Constant_slice_type_x;
+
+  // A MPI datatype representing a slice with constant y coordinate.
+  MPI_Datatype Constant_slice_type_y; 
+  
+  // These eight addresses are used to send and receive data to and from
+  // neighbouring processors. They are computed in recompute_mpi_addressing.
+  // The data that a given processor sends to its neighbours is stored in
+  // the very first and last available cells in a given direction.
+  // The data that a given processor receives from its neighbours is stored in
+  // the second and second-to-last available cells in a given direction.
   void *min_addr_recv_x;
   void *max_addr_recv_x;
   void *min_addr_recv_y;

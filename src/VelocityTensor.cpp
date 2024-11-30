@@ -8,6 +8,9 @@ namespace mif {
 StaggeredTensor::StaggeredTensor(const std::array<size_t, 3> &in_dimensions, const Constants &constants)
       : Tensor(in_dimensions), constants(constants) {
   if (constants.Px > 1 || constants.Py > 1) {
+    // We treat non-zero processors by creating MPI datatypes for slices of the
+    // tensor. MPI addressing is computed, and the relative information about
+    // neighbouring processors, min and max addresses, etc., is stored.
     MPI_Type_contiguous(in_dimensions[1]*in_dimensions[2], MPI_MIF_REAL, &Constant_slice_type_x);
     MPI_Type_commit(&Constant_slice_type_x);
     MPI_Type_vector(in_dimensions[0], in_dimensions[2], in_dimensions[1]*in_dimensions[2], MPI_MIF_REAL, &Constant_slice_type_y);
@@ -18,11 +21,17 @@ StaggeredTensor::StaggeredTensor(const std::array<size_t, 3> &in_dimensions, con
 }
 
 void StaggeredTensor::recompute_mpi_addressing() {
+  // Update the addresses used to send and receive data to and from neighbouring
+  // processors.
   const std::array<size_t, 3> &sizes = this->sizes();
+
+  // Receival addresses.
   min_addr_recv_x = raw_data();
   min_addr_recv_y = raw_data();
   max_addr_recv_x = static_cast<Real *>(min_addr_recv_x) + sizes[1]*sizes[2]*(sizes[0]-1);
   max_addr_recv_y = static_cast<Real *>(min_addr_recv_y) + sizes[2]*(sizes[1]-1);
+  
+  // Sending addresses.
   min_addr_send_x = static_cast<Real *>(min_addr_recv_x) + sizes[1]*sizes[2];
   min_addr_send_y = static_cast<Real *>(min_addr_recv_y) + sizes[2];
   max_addr_send_x = static_cast<Real *>(max_addr_recv_x) - sizes[1]*sizes[2];
@@ -30,22 +39,29 @@ void StaggeredTensor::recompute_mpi_addressing() {
 }
 
 void StaggeredTensor::send_mpi_data(int base_tag) {
+  // After checking if the neighbouring processors are valid, we send the data
+  // to them using MPI_Isend, which is a non-blocking send operation.
+  // This is where we practically use previously computed MPI addressing.
   if (constants.prev_proc_x != -1) {                                                                                                                                 
+    // Send data to the "left" neighbour.
     MPI_Request request;                                                                                                                                                 
     int outcome = MPI_Isend(min_addr_send_x, 1, Constant_slice_type_x, constants.prev_proc_x, base_tag, MPI_COMM_WORLD, &request);
     assert(outcome == MPI_SUCCESS);
   }                                                                                                                                                                            
-  if (constants.next_proc_x != -1) {                                                                                                                                 
+  if (constants.next_proc_x != -1) {
+    // Send data to the "right" neighbour.                                                                                                                                 
     MPI_Request request;                                                                                                                                                       
     int outcome = MPI_Isend(max_addr_send_x, 1, Constant_slice_type_x, constants.next_proc_x, base_tag + 1, MPI_COMM_WORLD, &request);
     assert(outcome == MPI_SUCCESS);
   } 
-  if (constants.prev_proc_y != -1) {                                                                                                                                 
+  if (constants.prev_proc_y != -1) {
+    // Send data to the "top" neighbour.                                                                                                                                 
     MPI_Request request;                                                                                                                                                       
     int outcome = MPI_Isend(min_addr_send_y, 1, Constant_slice_type_y, constants.prev_proc_y, base_tag + 2, MPI_COMM_WORLD, &request);
     assert(outcome == MPI_SUCCESS);
   }                                                                                                                                                                            
-  if (constants.next_proc_y != -1) {                                                                                                                                 
+  if (constants.next_proc_y != -1) {
+    // Send data to the "bottom" neighbour.                                                                                                                                 
     MPI_Request request;                                                                                                                                                       
     int outcome = MPI_Isend(max_addr_send_y, 1, Constant_slice_type_y, constants.next_proc_y, base_tag + 3, MPI_COMM_WORLD, &request);
     assert(outcome == MPI_SUCCESS);
@@ -95,6 +111,10 @@ void VelocityTensor::swap_data(VelocityTensor &other) {
     StaggeredTensor *new_buffer = (other.components[component]);
 
     old_buffer->swap_data(*new_buffer);
+
+    // Recompute MPI addressing after swapping, as swapping the buffer pointers
+    // is not enough to truly capture the new data layout, as MPI addressing
+    // will contain invalid addresses. New addresses are computed and stored.
     old_buffer->recompute_mpi_addressing();
     new_buffer->recompute_mpi_addressing();
   }
@@ -121,6 +141,7 @@ void VelocityTensor::set(const VectorFunction &f, bool include_border) {
   }
 }
 
+// Set the vector function without including the border.
 void VelocityTensor::set_initial(const VectorFunction &f) {
   set(f, false);
 }
@@ -185,6 +206,11 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
         }
       }
     }
+
+    // From now on, notice the extra condition for MPI communication. If the
+    // neighbouring processor is valid, we receive data from it, instead of
+    // applying the usual Dirichlet boundary conditions. This effectively
+    // treats the neighbouring processor as a Dirichlet boundary.
 
     // Face 3: y=0
     if (constants.prev_proc_y != -1) {
