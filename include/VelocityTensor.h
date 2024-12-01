@@ -37,10 +37,10 @@ public:
 
   const Constants &constants;
   // A MPI datatype representing a slice with constant x coordinate.
-  MPI_Datatype Constant_slice_type_x;
+  MPI_Datatype Slice_type_constant_x;
 
   // A MPI datatype representing a slice with constant y coordinate.
-  MPI_Datatype Constant_slice_type_y; 
+  MPI_Datatype Slice_type_constant_y; 
   
   // These eight addresses are used to send and receive data to and from
   // neighbouring processors. They are computed in recompute_mpi_addressing.
