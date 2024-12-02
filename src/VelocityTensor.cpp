@@ -47,24 +47,28 @@ void StaggeredTensor::send_mpi_data(int base_tag) {
     MPI_Request request;                                                                                                                                                 
     int outcome = MPI_Isend(min_addr_send_x, 1, Slice_type_constant_x, constants.prev_proc_x, base_tag, MPI_COMM_WORLD, &request);
     assert(outcome == MPI_SUCCESS);
+    (void) outcome;
   }                                                                                                                                                                            
   if (constants.next_proc_x != -1) {
     // Send data to the "right" neighbour.                                                                                                                                 
     MPI_Request request;                                                                                                                                                       
     int outcome = MPI_Isend(max_addr_send_x, 1, Slice_type_constant_x, constants.next_proc_x, base_tag + 1, MPI_COMM_WORLD, &request);
     assert(outcome == MPI_SUCCESS);
+    (void) outcome;
   } 
   if (constants.prev_proc_y != -1) {
     // Send data to the "top" neighbour.                                                                                                                                 
     MPI_Request request;                                                                                                                                                       
     int outcome = MPI_Isend(min_addr_send_y, 1, Slice_type_constant_y, constants.prev_proc_y, base_tag + 2, MPI_COMM_WORLD, &request);
     assert(outcome == MPI_SUCCESS);
+    (void) outcome;
   }                                                                                                                                                                            
   if (constants.next_proc_y != -1) {
     // Send data to the "bottom" neighbour.                                                                                                                                 
     MPI_Request request;                                                                                                                                                       
     int outcome = MPI_Isend(max_addr_send_y, 1, Slice_type_constant_y, constants.next_proc_y, base_tag + 3, MPI_COMM_WORLD, &request);
     assert(outcome == MPI_SUCCESS);
+    (void) outcome;
   } 
 }
 
@@ -217,6 +221,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       MPI_Status status;
       int return_code = MPI_Recv(tensor->min_addr_recv_y, 1, tensor->Slice_type_constant_y, constants.prev_proc_y, component*4 + 3, MPI_COMM_WORLD, &status);
       assert(return_code == 0);
+      (void) return_code;
     } else if (component == 1) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
@@ -246,6 +251,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       MPI_Status status;
       int return_code = MPI_Recv(tensor->max_addr_recv_y, 1, tensor->Slice_type_constant_y, constants.next_proc_y, component*4 + 2, MPI_COMM_WORLD, &status);
       assert(return_code == 0);
+      (void) return_code;
     } else if (component == 1) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
@@ -279,6 +285,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       MPI_Status status;
       int return_code = MPI_Recv(tensor->min_addr_recv_x, 1, tensor->Slice_type_constant_x, constants.prev_proc_x, component*4 + 1, MPI_COMM_WORLD, &status);
       assert(return_code == 0);
+      (void) return_code;
     } else if (component == 0) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
@@ -308,6 +315,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       MPI_Status status;
       int return_code = MPI_Recv(tensor->max_addr_recv_x, 1, tensor->Slice_type_constant_x, constants.next_proc_x, component*4, MPI_COMM_WORLD, &status);
       assert(return_code == 0);
+      (void) return_code;
     } else if (component == 0) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {

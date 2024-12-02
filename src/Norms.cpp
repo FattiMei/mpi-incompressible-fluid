@@ -100,6 +100,7 @@ Real accumulate_error_mpi(Real local_error, const Constants &constants,
       MPI_Status status;
       int outcome = MPI_Recv(&other_error, 1, MPI_MIF_REAL, rank, 0, MPI_COMM_WORLD, &status);
       assert(outcome == MPI_SUCCESS);
+      (void) outcome;
 
       global_error = reduction_operation(global_error, other_error);
     }
@@ -108,6 +109,7 @@ Real accumulate_error_mpi(Real local_error, const Constants &constants,
   } else {
     int outcome = MPI_Send(&local_error, 1, MPI_MIF_REAL, 0, 0, MPI_COMM_WORLD);
     assert(outcome == MPI_SUCCESS);
+    (void) outcome;
     return -1;
   }
 }

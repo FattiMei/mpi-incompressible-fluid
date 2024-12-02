@@ -1,5 +1,4 @@
 import os
-from math import log2
 import matplotlib.pyplot as plt
 
 # Assumes that the main file prints exactly in this format:
@@ -24,7 +23,7 @@ for step in range(num_tests):
     N = initial_N * 2**(step)
     time_steps = initial_time_steps * 2**(step)
 
-    os.system("../build/mif " + str(N) + " " + str(time_steps) + " >> results.txt")
+    os.system("../build/mif " + str(N) + " " + str(time_steps) + " 1 >> results.txt")
 
 # Get the results.
 with open("results.txt", "r") as f:
@@ -78,5 +77,5 @@ plt.xlabel("Variable-proportional deltas")
 plt.ylabel("Error")
 plt.legend()
 plt.title("Convergence order analysis")
-plt.show()
 plt.savefig("convergence_order.png")
+plt.show()
