@@ -6,7 +6,7 @@
 
 
 constexpr double PI = 3.141592653589793;
-constexpr int N = 5;
+constexpr int N = 200;
 
 
 double compute_eigenvalue_neumann(int i, int N) {
@@ -39,19 +39,11 @@ int main() {
 	fftw_plan xtilde_to_x_plan = fftw_plan_r2r_1d(N, xtilde, x, FFTW_REDFT00,  FFTW_ESTIMATE);
 
 	for (int i = 0; i < N; ++i) {
-		xex[i] = i;
+		xex[i] = std::cos(i+1);
 	}
 	apply_operator_neumann(N, xex, b);
 
-	b[0]   /= std::sqrt(2.0);
-	b[N-1] /= std::sqrt(2.0);
-
 	fftw_execute(b_to_btilde_plan);
-
-	// ATTENTION: normalization of the result of DCT has to be divided by 2
-	for (int i = 0; i < N; ++i) {
-		btilde[i] /= 2.0;
-	}
 
 	xtilde[0] = 0.0;
 	for (int i = 1; i < N; ++i) {
@@ -59,26 +51,18 @@ int main() {
 		xtilde[i] = btilde[i] / eig;
 	}
 
-	// -------- fino a qui tutto bene ----------
-
 	fftw_execute(xtilde_to_x_plan);
 
-	// ATTENTION: normalization of the result of DCT has to be divided by 2
 	for (int i = 0; i < N; ++i) {
-		x[i] /= 2.0;
+		x[i] /= 2.0 * (N-1);
 	}
-
-	x[0]   *= std::sqrt(2.0);
-	x[N-1] *= std::sqrt(2.0);
 
 	const double constant = xex[0] - x[0];
 
-	/*
-	 * This fails
 	for (int i = 0; i < N; ++i) {
 		assert(std::abs(xex[i] - x[i] - constant) < 1e-6);
 	}
-	*/
+	std::cout << std::endl;
 
 	fftw_destroy_plan(b_to_btilde_plan);
 	fftw_destroy_plan(xtilde_to_x_plan);
