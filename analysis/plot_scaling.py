@@ -22,7 +22,7 @@ for P in range(1, P_max+1):
     before = time.time_ns()
     os.system("mpirun -n " + str(P) + " ../build/mif " + str(N) + " " + str(time_steps) + " " + str(P) + " >/dev/null")
     after = time.time_ns()
-    Px_times.append(after-before)
+    Px_times.append((after-before) / (N ** 3 * time_steps))
 
 # Run (convergence over y).
 Py_times = []
@@ -30,7 +30,7 @@ for P in range(1, P_max+1):
     before = time.time_ns()
     os.system("mpirun -n " + str(P) + " ../build/mif " + str(N) + " " + str(time_steps) + " 1 >/dev/null")
     after = time.time_ns()
-    Py_times.append(after-before)
+    Py_times.append((after-before) / (N ** 3 * time_steps))
 
 # Plot the results.
 x = []
