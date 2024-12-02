@@ -8,7 +8,7 @@
 #include "../deps/2Decomp_C/C2Decomp.hpp"
 
 constexpr double PI = 3.141592653589793;
-constexpr int N = 5;
+constexpr int N = 4;
 
 using namespace std;
 
@@ -29,7 +29,7 @@ int rand_gen()
 
 }
 
-double compute_eigenvalue(int index, int N) {
+inline double compute_eigenvalue_periodic(int index, int N) {
 	return 2.0 * (cos(2.0 * PI * index / N) - 1.0);
 }
 
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 
     fftw_complex *x      = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * size); // array of 2 double pointer 
     fftw_complex *xex    = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * size);
-	fftw_complex *b1      = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * size);
+	double *b1      = (double*) fftw_malloc(sizeof(double) * size);
 	
 	fftw_complex *xtilde = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * size);
 
@@ -173,39 +173,54 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < N; ++i) {
         for (int j = 0; j < N; ++j) {
             for (int k = 0; k < N; ++k) {
-                b1[index(i, j, k)][0] = b[index(i, j, k)];
+                b1[index(i, j, k)] = b[index(i, j, k)];
             }
         }
     }
 
-    apply_operator(size, xex, b1);
+    //apply_operator(size, xex, b1);
 
 
-    fftw_complex *btilde1 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * size);
+    double *btilde1 = (double*) fftw_malloc(sizeof(double) * size);
+    
 
     fftw_complex *temp1      = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
     fftw_complex *temp2      = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+
+
+    fftw_plan b_to_btilde_plan = fftw_plan_dft_1d(N, temp1, temp2, FFTW_FORWARD,  FFTW_ESTIMATE);
     
     for (int kk = 0; kk < 3; kk++){
         for (int i = 0; i < N; ++i) {
             for (int j = 0; j < N; ++j){
                 for (int k = 0; k < N; ++k) {
-                    temp1[k][0] = b1[index(i, j, k)][0];
+                    temp1[k][0] = b1[index(i, j, k)];
                 }
-                fftw_plan b_to_btilde_plan = fftw_plan_dft_1d(N, temp1, temp2, FFTW_FORWARD,  FFTW_ESTIMATE);
                 fftw_execute(b_to_btilde_plan);
                 for (int k = 0; k < N; ++k) {
-                    btilde1[index(i, j, k)][0] = temp2[k][0];
+                    btilde1[index(i, j, k)] = temp2[k][0];
                 }
             }
         }
         if (kk == 0)
-            c2d->transposeX2Y((double*)btilde1, (double*)btilde1);
+            c2d->transposeX2Y(btilde1, btilde1);
         else if (kk == 1)
-            c2d->
+            c2d->transposeY2Z(btilde1, btilde1);
     }
     
-    
+    cout << "And the final matrix is: " << endl;
+
+    for (int i=0; i< N; i++){
+        for (int j=0; j< N; j++){
+            for (int k=0; k< N; k++){
+                cout << btilde1[index(i, j, k)] << " ";
+            }
+        }
+    }
+    cout << endl;
+
+    fftw_complex *temp2      = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+
     
 
     // Create FFTW plans
