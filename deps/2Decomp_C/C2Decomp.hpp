@@ -81,6 +81,8 @@ class C2Decomp{
         
 
     public:
+	
+	void decomp2DInit(int pRow, int pCol);
 
 	C2Decomp(int nx, int ny, int nz, int pRow, int pCol, bool periodicBC[3]){
 
@@ -101,7 +103,7 @@ class C2Decomp{
 	    decomp2DInit(pRow, pCol);
 	} 
 
-	void decomp2DInit(int pRow, int pCol);
+	
 
 	void best2DGrid(int nProc, int &pRow, int &pCol);
 	void FindFactor(int num, int *factors, int &nfact);

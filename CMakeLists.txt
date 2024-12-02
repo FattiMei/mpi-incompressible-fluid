@@ -61,16 +61,16 @@ include_directories(${DECOMP_DIR})
 add_library(
 	decomp
 	STATIC
-	${DECOMP_DIR}/C2Decomp.o
-	${DECOMP_DIR}/Alloc.o
-	${DECOMP_DIR}/TransposeX2Y.o
-	${DECOMP_DIR}/TransposeY2Z.o
-	${DECOMP_DIR}/TransposeZ2Y.o
-	${DECOMP_DIR}/TransposeY2X.o
+	${DECOMP_DIR}/C2Decomp.cpp
+	${DECOMP_DIR}/Alloc.cpp
+	${DECOMP_DIR}/TransposeX2Y.cpp
+	${DECOMP_DIR}/TransposeY2Z.cpp
+	${DECOMP_DIR}/TransposeZ2Y.cpp
+	${DECOMP_DIR}/TransposeY2X.cpp
 	${DECOMP_DIR}/MemSplitMerge.cpp
-	${DECOMP_DIR}/IO.o
-	${DECOMP_DIR}/Best2DGrid.o
-	${DECOMP_DIR}/Halo.o
+	${DECOMP_DIR}/IO.cpp
+	${DECOMP_DIR}/Best2DGrid.cpp
+	${DECOMP_DIR}/Halo.cpp
 )
 
 add_executable(${EXE_NAME} "${SOURCE_DIR}/main.cpp")
@@ -92,6 +92,10 @@ endif()
 
 add_executable(tensor_usage_test test/tensor_usage_test.cpp)
 add_executable(fftw_test test/fftw.cpp)
+add_executable(fftw_test3D test/fftw3D_test.cpp)
+
+target_include_directories(decomp PUBLIC ${DECOMP_DIR})
+target_link_libraries(fftw_test3D PRIVATE decomp)
 
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}
