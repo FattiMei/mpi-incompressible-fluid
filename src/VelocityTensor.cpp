@@ -6,15 +6,25 @@
 namespace mif {
 
 StaggeredTensor::StaggeredTensor(const std::array<size_t, 3> &in_dimensions, const Constants &constants)
-      : Tensor(in_dimensions), constants(constants) {
+      : Tensor(in_dimensions), constants(constants), prev_y_slice_recv({}), next_y_slice_recv({}),
+      prev_y_slice_send({}), next_y_slice_send({}) {
   if (constants.Px > 1 || constants.Py > 1) {
     // We treat non-zero processors by creating MPI datatypes for slices of the
     // tensor. MPI addressing is computed, and the relative information about
     // neighbouring processors, min and max addresses, etc., is stored.
     MPI_Type_contiguous(in_dimensions[1]*in_dimensions[2], MPI_MIF_REAL, &Slice_type_constant_x);
     MPI_Type_commit(&Slice_type_constant_x);
-    MPI_Type_vector(in_dimensions[0], in_dimensions[2], in_dimensions[1]*in_dimensions[2], MPI_MIF_REAL, &Slice_type_constant_y);
+    MPI_Type_contiguous(in_dimensions[0]*in_dimensions[2], MPI_MIF_REAL, &Slice_type_constant_y);
     MPI_Type_commit(&Slice_type_constant_y);
+
+    if (constants.prev_proc_y != -1) {
+      prev_y_slice_recv = Tensor<Real, 2U, size_t>({in_dimensions[0], in_dimensions[2]});
+      prev_y_slice_send = Tensor<Real, 2U, size_t>({in_dimensions[0], in_dimensions[2]});
+    }
+     if (constants.next_proc_y != -1) {
+      next_y_slice_send = Tensor<Real, 2U, size_t>({in_dimensions[0], in_dimensions[2]});
+      next_y_slice_recv = Tensor<Real, 2U, size_t>({in_dimensions[0], in_dimensions[2]});
+    }
 
     recompute_mpi_addressing();
   }
@@ -25,20 +35,26 @@ void StaggeredTensor::recompute_mpi_addressing() {
   // processors.
   const std::array<size_t, 3> &sizes = this->sizes();
 
-  // Receival addresses.
+  // Px addresses.
   min_addr_recv_x = raw_data();
-  min_addr_recv_y = raw_data();
   max_addr_recv_x = static_cast<Real *>(min_addr_recv_x) + sizes[1]*sizes[2]*(sizes[0]-1);
-  max_addr_recv_y = static_cast<Real *>(min_addr_recv_y) + sizes[2]*(sizes[1]-1);
-  
-  // Sending addresses.
   min_addr_send_x = static_cast<Real *>(min_addr_recv_x) + sizes[1]*sizes[2];
-  min_addr_send_y = static_cast<Real *>(min_addr_recv_y) + sizes[2];
   max_addr_send_x = static_cast<Real *>(max_addr_recv_x) - sizes[1]*sizes[2];
-  max_addr_send_y = static_cast<Real *>(max_addr_recv_y) - sizes[2];
+
+  // Py addresses.
+  if (constants.prev_proc_y != -1) {
+    min_addr_recv_y = prev_y_slice_recv.raw_data();
+    min_addr_send_y = prev_y_slice_send.raw_data();
+  }
+  if (constants.next_proc_y != -1) {
+    max_addr_recv_y = next_y_slice_recv.raw_data();
+    max_addr_send_y = next_y_slice_send.raw_data();
+  }
 }
 
 void StaggeredTensor::send_mpi_data(int base_tag) {
+  const std::array<size_t, 3> &sizes = this->sizes();
+  
   // After checking if the neighbouring processors are valid, we send the data
   // to them using MPI_Isend, which is a non-blocking send operation.
   // This is where we practically use previously computed MPI addressing.
@@ -57,6 +73,13 @@ void StaggeredTensor::send_mpi_data(int base_tag) {
     (void) outcome;
   } 
   if (constants.prev_proc_y != -1) {
+    // Copy data into the buffer.
+    for (size_t i = 0; i < sizes[0]; i++) {
+      for (size_t k = 0; k < sizes[2]; k++)  {
+        prev_y_slice_send(i, k) = this->operator()(i, 1, k);
+      }
+    }
+
     // Send data to the "top" neighbour.                                                                                                                                 
     MPI_Request request;                                                                                                                                                       
     int outcome = MPI_Isend(min_addr_send_y, 1, Slice_type_constant_y, constants.prev_proc_y, base_tag + 2, MPI_COMM_WORLD, &request);
@@ -64,6 +87,13 @@ void StaggeredTensor::send_mpi_data(int base_tag) {
     (void) outcome;
   }                                                                                                                                                                            
   if (constants.next_proc_y != -1) {
+    // Copy data into the buffer.
+    for (size_t i = 0; i < sizes[0]; i++) {
+      for (size_t k = 0; k < sizes[2]; k++)  {
+        next_y_slice_send(i, k) = this->operator()(i, sizes[1]-2, k);
+      }
+    }
+
     // Send data to the "bottom" neighbour.                                                                                                                                 
     MPI_Request request;                                                                                                                                                       
     int outcome = MPI_Isend(max_addr_send_y, 1, Slice_type_constant_y, constants.next_proc_y, base_tag + 3, MPI_COMM_WORLD, &request);
@@ -218,10 +248,18 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
 
     // Face 3: y=0
     if (constants.prev_proc_y != -1) {
+      // Receive the data.
       MPI_Status status;
       int return_code = MPI_Recv(tensor->min_addr_recv_y, 1, tensor->Slice_type_constant_y, constants.prev_proc_y, component*4 + 3, MPI_COMM_WORLD, &status);
       assert(return_code == 0);
       (void) return_code;
+
+      // Copy it into the tensor.
+      for (size_t i = 0; i < sizes[0]; i++) {
+        for (size_t k = 0; k < sizes[2]; k++) {
+          tensor->operator()(i, 0, k) = tensor->prev_y_slice_recv(i,k);
+        }
+      }
     } else if (component == 1) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
@@ -248,10 +286,18 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
 
     // Face 4: y=y_max
     if (constants.next_proc_y != -1) {
+      // Receive the data.
       MPI_Status status;
       int return_code = MPI_Recv(tensor->max_addr_recv_y, 1, tensor->Slice_type_constant_y, constants.next_proc_y, component*4 + 2, MPI_COMM_WORLD, &status);
       assert(return_code == 0);
       (void) return_code;
+
+      // Copy it into the tensor.
+      for (size_t i = 0; i < sizes[0]; i++) {
+        for (size_t k = 0; k < sizes[2]; k++) {
+          tensor->operator()(i, sizes[1] - 1, k) = tensor->next_y_slice_recv(i,k);
+        }
+      }
     } else if (component == 1) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {

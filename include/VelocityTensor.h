@@ -56,6 +56,13 @@ public:
   void *max_addr_send_x;
   void *min_addr_send_y;
   void *max_addr_send_y;
+  
+  // These tensors store a slice of the overall tensor with a constant y value,
+  // i.e. the y value to send or receive to previous and next processors respectively.
+  Tensor<Real, 2U, size_t> prev_y_slice_recv;
+  Tensor<Real, 2U, size_t> next_y_slice_recv;
+  Tensor<Real, 2U, size_t> prev_y_slice_send;
+  Tensor<Real, 2U, size_t> next_y_slice_send;
 
   /*!
    * Evaluate the function f, depending on x,y,z, on an index of this

@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import time
 
 # Parameters.
-N = 240
-time_steps = 20
+N = 60
+time_steps = 40
 P_max = 6
 
 # Remove previous results.
@@ -47,7 +47,7 @@ plt.plot(x, y, ":", label="Ideal scaling")
 plt.scatter(x, Px_times)
 plt.scatter(x, Py_times)
 plt.xlabel("P")
-plt.ylabel("Time (ns)")
+plt.ylabel("Time (ns) per point, time step")
 plt.legend()
 plt.title("Scaling analysis")
 plt.savefig("scaling.png")

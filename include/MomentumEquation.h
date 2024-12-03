@@ -39,11 +39,6 @@ inline Real calculate_diffusion_term(const StaggeredTensor *component,
 // The momentum equation is composed by two terms: convection and diffusion.
 //  -  (u * ∇) u = u ∂u/∂x + v ∂u/∂y + w ∂u/∂z
 //  -  1/Re * ∇²u = 1/Re * (∂²u/∂x² + ∂²u/∂y² + ∂²u/∂z²)
-
-// TODO: I'm not sure if these are the actual names of the terms. If you agree,
-// feel free to remove this comment. In each function, the convection term is
-// calculated first, followed by the diffusion term. Their results are then
-// algebraically summed up and returned.
 inline Real
 calculate_momentum_rhs_u(const VelocityTensor &velocity, // Velocity field.
                          const size_t i, const size_t j, const size_t k) {
