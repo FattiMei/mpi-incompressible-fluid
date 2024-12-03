@@ -219,8 +219,6 @@ int main(int argc, char *argv[]) {
     }
     cout << endl;
 
-    fftw_complex *temp2      = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-
     
 
     // Create FFTW plans
