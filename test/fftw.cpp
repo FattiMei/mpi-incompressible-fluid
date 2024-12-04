@@ -14,6 +14,8 @@ double compute_eigenvalue(int index, int N) {
 }
 
 
+
+
 void apply_operator(const int N, const double x[], double b[]) {
 	b[0] = -2.0 * x[0] + x[1] + x[N-1];
 
@@ -65,10 +67,6 @@ int main() {
 
 	for (int i = 0; i < N; ++i) {
 		assert(std::abs(xex[i] - x[i] - constant) < 1e-6);
-	}
-
-	for(int i = 0; i < N; ++i){
-		
 	}
 
 	fftw_destroy_plan(b_to_btilde_plan);

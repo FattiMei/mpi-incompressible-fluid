@@ -33,15 +33,46 @@ inline double compute_eigenvalue_periodic(int index, int N) {
 	return 2.0 * (cos(2.0 * PI * index / N) - 1.0);
 }
 
+inline int index3D(int i, int j, int k, int N) {
+    return (i * N * N) + (j * N) + k;
+}
 
-void apply_operator(const int N, const fftw_complex x[], fftw_complex b[]) {
-	b[0][0] = -2.0 * x[0][0] + x[1][0] + x[N-1][0];
+inline double* extract_array(double arr[], int size, int start, int end){
+    double subarray[size];
 
-	for (int i = 1; i < N-1; ++i) {
-		b[i][0] = -2.0 * x[i][0] + x[i-1][0] + x[i+1][0];
-	}
+    // Copy the elements manually
+    for (int i = 0; i < size; ++i) {
+        subarray[i] = arr[start + i];
+    }
+    return subarray;
+}
 
-	b[N-1][0] = -2.0 * x[N-1][0] + x[N-2][0] + x[0][0];
+void apply_operator(const int N, const double x[], double b[]) {
+	for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            for (int k = 0; k < N; ++k) {
+                int idx = index3D(i, j, k, N);
+                
+                // Apply the operator for x-derivative
+                int im1 = index3D((i - 1 + N) % N, j, k, N); // wrap around for i-1
+                int ip1 = index3D((i + 1) % N, j, k, N);     // wrap around for i+1
+                
+                // Apply the operator for y-derivative
+                int jm1 = index3D(i, (j - 1 + N) % N, k, N); // wrap around for j-1
+                int jp1 = index3D(i, (j + 1) % N, k, N);     // wrap around for j+1
+                
+                // Apply the operator for z-derivative
+                int km1 = index3D(i, j, (k - 1 + N) % N, N); // wrap around for k-1
+                int kp1 = index3D(i, j, (k + 1) % N, N);     // wrap around for k+1
+
+                // Operator sum for current element
+                b[idx] = -2.0 * x[idx] * 3.0 // Center point contribution (-2 for x, y, z derivatives each)
+                         + x[im1] + x[ip1]   // x-direction neighbors
+                         + x[jm1] + x[jp1]   // y-direction neighbors
+                         + x[km1] + x[kp1];  // z-direction neighbors
+            }
+        }
+    }
 }
 
 int mod(int x, int N) {
@@ -76,80 +107,15 @@ int main(int argc, char *argv[]) {
 
 	int size = N * N * N;
 
-    // Initialize a 6D array using std::vector
-    std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>> A(
-        N, std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>(
-            N, std::vector<std::vector<std::vector<std::vector<int>>>>(
-                N, std::vector<std::vector<std::vector<int>>>(
-                    N, std::vector<std::vector<int>>(
-                        N, std::vector<int>(N, 0.0))))));
-
-    // Fill the array
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            for (int k = 0; k < N; ++k) {
-                // Derivative wrt x
-                A[i][j][k][i][j][k] += -2;
-                A[i][j][k][mod(i - 1, N)][j][k] += 1;
-                A[i][j][k][mod(i + 1, N)][j][k] += 1;
-
-                // Derivative wrt y
-                A[i][j][k][i][j][k] += -2;
-                A[i][j][k][i][mod(j - 1, N)][k] += 1;
-                A[i][j][k][i][mod(j + 1, N)][k] += 1;
-
-                // Derivative wrt z
-                A[i][j][k][i][j][k] += -2;
-                A[i][j][k][i][j][mod(k - 1, N)] += 1;
-                A[i][j][k][i][j][mod(k + 1, N)] += 1;
-            }
-        }
-    }
-
-    // Reshape into 2D array
-    std::vector<std::vector<double>> flatA(size, std::vector<double>(size, 0.0));
-
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            for (int k = 0; k < N; ++k) {
-                for (int i2 = 0; i2 < N; ++i2) {
-                    for (int j2 = 0; j2 < N; ++j2) {
-                        for (int k2 = 0; k2 < N; ++k2) {
-                            int index1 = i * N * N + j * N + k;
-                            int index2 = i2 * N * N + j2 * N + k2;
-                            flatA[index1][index2] = A[i][j][k][i2][j2][k2];
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-	std::vector<int> Uex;
+	double *Uex      = (double*) fftw_malloc(sizeof(double) * size);
+    double *b      = (double*) fftw_malloc(sizeof(double) * size);
 	for(int i = 0; i < size; ++i){
-		Uex.push_back(rand_gen());
+		Uex[i] = i;
 	}
 
-	std::vector<int> b(size, 0);
+    apply_operator(N, (const double*)Uex, b);
 
-	for (size_t i = 0; i < flatA.size(); ++i) {
-        for (size_t j = 0; j < flatA[i].size(); ++j) {
-            b[i] += flatA[i][j] * Uex[j];
-        }
-    }
-
-    std::vector<std::vector<std::vector<double>>> b_view(
-        N, std::vector<std::vector<double>>(
-               N, std::vector<double>(N, 0.0)));
-
-    // Populate the 3D view
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            for (int k = 0; k < N; ++k) {
-                b_view[i][j][k] = b[i * N * N + j * N + k];
-            }
-        }
-    }
+    // Sopra corretto
 
     int pRow = 0, pCol = 0;
     bool periodicBC[3] = {true, true, true};
@@ -158,66 +124,43 @@ int main(int argc, char *argv[]) {
     C2Decomp *c2d = new C2Decomp(N, N, N, pRow, pCol, periodicBC);
     if(!mpiRank) cout << "done initializing " << endl;
 
-    fftw_complex *x      = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * size); // array of 2 double pointer 
-    fftw_complex *xex    = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * size);
-	double *b1      = (double*) fftw_malloc(sizeof(double) * size);
-	
-	fftw_complex *xtilde = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * size);
+    double *x      = (double*) fftw_malloc(sizeof(double) * size); // array of 2 double pointer 
+	double *btilde      = (double*) fftw_malloc(sizeof(double) * size);	
+	double *xtilde = (double*) fftw_malloc(sizeof(double) * size);
 
-    auto index = [N](int i, int j, int k) {
-        return i * N * N + j * N + k;
-    };
 
-    
-    // Print elements in 3D view
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            for (int k = 0; k < N; ++k) {
-                b1[index(i, j, k)] = b[index(i, j, k)];
-            }
-        }
-    }
+    double *temp1 = (double*) fftw_malloc(sizeof(double) * N);
+    double *temp2 = (double*) fftw_malloc(sizeof(double) * N);
+    fftw_plan b_to_btilde_plan = fftw_plan_r2r_1d(N, temp1, temp2, FFTW_R2HC,  FFTW_ESTIMATE);
 
     //apply_operator(size, xex, b1);
-
-
-    double *btilde1 = (double*) fftw_malloc(sizeof(double) * size);
-    
-
-    fftw_complex *temp1      = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-    fftw_complex *temp2      = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-
-
-    fftw_plan b_to_btilde_plan = fftw_plan_dft_1d(N, temp1, temp2, FFTW_FORWARD,  FFTW_ESTIMATE);
     
     for (int kk = 0; kk < 3; kk++){
         for (int i = 0; i < N; ++i) {
             for (int j = 0; j < N; ++j){
-                for (int k = 0; k < N; ++k) {
-                    temp1[k][0] = b1[index(i, j, k)];
-                }
+                temp1 = extract_array(b, N, i*N*N, j*N);
                 fftw_execute(b_to_btilde_plan);
-                for (int k = 0; k < N; ++k) {
-                    btilde1[index(i, j, k)] = temp2[k][0];
+                for (int k = 0; k < N; ++k){
+                    btilde[index3D(i, j, k, N)] = temp2[k];
                 }
             }
         }
         if (kk == 0)
-            c2d->transposeX2Y(btilde1, btilde1);
+            c2d->transposeX2Y(btilde, btilde);
         else if (kk == 1)
-            c2d->transposeY2Z(btilde1, btilde1);
+            c2d->transposeY2Z(btilde, btilde);
     }
     
-    cout << "And the final matrix is: " << endl;
-
-    for (int i=0; i< N; i++){
-        for (int j=0; j< N; j++){
-            for (int k=0; k< N; k++){
-                cout << btilde1[index(i, j, k)] << " ";
-            }
-        }
-    }
-    cout << endl;
+    // cout << "And the final matrix is: " << endl;
+    
+    // for (int i=0; i< N; i++){
+    //     for (int j=0; j< N; j++){
+    //         for (int k=0; k< N; k++){
+    //             cout << btilde1[index(i, j, k)] << " ";
+    //         }
+    //     }
+    // }
+    // cout << endl;
 
     
 
@@ -229,11 +172,11 @@ int main(int argc, char *argv[]) {
 
 
     /*
-	fftw_complex *x      = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * total_points);
-	fftw_complex *xex    = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * total_points);
-	fftw_complex *b      = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * total_points);
-	fftw_complex *btilde = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * total_points);
-	fftw_complex *xtilde = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * total_points);
+	double *x      = (double*) fftw_malloc(sizeof(double) * total_points);
+	double *xex    = (double*) fftw_malloc(sizeof(double) * total_points);
+	double *b      = (double*) fftw_malloc(sizeof(double) * total_points);
+	double *btilde = (double*) fftw_malloc(sizeof(double) * total_points);
+	double *xtilde = (double*) fftw_malloc(sizeof(double) * total_points);
 
 	// Create FFTW plans
 	fftw_plan b_to_btilde_plan = fftw_plan_dft_1d(N, b, btilde, FFTW_FORWARD,  FFTW_ESTIMATE);
