@@ -30,7 +30,7 @@ int rand_gen()
 }
 
 inline double compute_eigenvalue_periodic(int index, int N) {
-	return 2.0 * (cos(2.0 * PI * index / N) - 2.0);
+	return (2.0 *cos(2.0 * PI * index / N) - 2.0);
 }
 
 inline int index3D(int i, int j, int k, int N) {
@@ -114,15 +114,15 @@ int main(int argc, char *argv[]) {
 
     // Sopra corretto
 
-    int pRow = 0, pCol = 0;
+    int pRow = 1, pCol = 1;
     bool periodicBC[3] = {true, true, true};
 
     if(!mpiRank) cout << "initializing " << endl;
     C2Decomp *c2d = new C2Decomp(N, N, N, pRow, pCol, periodicBC);
     if(!mpiRank) cout << "done initializing " << endl;
 
-    double *x      = (double*) fftw_malloc(sizeof(double) * size); // array of 2 double pointer 
-	double *btilde      = (double*) fftw_malloc(sizeof(double) * size);	
+    double *x      = (double*) fftw_malloc(sizeof(double) * size);
+	double *btilde = (double*) fftw_malloc(sizeof(double) * size);	
 	double *xtilde = (double*) fftw_malloc(sizeof(double) * size);
 
 
@@ -131,6 +131,20 @@ int main(int argc, char *argv[]) {
     fftw_plan b_to_btilde_plan = fftw_plan_r2r_1d(N, temp1, temp2, FFTW_R2HC,  FFTW_ESTIMATE);
 
     //apply_operator(size, xex, b1);
+
+    // cout << "b initi: ";
+    // for(int i=0; i<size; ++i)
+    // {
+    //     cout<< b[i]<< " ";
+    // }
+    // cout<<endl;
+    // c2d->transposeX2Y_MajorIndex(b, b);
+    // cout << "b final: ";
+    // for(int i=0; i<size; ++i)
+    // {
+    //     cout<< b[i]<< " ";
+    // }
+    // cout<<endl;
     
     for (int kk = 0; kk < 3; kk++){
         for (int i = 0; i < N; i++) {
@@ -142,68 +156,56 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
-        if (kk == 0)
-            c2d->transposeX2Y(btilde, btilde);
-        else if (kk == 1)
-            c2d->transposeY2Z(btilde, btilde);
+        c2d->transposeX2Y_MajorIndex(btilde, btilde);
+            
         b = btilde;
     }
 
-    for(int i=0; i<size; ++i)
-    {
-        cout<< btilde[i]<< " ";
-    }
-    cout<< endl;
 
     xtilde = btilde;
 
-    for (int i = 0; i < N; ++i) {
+    for (int i = 0; i < N; i++) {
         double t1= compute_eigenvalue_periodic(i, N);
-        for (int j = 0; j < N; ++j){
+        for (int j = 0; j < N; j++){
             double t2= compute_eigenvalue_periodic(j, N);
-            for (int k = 0; k < N; ++k){
+            for (int k = 0; k < N; k++){
                 xtilde[index3D(i, j, k, N)] /= t1 + t2 + compute_eigenvalue_periodic(k, N);
             }
         }
     }
+    xtilde[0] = 0;
 
-    for (int j = 0; j < N; ++j){
-        double t2= compute_eigenvalue_periodic(j, N);
-        for (int k = 0; k < N; ++k){
-            xtilde[index3D(0, j, k, N)] /= t2 + compute_eigenvalue_periodic(k, N);
-        }
-    }
-
-    for (int k = 0; k < N; ++k){
-        xtilde[index3D(0, 0, k, N)] /= compute_eigenvalue_periodic(k, N);
-    }
-
+    // fino a qui controllato, valore xtilde corretto
 
     // inverse transform
 
     fftw_plan xtilde_to_x_plan = fftw_plan_r2r_1d(N, temp1, temp2, FFTW_HC2R,  FFTW_ESTIMATE);
 
     for (int kk = 0; kk < 3; kk++){
-        for (int i = 0; i < N; ++i) {
-            for (int j = 0; j < N; ++j){
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++){
                 extract_array(xtilde, N, i*N*N + j*N, temp1);
+               
                 fftw_execute(xtilde_to_x_plan);
-                for (int k = 0; k < N; ++k){
-                    x[index3D(i, j, k, N)] = temp2[k];
+                for (int k = 0; k < N; k++){
+                    x[index3D(i, j, k, N)] = (temp2[k]/(2.0 * (N-1)));
                 }
+                cout<< "Value at "<< kk<< " iteration: ";
+                for(int k = 0; k < N; k++)
+                {
+                    cout<< temp2[k] << " ";
+                }
+                cout<<endl;
             }
         }
-        if (kk == 0)
-            c2d->transposeX2Y(x, x);
-        else if (kk == 1)
-            c2d->transposeY2Z(x, x);
+        c2d->transposeX2Y_MajorIndex(x, x);
         xtilde = x;
     }
 
     cout << "My final result: "<<endl; 
     for(int i=0; i<size; ++i)
     {
-        cout<< btilde[i]<< " ";
+        cout<< x[i]<< " ";
     }
     cout<< endl;
 
@@ -287,6 +289,10 @@ int main(int argc, char *argv[]) {
 
 
     //Now lets kill MPI
+
+    fftw_destroy_plan(b_to_btilde_plan);
+    fftw_destroy_plan(xtilde_to_x_plan);
+    fftw_cleanup();
     MPI_Finalize();
 
 	return 0;
