@@ -8,7 +8,7 @@
 #include "../deps/2Decomp_C/C2Decomp.hpp"
 
 constexpr double PI = 3.141592653589793;
-constexpr int N = 4;
+constexpr int N = 3;
 
 using namespace std;
 
@@ -30,21 +30,18 @@ int rand_gen()
 }
 
 inline double compute_eigenvalue_periodic(int index, int N) {
-	return 2.0 * (cos(2.0 * PI * index / N) - 1.0);
+	return 2.0 * (cos(2.0 * PI * index / N) - 2.0);
 }
 
 inline int index3D(int i, int j, int k, int N) {
     return (i * N * N) + (j * N) + k;
 }
 
-inline double* extract_array(double arr[], int size, int start, int end){
-    double subarray[size];
-
+void extract_array(double arr[], int size, int start, double subarray[]){
     // Copy the elements manually
     for (int i = 0; i < size; ++i) {
         subarray[i] = arr[start + i];
     }
-    return subarray;
 }
 
 void apply_operator(const int N, const double x[], double b[]) {
@@ -136,11 +133,11 @@ int main(int argc, char *argv[]) {
     //apply_operator(size, xex, b1);
     
     for (int kk = 0; kk < 3; kk++){
-        for (int i = 0; i < N; ++i) {
-            for (int j = 0; j < N; ++j){
-                temp1 = extract_array(b, N, i*N*N, j*N);
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++){
+                extract_array(b, N, i*N*N + j*N, temp1);
                 fftw_execute(b_to_btilde_plan);
-                for (int k = 0; k < N; ++k){
+                for (int k = 0; k < N; k++){
                     btilde[index3D(i, j, k, N)] = temp2[k];
                 }
             }
@@ -149,7 +146,72 @@ int main(int argc, char *argv[]) {
             c2d->transposeX2Y(btilde, btilde);
         else if (kk == 1)
             c2d->transposeY2Z(btilde, btilde);
+        b = btilde;
     }
+
+    for(int i=0; i<size; ++i)
+    {
+        cout<< btilde[i]<< " ";
+    }
+    cout<< endl;
+
+    xtilde = btilde;
+
+    for (int i = 0; i < N; ++i) {
+        double t1= compute_eigenvalue_periodic(i, N);
+        for (int j = 0; j < N; ++j){
+            double t2= compute_eigenvalue_periodic(j, N);
+            for (int k = 0; k < N; ++k){
+                xtilde[index3D(i, j, k, N)] /= t1 + t2 + compute_eigenvalue_periodic(k, N);
+            }
+        }
+    }
+
+    for (int j = 0; j < N; ++j){
+        double t2= compute_eigenvalue_periodic(j, N);
+        for (int k = 0; k < N; ++k){
+            xtilde[index3D(0, j, k, N)] /= t2 + compute_eigenvalue_periodic(k, N);
+        }
+    }
+
+    for (int k = 0; k < N; ++k){
+        xtilde[index3D(0, 0, k, N)] /= compute_eigenvalue_periodic(k, N);
+    }
+
+
+    // inverse transform
+
+    fftw_plan xtilde_to_x_plan = fftw_plan_r2r_1d(N, temp1, temp2, FFTW_HC2R,  FFTW_ESTIMATE);
+
+    for (int kk = 0; kk < 3; kk++){
+        for (int i = 0; i < N; ++i) {
+            for (int j = 0; j < N; ++j){
+                extract_array(xtilde, N, i*N*N + j*N, temp1);
+                fftw_execute(xtilde_to_x_plan);
+                for (int k = 0; k < N; ++k){
+                    x[index3D(i, j, k, N)] = temp2[k];
+                }
+            }
+        }
+        if (kk == 0)
+            c2d->transposeX2Y(x, x);
+        else if (kk == 1)
+            c2d->transposeY2Z(x, x);
+        xtilde = x;
+    }
+
+    cout << "My final result: "<<endl; 
+    for(int i=0; i<size; ++i)
+    {
+        cout<< btilde[i]<< " ";
+    }
+    cout<< endl;
+
+
+
+
+
+
     
     // cout << "And the final matrix is: " << endl;
     
@@ -165,10 +227,6 @@ int main(int argc, char *argv[]) {
     
 
     // Create FFTW plans
-	
-	fftw_plan xtilde_to_x_plan; //= fftw_plan_dft_1d(N, xtilde, x, 1, FFTW_ESTIMATE);
-
-    
 
 
     /*
