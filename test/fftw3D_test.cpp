@@ -81,7 +81,7 @@ int mod(int x, int N) {
 int main(int argc, char *argv[]) {
 
     int N = std::atoi(argv[1]);
-    std::cout<< "Init with N = "<< N << std::endl;
+    //std::cout<< "Init with N = "<< N << std::endl;
 
     int ierr, totRank, mpiRank;
 
@@ -96,11 +96,11 @@ int main(int argc, char *argv[]) {
 
 
     if(!mpiRank){
-        cout << endl;
-        cout << "-------------------" << endl;
-    	cout << " C2Decomp Testing " << endl;
-    	cout << "-------------------" << endl;
-    	cout << endl;
+        // cout << endl;
+        // cout << "-------------------" << endl;
+    	// cout << " C2Decomp Testing " << endl;
+    	// cout << "-------------------" << endl;
+    	// cout << endl;
 
     }
 
@@ -127,9 +127,9 @@ int main(int argc, char *argv[]) {
     int pRow = 1, pCol = 1;
     bool neumannBC[3] = {true, true, true};
 
-    if(!mpiRank) cout << "initializing " << endl;
+    //if(!mpiRank) cout << "initializing " << endl;
     C2Decomp *c2d = new C2Decomp(N, N, N, pRow, pCol, neumannBC);
-    if(!mpiRank) cout << "done initializing " << endl;
+    //if(!mpiRank) cout << "done initializing " << endl;
 
     double *x      = (double*) fftw_malloc(sizeof(double) * size);
 	double *btilde = (double*) fftw_malloc(sizeof(double) * size);	
