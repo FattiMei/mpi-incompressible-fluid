@@ -4,6 +4,10 @@ import sys
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+##########################
+#  Not working properly  #
+##########################
+
 N = 3  # Number of points in a side of the domain.
 
 # Discretize u = cos(x) * cos(y) * cos(z) in [0, 2pi]^3
