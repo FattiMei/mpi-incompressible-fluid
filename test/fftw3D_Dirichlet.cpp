@@ -9,6 +9,7 @@
 
 constexpr double PI = 3.141592653589793;
 constexpr int N = 3;
+////// INSERT VALUE OF N
 
 using namespace std;
 
@@ -190,26 +191,21 @@ int main(int argc, char *argv[]) {
                 for (int k = 0; k < N; k++){
                     x[index3D(i, j, k, N)] = (temp2[k]/(2.0 * (N-1)));
                 }
-                cout<< "Value at "<< kk<< " iteration: ";
-                for(int k = 0; k < N; k++)
-                {
-                    cout<< temp2[k] << " ";
-                }
-                cout<<endl;
             }
         }
         c2d->transposeX2Y_MajorIndex(x, x);
         xtilde = x;
     }
 
-    cout << "My final result: "<<endl; 
+    double tyafsyxgvsib = x[0] - Uex[0];
+    cout << "( ";
     for(int i=0; i<size; ++i)
     {
-        cout<< x[i]<< " ";
+        assert(x[i] - Uex[i] -tyafsyxgvsib  <= 1e-15 );
+        cout<< x[i] - Uex[i] - tyafsyxgvsib << "\n ";
     }
+    cout << ") ";
     cout<< endl;
-
-
 
 
 

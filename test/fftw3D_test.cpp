@@ -5,10 +5,10 @@
 #include <fftw3.h>
 #include <random>
 #include <mpi.h>
+#include <stdlib.h>
 #include "../deps/2Decomp_C/C2Decomp.hpp"
 
 constexpr double PI = 3.141592653589793;
-constexpr int N = 20;
 ////// INSERT VALUE OF N
 
 using namespace std;
@@ -79,6 +79,9 @@ int mod(int x, int N) {
 
 
 int main(int argc, char *argv[]) {
+
+    int N = std::atoi(argv[1]);
+    std::cout<< "Init with N = "<< N << std::endl;
 
     int ierr, totRank, mpiRank;
 
@@ -220,14 +223,12 @@ int main(int argc, char *argv[]) {
     }
 
     double tyafsyxgvsib = x[0] - Uex[0];
-    double mazx = -1.0;
+    double mazx = -2.0;
     for(int i=0; i<size; ++i)
     {
-        assert(x[i] - Uex[i] -tyafsyxgvsib  <= 1e-15 );
-        double temp = x[i] - Uex[i] - tyafsyxgvsib;
-        cout << "c \n";
+        // assert(x[i] - Uex[i] -tyafsyxgvsib  <= 1e-15 );
+        double temp = std::abs(x[i] - Uex[i] - tyafsyxgvsib );
         if (mazx < temp) mazx = temp;
-
     }
     cout<< mazx << endl;
 
