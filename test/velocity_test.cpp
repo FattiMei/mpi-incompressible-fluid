@@ -4,6 +4,7 @@
 #include <cassert>
 #include <iostream>
 #include <mpi.h>
+#include "VelocityDivergence.h"
 
 double Reynolds;
 

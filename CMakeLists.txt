@@ -35,6 +35,7 @@ set(EXE_NAME "mif")
 set(CONVERGENCE_TEST_EXE_NAME "convergence_test")
 set(BENCHMARK_EXE_NAME "benchmark")
 set(MPI_TEST_EXE_NAME "mpi_test")
+set(VELOCITY_TEST_EXE_NAME "velocity_test")
 
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(SOURCE_DIR  "${CMAKE_SOURCE_DIR}/src")
@@ -67,6 +68,9 @@ target_link_libraries(${CONVERGENCE_TEST_EXE_NAME} PRIVATE miflib ${MPI_C_LIBRAR
 
 add_executable(${MPI_TEST_EXE_NAME} "${TEST_DIR}/mpi_test.cpp")
 target_link_libraries(${MPI_TEST_EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})
+
+add_executable(${VELOCITY_TEST_EXE_NAME} "${TEST_DIR}/velocity_test.cpp")
+target_link_libraries(${VELOCITY_TEST_EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})
 
 if (${BENCH_OK})
 	add_executable(${BENCHMARK_EXE_NAME} "${TEST_DIR}/benchmark.cpp")

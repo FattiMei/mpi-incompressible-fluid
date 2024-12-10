@@ -60,7 +60,7 @@ constexpr Real b3 = (3.0 / 4.0);
   COMPUTE_COMPONENT_##step(w, 8)                                      \
 }
 
-void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
+void timestep_velocity(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
               VelocityTensor &rhs_buffer, Real t_n) {
   const Constants &constants = velocity.constants;
   const Real time_1 = t_n + c2 * constants.dt;
