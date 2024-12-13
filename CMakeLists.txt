@@ -91,11 +91,13 @@ if (${BENCH_OK})
 endif()
 
 add_executable(tensor_usage_test test/tensor_usage_test.cpp)
-add_executable(fftw_test test/fftw.cpp)
-add_executable(fftw_test3D test/fftw3D_test.cpp)
+## add_executable(fftw_Dirichlet test/fftw3D_Dirichlet.cpp)
+add_executable(fftw_Dirichlet test/fftw.cpp)
+add_executable(fftw_Neumann test/fftw3D_Neumann.cpp)
 
 target_include_directories(decomp PUBLIC ${DECOMP_DIR})
-target_link_libraries(fftw_test3D PRIVATE decomp)
+target_link_libraries(fftw_Neumann PRIVATE decomp)
+target_link_libraries(fftw_Dirichlet PRIVATE decomp)
 
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}
