@@ -41,6 +41,8 @@ set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(SOURCE_DIR  "${CMAKE_SOURCE_DIR}/src")
 set(TEST_DIR    "${CMAKE_SOURCE_DIR}/test")
 
+set(DECOMP_DIR "${CMAKE_SOURCE_DIR}/deps/2Decomp_C")
+
 set(FORCING_TERM_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol.py)
 set(FORCING_TERM_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp)
 
@@ -59,6 +61,22 @@ add_library(
 	${FORCING_TERM_ARTIFACT}
 )
 
+
+include_directories(${DECOMP_DIR})
+add_library(
+	decomp
+	STATIC
+	${DECOMP_DIR}/C2Decomp.cpp
+	${DECOMP_DIR}/Alloc.cpp
+	${DECOMP_DIR}/TransposeX2Y.cpp
+	${DECOMP_DIR}/TransposeY2Z.cpp
+	${DECOMP_DIR}/TransposeZ2Y.cpp
+	${DECOMP_DIR}/TransposeY2X.cpp
+	${DECOMP_DIR}/MemSplitMerge.cpp
+	${DECOMP_DIR}/IO.cpp
+	${DECOMP_DIR}/Best2DGrid.cpp
+	${DECOMP_DIR}/Halo.cpp
+)
 
 add_executable(${EXE_NAME} "${SOURCE_DIR}/main.cpp")
 target_link_libraries(${EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})
@@ -84,6 +102,13 @@ if (${BENCH_OK})
 endif()
 
 add_executable(tensor_usage_test test/tensor_usage_test.cpp)
+## add_executable(fftw_Dirichlet test/fftw3D_Dirichlet.cpp)
+add_executable(fftw_Dirichlet test/fftw.cpp)
+add_executable(fftw_Neumann test/fftw3D_Neumann.cpp)
+
+target_include_directories(decomp PUBLIC ${DECOMP_DIR})
+target_link_libraries(fftw_Neumann PRIVATE decomp)
+target_link_libraries(fftw_Dirichlet PRIVATE decomp)
 
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}
