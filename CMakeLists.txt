@@ -57,6 +57,7 @@ add_library(
 	STATIC
 	${SOURCE_DIR}/Constants.cpp
 	${SOURCE_DIR}/Norms.cpp
+	${SOURCE_DIR}/StaggeredTensor.cpp
 	${SOURCE_DIR}/TimestepVelocity.cpp
 	${SOURCE_DIR}/VectorFunction.cpp
 	${SOURCE_DIR}/VelocityTensor.cpp
