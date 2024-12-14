@@ -43,8 +43,10 @@ set(TEST_DIR    "${CMAKE_SOURCE_DIR}/test")
 
 set(DECOMP_DIR "${CMAKE_SOURCE_DIR}/deps/2Decomp_C")
 
-set(FORCING_TERM_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol.py)
-set(FORCING_TERM_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp)
+set(FORCING_TERM_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol_velocity.py)
+set(FORCING_TERM_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol_velocity.cpp)
+set(EXACT_SOLUTION_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol.py)
+set(EXACT_SOLUTION_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp)
 
 set(CONVERGENCE_REPORT_NAME "convergence_report.csv")
 
@@ -55,7 +57,7 @@ add_library(
 	STATIC
 	${SOURCE_DIR}/Constants.cpp
 	${SOURCE_DIR}/Norms.cpp
-	${SOURCE_DIR}/Timestep.cpp
+	${SOURCE_DIR}/TimestepVelocity.cpp
 	${SOURCE_DIR}/VectorFunction.cpp
 	${SOURCE_DIR}/VelocityTensor.cpp
 	${FORCING_TERM_ARTIFACT}
@@ -114,6 +116,12 @@ add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}
 	DEPENDS ${FORCING_TERM_GENERATOR}
 	COMMAND ${Python3_EXECUTABLE} ${FORCING_TERM_GENERATOR} > ${FORCING_TERM_ARTIFACT}
+)
+
+add_custom_command(
+	OUTPUT ${EXACT_SOLUTION_ARTIFACT}
+	DEPENDS ${EXACT_SOLUTION_GENERATOR}
+	COMMAND ${Python3_EXECUTABLE} ${EXACT_SOLUTION_GENERATOR} > ${EXACT_SOLUTION_ARTIFACT}
 )
 
 add_custom_command(

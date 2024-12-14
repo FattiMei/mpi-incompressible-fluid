@@ -29,10 +29,7 @@ def lap(u):
 # Define the manufactured solution function.
 # Note: the asterisk (*) in the function signature indicates that the arguments
 # are keyword-only. This is to minimize the risk of passing wrong arguments.
-def manufsol(*, u, v, w, p, ignore_pressure=False):
-    if ignore_pressure:
-        p = 0
-
+def manufsol(*, u, v, w):
     # Safety check: the proposed manufactured solution must be divergence free.
     if diff(u, x) + diff(v, y) + diff(w, z) != 0:
         w = sp.integrate(simp(sp.diff(u, x) + sp.diff(v, y)), z)
@@ -42,28 +39,13 @@ def manufsol(*, u, v, w, p, ignore_pressure=False):
         )
 
     fx = simp(
-        diff(u, t)
-        + u * diff(u, x)
-        + v * diff(u, y)
-        + w * diff(u, z)
-        + diff(p, x)
-        - lap(u) / Re
+        diff(u, t) + u * diff(u, x) + v * diff(u, y) + w * diff(u, z) - lap(u) / Re
     )
     fy = simp(
-        diff(v, t)
-        + u * diff(v, x)
-        + v * diff(v, y)
-        + w * diff(v, z)
-        + diff(p, y)
-        - lap(v) / Re
+        diff(v, t) + u * diff(v, x) + v * diff(v, y) + w * diff(v, z) - lap(v) / Re
     )
     fz = simp(
-        diff(w, t)
-        + u * diff(w, x)
-        + v * diff(w, y)
-        + w * diff(w, z)
-        + diff(p, z)
-        - lap(w) / Re
+        diff(w, t) + u * diff(w, x) + v * diff(w, y) + w * diff(w, z) - lap(w) / Re
     )
 
     return (u, v, w), (fx, fy, fz)
@@ -75,14 +57,8 @@ if __name__ == "__main__":
     v = sp.cos(x) * sp.sin(y) * sp.sin(z) * sp.sin(t)
     w = 2 * sp.cos(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
 
-    # TODO: generate correct u,v,w,p without forcing terms, using a known exact solution.
-
-    # WARNING: this shouldn't be a constant value, otherwise the codegen will
-    # generate a wrong function signature. Use the ignore_pressure flag instead.
-    p = sp.sin(t) * x * y * z
-
     # Until we tackle the pressure term, we can ignore it.
-    (u, v, w), (fx, fy, fz) = manufsol(u=u, v=v, w=w, p=p, ignore_pressure=True)
+    (u, v, w), (fx, fy, fz) = manufsol(u=u, v=v, w=w)
 
     # Generate the C code through sympy's codegen utility.
     [(c_name, c_code), (h_name, c_header)] = codegen(
@@ -90,13 +66,12 @@ if __name__ == "__main__":
             ("u_exact", u),
             ("v_exact", v),
             ("w_exact", w),
-            ("p_exact", p),
             ("forcing_x", fx),
             ("forcing_y", fy),
             ("forcing_z", fz),
         ],
         language="C99",
-        prefix="Manufactured",
+        prefix="ManufacturedVelocity",
         project="mif",
         header=True,
         empty=True,

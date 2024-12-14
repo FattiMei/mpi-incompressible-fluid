@@ -1,7 +1,7 @@
 #ifndef MOMENTUM_EQUATION_H
 #define MOMENTUM_EQUATION_H
 
-#include "Manufactured.h"
+#include "ManufacturedVelocity.h"
 #include "VelocityTensor.h"
 
 // Given a specific point in the grid denoted by the indices i, j, k, the
