@@ -91,13 +91,18 @@ if (${BENCH_OK})
 endif()
 
 add_executable(tensor_usage_test test/tensor_usage_test.cpp)
-## add_executable(fftw_Dirichlet test/fftw3D_Dirichlet.cpp)
-add_executable(fftw_Dirichlet test/fftw.cpp)
-add_executable(fftw_Neumann test/fftw3D_Neumann.cpp)
+add_executable(fftw_Dirichlet3D test/fftw3D_Dirichlet.cpp)
+add_executable(fftw_Dirichlet1D test/fftw1D_Dirichlet.cpp)
+add_executable(fftw_Neumann3D test/fftw3D_Neumann.cpp)
+add_executable(fftw_Neumann1D test/fftw1D_Neumann.cpp)
+add_executable(testing_2decomp test/testing_2decomp.cpp)
 
 target_include_directories(decomp PUBLIC ${DECOMP_DIR})
-target_link_libraries(fftw_Neumann PRIVATE decomp)
-target_link_libraries(fftw_Dirichlet PRIVATE decomp)
+target_link_libraries(fftw_Neumann1D PRIVATE decomp)
+target_link_libraries(fftw_Dirichlet1D PRIVATE decomp)
+target_link_libraries(fftw_Neumann3D PRIVATE decomp)
+target_link_libraries(fftw_Dirichlet3D PRIVATE decomp)
+target_link_libraries(testing_2decomp PRIVATE decomp)
 
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}
