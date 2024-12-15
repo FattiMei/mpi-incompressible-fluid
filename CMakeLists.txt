@@ -17,11 +17,23 @@ if (benchmark_FOUND)
 	set(BENCH_OK TRUE)
 endif()
 
+# Set the compiler.
+set(CMAKE_C_COMPILER "mpicc")
+set(CMAKE_CXX_COMPILER "mpicxx")
+
+# Choose build type.
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
-	-funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto -DNDEBUG") #-DNDEBUG
-# TODO: split into Debug and Release (with -DNDEBUG in Release)
+
+# Set custom flags for Debug build.
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
+	-funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
+
+# Set custom flags for Release build.
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG} -DNDEBUG")
 
 
 if(NOT DEFINED VERBOSE)
