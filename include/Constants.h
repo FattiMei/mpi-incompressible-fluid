@@ -10,22 +10,22 @@ namespace mif {
 class Constants {
 public:
   // Core constants.
-  const size_t Nx_domains_global;
+  const size_t Nx_domains;
   const size_t Ny_domains_global;
-  const size_t Nz_domains;
-  const Real x_size_global;
+  const size_t Nz_domains_global;
+  const Real x_size;
   const Real y_size_global;
-  const Real z_size;
+  const Real z_size_global;
   const Real Re;
   const Real final_time;
   const unsigned int num_time_steps;
 
   // MPI constants.
-  const int Px;
   const int Py; 
+  const int Pz;
   const int rank;
-  const int x_rank;
   const int y_rank;
+  const int z_rank;
 
   // Derived constants (computed here once for efficiency).
   const Real dt;
@@ -50,8 +50,8 @@ public:
 
   // Derived constants for the staggered grid.
   const int P;
-  const size_t Nx_domains_local;
   const size_t Ny_domains_local;
+  const size_t Nz_domains_local;
   const size_t Nx_staggered;
   const size_t Ny_staggered;
   const size_t Nz_staggered;
@@ -60,23 +60,23 @@ public:
   const size_t Nz;
 
   // Derived constants for the local domain.
-  const Real x_size_local;
   const Real y_size_local;
-  const Real min_x;
-  const Real max_x;
+  const Real z_size_local;
   const Real min_y;
   const Real max_y;
+  const Real min_z;
+  const Real max_z;
 
   // Derived constants for the MPI communication.
-  const int prev_proc_x;
-  const int next_proc_x;
   const int prev_proc_y;
   const int next_proc_y;
+  const int prev_proc_z;
+  const int next_proc_z;
 
   // Constructor.
-  Constants(size_t Nx_domains_global, size_t Ny_domains_global, size_t Nz_domains, 
+  Constants(size_t Nx_domains, size_t Ny_domains_global, size_t Nz_domains_global, 
             Real x_size, Real y_size, Real z_size, Real Re, Real final_time, unsigned int num_time_steps,
-            int Px, int Py, int rank);
+            int Py, int Pz, int rank);
 };
 
 } // namespace mif

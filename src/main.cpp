@@ -44,17 +44,17 @@ int main(int argc, char *argv[]) {
   // Given the number of processors in the x direction, compute the number of
   // processors in the y direction and verify that the total number of
   // processors is correct.
-  const int Px = std::atol(argv[3]);
-  const int Py = size / Px;
-  assert(Px * Py == size);
-  assert(Px > 0 && Py > 0);
+  const int Pz = std::atol(argv[3]);
+  const int Py = size / Pz;
+  assert(Pz * Py == size);
+  assert(Pz > 0 && Py > 0);
   
   // Note that the constants object is only constant within the scope of this
   // particular processor. All processors will have their own subdomain
   // on which they will compute the solution.
   const Constants constants(Nx_domains_global, Ny_domains_global, Nz_domains_global, 
                             x_size, y_size, z_size, Re, final_time, num_time_steps, 
-                            Px, Py, rank);
+                            Py, Pz, rank);
 
   Reynolds = Re;
 

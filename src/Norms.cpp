@@ -21,12 +21,12 @@ Real compute_error(
   // boundary points because the error on the boundaries is 0 due to Dirichlet
   // boundary conditions. This also implies that the integration weights are all
   // equal.
-  for (size_t i = 1; i < constants.Nx - 1; i++) {
-    const Real x = constants.min_x + i * constants.dx;
+  for (size_t k = 1; k < constants.Nz - 1; k++) {
+    const Real z = constants.min_z + k * constants.dz;
     for (size_t j = 1; j < constants.Ny - 1; j++) {
       const Real y = constants.min_y + j * constants.dy;
-      for (size_t k = 1; k < constants.Nz - 1; k++) {
-        const Real z = k * constants.dz;
+      for (size_t i = 1; i < constants.Nx - 1; i++) {
+        const Real x = i * constants.dx;
 
         const Real interpolated_u =
             (velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2.0;

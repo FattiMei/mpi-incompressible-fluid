@@ -27,9 +27,9 @@
     } else {                                                                   \
       upper_limit_z = sizes[2] - 1;                                            \
     };                                                                         \
-    for (size_t i = lower_limit; i < upper_limit_x; i++) {                     \
+    for (size_t k = lower_limit; k < upper_limit_z; k++) {                     \
       for (size_t j = lower_limit; j < upper_limit_y; j++) {                   \
-        for (size_t k = lower_limit; k < upper_limit_z; k++) {                 \
+        for (size_t i = lower_limit; i < upper_limit_x; i++) {                 \
           CODE                                                                 \
         }                                                                      \
       }                                                                        \

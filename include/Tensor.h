@@ -50,10 +50,10 @@ class Tensor {
     if constexpr (size == 1) {                                                 \
       return _data[index_storage[0]];                                          \
     } else if constexpr (size == 2) {                                          \
-      return _data[index_storage[0] * _strides[0] + index_storage[1]];         \
+      return _data[index_storage[0] + index_storage[1] * _strides[0]];         \
     } else if constexpr (size == 3) {                                          \
-      return _data[index_storage[0] * _strides[0] +                            \
-                   index_storage[1] * _strides[1] + index_storage[2]];         \
+      return _data[index_storage[0] + index_storage[1] * _strides[1] +         \
+                   index_storage[2] * _strides[0]];                            \
     }                                                                          \
   } while (0)
 
@@ -126,11 +126,11 @@ public:
     }
     _dimensions = in_dimensions;
     if constexpr (SpaceDim == 2) {
-      _strides[0] = in_dimensions[1];
+      _strides[0] = in_dimensions[0];
     }
     if constexpr (SpaceDim == 3) {
-      _strides[0] = in_dimensions[1] * in_dimensions[2];
-      _strides[1] = in_dimensions[2];
+      _strides[0] = in_dimensions[1] * in_dimensions[0];
+      _strides[1] = in_dimensions[0];
     }
   }
   /*!
@@ -194,7 +194,7 @@ public:
    */
   constexpr Type operator()(const DimensionsType i,
                             const DimensionsType j) const {
-    return _data[i * _strides[0] + j];
+    return _data[i + j * _strides[0]];
   }
   /*!
    * Retrieve a reference of an element stored inside the tensor
@@ -202,7 +202,7 @@ public:
    * @param j second dimension index The index
    */
   constexpr Type &operator()(const DimensionsType i, const DimensionsType j) {
-    return _data[i * _strides[0] + j];
+    return _data[i + j * _strides[0]];
   }
   /*!
    * Retrieve a copy of an element stored inside the tensor
@@ -216,7 +216,7 @@ public:
     assert(i >= 0 && i < _dimensions[0]);
     assert(j >= 0 && j < _dimensions[1]);
     assert(k >= 0 && k < _dimensions[2]);
-    return _data[i * _strides[0] + j * _strides[1] + k];
+    return _data[i + j * _strides[1] + k * _strides[0]];
   }
   /*!
    * Retrieve a reference of an element stored inside the tensor
@@ -229,7 +229,7 @@ public:
     assert(i >= 0 && i < _dimensions[0]);
     assert(j >= 0 && j < _dimensions[1]);
     assert(k >= 0 && k < _dimensions[2]);
-    return _data[i * _strides[0] + j * _strides[1] + k];
+    return _data[i + j * _strides[1] + k * _strides[0]];
   }
   /*!
    * Apply Dirichlet boundary conditions

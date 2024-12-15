@@ -57,6 +57,7 @@ add_library(
 	STATIC
 	${SOURCE_DIR}/Constants.cpp
 	${SOURCE_DIR}/Norms.cpp
+	${SOURCE_DIR}/PressureEquation.cpp
 	${SOURCE_DIR}/StaggeredTensor.cpp
 	${SOURCE_DIR}/TimestepVelocity.cpp
 	${SOURCE_DIR}/VectorFunction.cpp
@@ -108,10 +109,12 @@ add_executable(tensor_usage_test test/tensor_usage_test.cpp)
 ## add_executable(fftw_Dirichlet test/fftw3D_Dirichlet.cpp)
 add_executable(fftw_Dirichlet test/fftw.cpp)
 add_executable(fftw_Neumann test/fftw3D_Neumann.cpp)
+add_executable(2decomp_test test/2decomp_test.cpp)
 
 target_include_directories(decomp PUBLIC ${DECOMP_DIR})
 target_link_libraries(fftw_Neumann PRIVATE decomp)
 target_link_libraries(fftw_Dirichlet PRIVATE decomp)
+target_link_libraries(2decomp_test PRIVATE decomp miflib)
 
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}

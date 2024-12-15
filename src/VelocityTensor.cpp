@@ -60,7 +60,12 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
         (component == 0) ? u_exact : (component == 1 ? v_exact : w_exact);
 
     // Face 1: z=0
-    if (component == 2) {
+    if (constants.prev_proc_z != -1) {
+      MPI_Status status;
+      int return_code = MPI_Recv(tensor->min_addr_recv_z, 1, tensor->Slice_type_constant_z, constants.prev_proc_z, component*4 + 1, MPI_COMM_WORLD, &status);
+      assert(return_code == 0);
+      (void) return_code;
+    } else if (component == 2) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t j = 1; j < constants.Ny - 1; j++) {
           const Real w_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, i, j, 0, func);
@@ -85,7 +90,12 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     }
 
     // Face 2: z=z_max
-    if (component == 2) {
+    if (constants.next_proc_z != -1) {
+      MPI_Status status;
+      int return_code = MPI_Recv(tensor->max_addr_recv_z, 1, tensor->Slice_type_constant_z, constants.next_proc_z, component*4, MPI_COMM_WORLD, &status);
+      assert(return_code == 0);
+      (void) return_code;
+    } else if (component == 2) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t j = 1; j < constants.Ny - 1; j++) {
           const Real w_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, i, j, constants.Nz_staggered - 1, func);
@@ -199,12 +209,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     }
 
     // Face 5: x=0
-    if (constants.prev_proc_x != -1) {
-      MPI_Status status;
-      int return_code = MPI_Recv(tensor->min_addr_recv_x, 1, tensor->Slice_type_constant_x, constants.prev_proc_x, component*4 + 1, MPI_COMM_WORLD, &status);
-      assert(return_code == 0);
-      (void) return_code;
-    } else if (component == 0) {
+    if (component == 0) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real u_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, 0, j, k, func);
@@ -229,12 +234,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     }
 
     // Face 6: x=x_max
-    if (constants.next_proc_x != -1) {
-      MPI_Status status;
-      int return_code = MPI_Recv(tensor->max_addr_recv_x, 1, tensor->Slice_type_constant_x, constants.next_proc_x, component*4, MPI_COMM_WORLD, &status);
-      assert(return_code == 0);
-      (void) return_code;
-    } else if (component == 0) {
+    if (component == 0) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
           const Real u_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, constants.Nx_staggered - 1, j, k, func);

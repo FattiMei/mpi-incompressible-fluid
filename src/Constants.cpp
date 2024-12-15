@@ -55,38 +55,38 @@ namespace mif {
  * @param Py Number of processors in the y direction.
  * @param rank Rank of the current processor.
  */
-Constants::Constants(size_t Nx_domains_global, size_t Ny_domains_global, size_t Nz_domains, 
-                     Real x_size_global, Real y_size_global, Real z_size, Real Re, 
+Constants::Constants(size_t Nx_domains, size_t Ny_domains_global, size_t Nz_domains_global, 
+                     Real x_size, Real y_size_global, Real z_size_global, Real Re, 
                      Real final_time, unsigned int num_time_steps,
-                     int Px, int Py, int rank)
-    : Nx_domains_global(Nx_domains_global), Ny_domains_global(Ny_domains_global), Nz_domains(Nz_domains),
-      x_size_global(x_size_global), y_size_global(y_size_global), z_size(z_size), 
+                     int Py, int Pz, int rank)
+    : Nx_domains(Nx_domains), Ny_domains_global(Ny_domains_global), Nz_domains_global(Nz_domains_global),
+      x_size(x_size), y_size_global(y_size_global), z_size_global(z_size_global), 
       Re(Re), final_time(final_time), num_time_steps(num_time_steps),
-      Px(Px), Py(Py), rank(rank), x_rank(rank % Px), y_rank(rank / Px),
-      dt(final_time / num_time_steps), dx(x_size_global / Nx_domains_global), 
-      dy(y_size_global / Ny_domains_global), dz(z_size / Nz_domains),
+      Py(Py), Pz(Pz), rank(rank), y_rank(rank / Pz), z_rank(rank % Pz),
+      dt(final_time / num_time_steps), dx(x_size / Nx_domains), 
+      dy(y_size_global / Ny_domains_global), dz(z_size_global / Nz_domains_global),
       one_over_2_dx(1 / (2 * dx)), one_over_2_dy(1 / (2 * dy)), one_over_2_dz(1 / (2 * dz)), 
       one_over_8_dx(1 / (8 * dx)), one_over_8_dy(1 / (8 * dy)), 
       one_over_8_dz(1 / (8 * dz)), one_over_dx2_Re(1 / (Re * dx * dx)), 
       one_over_dy2_Re(1 / (Re * dy * dy)), one_over_dz2_Re(1 / (Re * dz * dz)), 
       dx_over_2(dx / 2), dy_over_2(dy / 2), dz_over_2(dz / 2), one_over_dx(1 / dx), 
       one_over_dy(1 / dy), one_over_dz(1 / dz),
-      P(Px * Py), Nx_domains_local(Nx_domains_global / Px), Ny_domains_local(Ny_domains_global / Py), 
-      Nx_staggered(Nx_domains_local + 2UL), Ny_staggered(Ny_domains_local + 2UL), Nz_staggered(Nz_domains + 2UL), 
-      Nx((x_rank == (Px - 1)) ? Nx_staggered - 1UL : Nx_staggered), Ny((y_rank == (Py - 1)) ? Ny_staggered - 1UL : Ny_staggered), Nz(Nz_staggered - 1UL),
+      P(Py * Pz), Ny_domains_local(Ny_domains_global / Py), Nz_domains_local(Nz_domains_global / Pz), 
+      Nx_staggered(Nx_domains + 2UL), Ny_staggered(Ny_domains_local + 2UL), Nz_staggered(Nz_domains_local + 2UL), 
+      Nx(Nx_staggered - 1UL), Ny((y_rank == (Py - 1)) ? Ny_staggered - 1UL : Ny_staggered), Nz((z_rank == (Pz - 1)) ? Nz_staggered - 1UL : Nz_staggered),
       
       // Calculate the size of the domain for the current processor.
-      x_size_local(x_size_global / Px), y_size_local(y_size_global / Py),
+      y_size_local(y_size_global / Py), z_size_local(z_size_global / Pz), 
       
-      // Calculate the minimum and maximum values of x and y for the current
+      // Calculate the minimum and maximum values of y and z for the current
       // processor. Each processor will have a different subset of the domain.
-      min_x(x_size_local * x_rank), max_x(min_x + x_size_local + ((x_rank == Px - 1) ? 0.0 : dx)),
       min_y(y_size_local * y_rank), max_y(min_y + y_size_local + ((y_rank == Py - 1) ? 0.0 : dy)),
+      min_z(z_size_local * z_rank), max_z(min_z + z_size_local + ((z_rank == Pz - 1) ? 0.0 : dz)),
       
-      // Calculate the neighbouring processors in the x and y directions based
+      // Calculate the neighbouring processors in the y and z directions based
       // on the rank.
-      prev_proc_x((x_rank == 0)? -1: rank-1), next_proc_x((x_rank == Px - 1)? -1: rank+1),
-      prev_proc_y((y_rank == 0)? -1: rank-Px), next_proc_y((y_rank == Py - 1)? -1: rank+Px) {
+      prev_proc_y((y_rank == 0)? -1: rank-Pz), next_proc_y((y_rank == Py - 1)? -1: rank+Pz),
+      prev_proc_z((z_rank == 0)? -1: rank-1), next_proc_z((z_rank == Pz - 1)? -1: rank+1) {
 
   // Ensure that the number of domains in each direction is positive.
   assert(Nx > 0 && Ny > 0 && Nz > 0);
@@ -95,20 +95,20 @@ Constants::Constants(size_t Nx_domains_global, size_t Ny_domains_global, size_t 
   assert(num_time_steps > 0 && final_time > 0);
 
   // Ensure that the number of processors in each direction is positive.
-  assert(Px > 0 && Py > 0);
+  assert(Py > 0 && Pz > 0);
   
   // Ensure that the local domains multiplied by the number of processors equals the global domains.
-  assert(Nx_domains_local * Px == Nx_domains_global);
   assert(Ny_domains_local * Py == Ny_domains_global);
+  assert(Nz_domains_local * Pz == Nz_domains_global);
 
   // Ensure that the rank is within the valid range.
-  assert(x_rank >= 0 && x_rank < Px);
   assert(y_rank >= 0 && y_rank < Py);
+  assert(z_rank >= 0 && z_rank < Pz);
   assert(rank >= 0 && rank < P);
 
   // Ensure that the previous and next processors in y direction are valid.
-  assert(prev_proc_x >= -1 && prev_proc_x < rank && (next_proc_x == -1 || next_proc_x > rank) && next_proc_x < P);
   assert(prev_proc_y >= -1 && prev_proc_y < rank && (next_proc_y == -1 || next_proc_y > rank) && next_proc_y < P);
+  assert(prev_proc_z >= -1 && prev_proc_z < rank && (next_proc_z == -1 || next_proc_z > rank) && next_proc_z < P);
 }
 
 } // namespace mif
