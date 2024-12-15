@@ -30,7 +30,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 # Set custom flags for Debug build.
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
-	-funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
+     -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
 
 # Set custom flags for Release build.
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG} -DNDEBUG")
@@ -64,6 +64,22 @@ set(EXACT_SOLUTION_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp)
 
 set(CONVERGENCE_REPORT_NAME "convergence_report.csv")
 
+include_directories(${DECOMP_DIR})
+add_library(
+	decomp
+	STATIC
+	${DECOMP_DIR}/Alloc.cpp
+	${DECOMP_DIR}/Best2DGrid.cpp
+	${DECOMP_DIR}/C2Decomp.cpp
+	${DECOMP_DIR}/Halo.cpp
+	${DECOMP_DIR}/IO.cpp
+	${DECOMP_DIR}/MemSplitMerge.cpp
+	${DECOMP_DIR}/TransposeX2Y.cpp
+	${DECOMP_DIR}/TransposeY2X.cpp
+	${DECOMP_DIR}/TransposeY2Z.cpp
+	${DECOMP_DIR}/TransposeZ2Y.cpp
+)
+target_compile_options(decomp PUBLIC -w) # Ignore all warnings from 2decomp.
 
 include_directories(${INCLUDE_DIR})
 add_library(
@@ -80,24 +96,6 @@ add_library(
 	${PRESSURE_ARTIFACT}
 	${EXACT_SOLUTION_ARTIFACT}
 )
-
-
-include_directories(${DECOMP_DIR})
-add_library(
-	decomp
-	STATIC
-	${DECOMP_DIR}/C2Decomp.cpp
-	${DECOMP_DIR}/Alloc.cpp
-	${DECOMP_DIR}/TransposeX2Y.cpp
-	${DECOMP_DIR}/TransposeY2Z.cpp
-	${DECOMP_DIR}/TransposeZ2Y.cpp
-	${DECOMP_DIR}/TransposeY2X.cpp
-	${DECOMP_DIR}/MemSplitMerge.cpp
-	${DECOMP_DIR}/IO.cpp
-	${DECOMP_DIR}/Best2DGrid.cpp
-	${DECOMP_DIR}/Halo.cpp
-)
-target_compile_options(decomp PRIVATE -w) # Ignore all warnings from 2decomp.
 
 add_executable(${EXE_NAME} "${SOURCE_DIR}/main.cpp")
 target_link_libraries(${EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})
@@ -123,15 +121,15 @@ if (${BENCH_OK})
 endif()
 
 add_executable(tensor_usage_test test/tensor_usage_test.cpp)
-## add_executable(fftw_Dirichlet test/fftw3D_Dirichlet.cpp)
 add_executable(fftw_Dirichlet test/fftw.cpp)
 add_executable(fftw_Neumann test/fftw3D_Neumann.cpp)
 add_executable(2decomp_test test/2decomp_test.cpp)
+add_executable(pressure_test test/pressure_test.cpp)
 
-target_include_directories(decomp PUBLIC ${DECOMP_DIR})
 target_link_libraries(fftw_Neumann PRIVATE decomp)
 target_link_libraries(fftw_Dirichlet PRIVATE decomp)
-target_link_libraries(2decomp_test PRIVATE decomp miflib)
+target_link_libraries(2decomp_test PRIVATE miflib decomp)
+target_link_libraries(pressure_test PRIVATE miflib decomp -w)
 
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}

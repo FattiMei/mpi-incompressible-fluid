@@ -1,7 +1,6 @@
 #ifndef PRESSURE_EQUATION_H
 #define PRESSURE_EQUATION_H
 
-#include "StaggeredTensor.h"
 #include "VelocityTensor.h"
 
 namespace mif {

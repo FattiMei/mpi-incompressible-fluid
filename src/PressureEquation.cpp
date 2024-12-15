@@ -1,6 +1,6 @@
 #include "PressureEquation.h"
+#include "StaggeredTensorMacros.h"
 #include "VelocityDivergence.h"
-#include "VelocityTensorMacros.h"
 #include <fftw3.h>
 #pragma GCC diagnostic push 
 #pragma GCC diagnostic ignored "-Wcast-function-type"
@@ -8,16 +8,21 @@
 #pragma GCC diagnostic pop
 
 namespace mif {
+    
     inline Real compute_eigenvalue_neumann(size_t index, size_t N) {
         return (std::cos(M_PI * index / (N-1)) - 1.0) * (N-1) * (N-1) / (2.0*M_PI*M_PI);
     }
 
-    void solve_pressure_equation_neumann(StaggeredTensor &pressure, StaggeredTensor &pressure_tilde_buffer, const VelocityTensor &velocity, StaggeredTensor &b_buffer, StaggeredTensor &b_tilde_buffer) {
+    void solve_pressure_equation_neumann(StaggeredTensor &pressure, 
+                                         StaggeredTensor &pressure_tilde_buffer, 
+                                         const VelocityTensor &velocity, 
+                                         StaggeredTensor &b_buffer, 
+                                         StaggeredTensor &b_tilde_buffer) {
         // TODO: Not tested. Most likely very broken.
         const Constants &constants = velocity.constants;
 
         // Fill the rhs buffer with the divergence of the velocity.
-        VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, b_buffer(i,j,k) = calculate_velocity_divergence(velocity,i,j,k) / constants.dt;)
+        STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, b_buffer(i,j,k) = calculate_velocity_divergence(velocity,i,j,k) / constants.dt;)
 
         // By default, starting from z direction.
         // Create 2decomp object.
@@ -25,7 +30,7 @@ namespace mif {
         C2Decomp c2d = C2Decomp(constants.Nx, constants.Ny, constants.Nz, constants.Pz, constants.Py, neumannBC);
 
 
-        // Exeucute type 1 DCT along direction x and transpose from (z,y,x) to (x,z,y).
+        // Execute type 1 DCT along direction x and transpose from (z,y,x) to (x,z,y).
         // Note: major refers to the last index of the triple, the triple is in the iterating order.
         // TODO: only allocate space once.
         Real *temp1 = (Real*) fftw_malloc(sizeof(Real) * constants.Nx);
@@ -55,7 +60,7 @@ namespace mif {
         fftw_free(temp2);
 
 
-        // Exucute type 1 DCT along direction y and transpose from (x,z,y) to (y,x,z).
+        // Execute type 1 DCT along direction y and transpose from (x,z,y) to (y,x,z).
         temp1 = (Real*) fftw_malloc(sizeof(Real) * constants.Ny);
         temp2 = (Real*) fftw_malloc(sizeof(Real) * constants.Ny);
         fft_plan = fftw_plan_r2r_1d(constants.Ny, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
@@ -83,7 +88,7 @@ namespace mif {
         fftw_free(temp2);
 
 
-        // Exucute type 1 DCT along direction z while in indexing (y,x,z), do not transpose.
+        // Execute type 1 DCT along direction z while in indexing (y,x,z), do not transpose.
         temp1 = (Real*) fftw_malloc(sizeof(Real) * constants.Nz);
         temp2 = (Real*) fftw_malloc(sizeof(Real) * constants.Nz);
         fft_plan = fftw_plan_r2r_1d(constants.Nz, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
@@ -126,7 +131,7 @@ namespace mif {
         pressure_tilde_buffer(0,0,0) = 0;
 
 
-        // Exucute type 1 IDCT along direction z, transpose from (y,x,z) to (x,z,y).
+        // Execute type 1 IDCT along direction z, transpose from (y,x,z) to (x,z,y).
         temp1 = (Real*) fftw_malloc(sizeof(Real) * constants.Nz);
         temp2 = (Real*) fftw_malloc(sizeof(Real) * constants.Nz);
         fft_plan = fftw_plan_r2r_1d(constants.Nz, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
@@ -154,7 +159,7 @@ namespace mif {
         fftw_free(temp2);
 
 
-        // Exucute type 1 IDCT along direction y and transpose from (x,z,y) to (z,y,x).
+        // Execute type 1 IDCT along direction y and transpose from (x,z,y) to (z,y,x).
         temp1 = (Real*) fftw_malloc(sizeof(Real) * constants.Ny);
         temp2 = (Real*) fftw_malloc(sizeof(Real) * constants.Ny);
         fft_plan = fftw_plan_r2r_1d(constants.Ny, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
@@ -179,7 +184,7 @@ namespace mif {
         pressure.swap_data(pressure_tilde_buffer);
 
 
-        // Exucute type 1 IDCT along direction x while in indexing (z,y,x), do not transpose.
+        // Execute type 1 IDCT along direction x while in indexing (z,y,x), do not transpose.
         temp1 = (Real*) fftw_malloc(sizeof(Real) * constants.Nx);
         temp2 = (Real*) fftw_malloc(sizeof(Real) * constants.Nx);
         fft_plan = fftw_plan_r2r_1d(constants.Nx, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);

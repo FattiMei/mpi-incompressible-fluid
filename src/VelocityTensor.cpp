@@ -1,6 +1,5 @@
 #include "VelocityTensor.h"
-#include "ManufacturedVelocity.h"
-#include "VelocityTensorMacros.h"
+#include "StaggeredTensorMacros.h"
 
 namespace mif {
 
@@ -52,12 +51,12 @@ void VelocityTensor::set_initial(const VectorFunction &f) {
   set(f, false);
 }
 
-void VelocityTensor::apply_all_dirichlet_bc(Real time) {
+void VelocityTensor::apply_all_dirichlet_bc(const VectorFunction &exact_velocity) {
   for (size_t component = 0; component < 3U; component++) {
     StaggeredTensor *tensor = components[component];
     const std::array<size_t, 3> sizes = tensor->sizes();
-    const std::function<Real(Real, Real, Real, Real)> &func =
-        (component == 0) ? u_exact : (component == 1 ? v_exact : w_exact);
+    const std::function<Real(Real, Real, Real)> &func =
+        (component == 0) ? exact_velocity.f_u : (component == 1 ? exact_velocity.f_v : exact_velocity.f_w);
 
     // Face 1: z=0
     if (constants.prev_proc_z != -1) {
@@ -68,14 +67,14 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     } else if (component == 2) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t j = 1; j < constants.Ny - 1; j++) {
-          const Real w_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, i, j, 0, func);
+          const Real w_at_boundary = tensor->evaluate_function_at_index_unstaggered(i, j, 0, func);
           const Real du_dx =
-              (u.evaluate_function_at_index(time, i + 1, j, 0, u_exact) -
-               u.evaluate_function_at_index(time, i, j, 0, u_exact)) *
+              (u.evaluate_function_at_index(i + 1, j, 0, exact_velocity.f_u) -
+               u.evaluate_function_at_index(i, j, 0, exact_velocity.f_u)) *
               constants.one_over_dx;
           const Real dv_dy =
-              (v.evaluate_function_at_index(time, i, j + 1, 0, v_exact) -
-               v.evaluate_function_at_index(time, i, j, 0, v_exact)) *
+              (v.evaluate_function_at_index(i, j + 1, 0, exact_velocity.f_v) -
+               v.evaluate_function_at_index(i, j, 0, exact_velocity.f_v)) *
               constants.one_over_dy;
           w(i, j, 0) = w_at_boundary + constants.dz_over_2 * (du_dx + dv_dy);
         }
@@ -84,7 +83,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       for (size_t i = 0; i < sizes[0]; i++) {
         for (size_t j = 0; j < sizes[1]; j++) {
           (*tensor)(i, j, 0) =
-              tensor->evaluate_function_at_index(time, i, j, 0, func);
+              tensor->evaluate_function_at_index(i, j, 0, func);
         }
       }
     }
@@ -98,16 +97,16 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     } else if (component == 2) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t j = 1; j < constants.Ny - 1; j++) {
-          const Real w_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, i, j, constants.Nz_staggered - 1, func);
+          const Real w_at_boundary = tensor->evaluate_function_at_index_unstaggered(i, j, constants.Nz_staggered - 1, func);
           const Real du_dx = (u.evaluate_function_at_index(
-                                  time, i + 1, j, constants.Nz - 1, u_exact) -
+                                  i + 1, j, constants.Nz - 1, exact_velocity.f_u) -
                               u.evaluate_function_at_index(
-                                  time, i, j, constants.Nz - 1, u_exact)) *
+                                  i, j, constants.Nz - 1, exact_velocity.f_u)) *
                              constants.one_over_dx;
           const Real dv_dy = (v.evaluate_function_at_index(
-                                  time, i, j + 1, constants.Nz - 1, v_exact) -
+                                  i, j + 1, constants.Nz - 1, exact_velocity.f_v) -
                               v.evaluate_function_at_index(
-                                  time, i, j, constants.Nz - 1, v_exact)) *
+                                  i, j, constants.Nz - 1, exact_velocity.f_v)) *
                              constants.one_over_dy;
           w(i, j, constants.Nz_staggered - 1) =
               w_at_boundary - constants.dz_over_2 * (du_dx + dv_dy);
@@ -117,7 +116,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       for (size_t i = 0; i < sizes[0]; i++) {
         for (size_t j = 0; j < sizes[1]; j++) {
           (*tensor)(i, j, constants.Nz - 1) =
-              tensor->evaluate_function_at_index(time, i, j, constants.Nz - 1,
+              tensor->evaluate_function_at_index(i, j, constants.Nz - 1,
                                                  func);
         }
       }
@@ -145,14 +144,14 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     } else if (component == 1) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
-          const Real v_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, i, 0, k, func);
+          const Real v_at_boundary = tensor->evaluate_function_at_index_unstaggered(i, 0, k, func);
           const Real du_dx =
-              (u.evaluate_function_at_index(time, i + 1, 0, k, u_exact) -
-               u.evaluate_function_at_index(time, i, 0, k, u_exact)) *
+              (u.evaluate_function_at_index(i + 1, 0, k, exact_velocity.f_u) -
+               u.evaluate_function_at_index(i, 0, k, exact_velocity.f_u)) *
               constants.one_over_dx;
           const Real dw_dz =
-              (w.evaluate_function_at_index(time, i, 0, k + 1, w_exact) -
-               w.evaluate_function_at_index(time, i, 0, k, w_exact)) *
+              (w.evaluate_function_at_index(i, 0, k + 1, exact_velocity.f_w) -
+               w.evaluate_function_at_index(i, 0, k, exact_velocity.f_w)) *
               constants.one_over_dz;
           v(i, 0, k) = v_at_boundary + constants.dy_over_2 * (du_dx + dw_dz);
         }
@@ -161,7 +160,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       for (size_t i = 0; i < sizes[0]; i++) {
         for (size_t k = 0; k < sizes[2]; k++) {
           (*tensor)(i, 0, k) =
-              tensor->evaluate_function_at_index(time, i, 0, k, func);
+              tensor->evaluate_function_at_index(i, 0, k, func);
         }
       }
     }
@@ -183,16 +182,16 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     } else if (component == 1) {
       for (size_t i = 1; i < constants.Nx - 1; i++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
-          const Real v_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, i, constants.Ny_staggered - 1, k, func);
+          const Real v_at_boundary = tensor->evaluate_function_at_index_unstaggered(i, constants.Ny_staggered - 1, k, func);
           const Real du_dx = (u.evaluate_function_at_index(
-                                  time, i + 1, constants.Ny - 1, k, u_exact) -
+                                  i + 1, constants.Ny - 1, k, exact_velocity.f_u) -
                               u.evaluate_function_at_index(
-                                  time, i, constants.Ny - 1, k, u_exact)) *
+                                  i, constants.Ny - 1, k, exact_velocity.f_u)) *
                              constants.one_over_dx;
           const Real dw_dz = (w.evaluate_function_at_index(
-                                  time, i, constants.Ny - 1, k + 1, w_exact) -
+                                  i, constants.Ny - 1, k + 1, exact_velocity.f_w) -
                               w.evaluate_function_at_index(
-                                  time, i, constants.Ny - 1, k, w_exact)) *
+                                  i, constants.Ny - 1, k, exact_velocity.f_w)) *
                              constants.one_over_dz;
           v(i, constants.Ny_staggered - 1, k) =
               v_at_boundary - constants.dy_over_2 * (du_dx + dw_dz);
@@ -202,7 +201,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       for (size_t i = 0; i < sizes[0]; i++) {
         for (size_t k = 0; k < sizes[2]; k++) {
           (*tensor)(i, constants.Ny - 1, k) =
-              tensor->evaluate_function_at_index(time, i, constants.Ny - 1, k,
+              tensor->evaluate_function_at_index(i, constants.Ny - 1, k,
                                                  func);
         }
       }
@@ -212,14 +211,14 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     if (component == 0) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
-          const Real u_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, 0, j, k, func);
+          const Real u_at_boundary = tensor->evaluate_function_at_index_unstaggered(0, j, k, func);
           const Real dv_dy =
-              (v.evaluate_function_at_index(time, 0, j + 1, k, v_exact) -
-               v.evaluate_function_at_index(time, 0, j, k, v_exact)) *
+              (v.evaluate_function_at_index(0, j + 1, k, exact_velocity.f_v) -
+               v.evaluate_function_at_index(0, j, k, exact_velocity.f_v)) *
               constants.one_over_dy;
           const Real dw_dz =
-              (w.evaluate_function_at_index(time, 0, j, k + 1, w_exact) -
-               w.evaluate_function_at_index(time, 0, j, k, w_exact)) *
+              (w.evaluate_function_at_index(0, j, k + 1, exact_velocity.f_w) -
+               w.evaluate_function_at_index(0, j, k, exact_velocity.f_w)) *
               constants.one_over_dz;
           u(0, j, k) = u_at_boundary + constants.dx_over_2 * (dv_dy + dw_dz);
         }
@@ -228,7 +227,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       for (size_t j = 0; j < sizes[1]; j++) {
         for (size_t k = 0; k < sizes[2]; k++) {
           (*tensor)(0, j, k) =
-              tensor->evaluate_function_at_index(time, 0, j, k, func);
+              tensor->evaluate_function_at_index(0, j, k, func);
         }
       }
     }
@@ -237,16 +236,16 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
     if (component == 0) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t k = 1; k < constants.Nz - 1; k++) {
-          const Real u_at_boundary = tensor->evaluate_function_at_index_unstaggered(time, constants.Nx_staggered - 1, j, k, func);
+          const Real u_at_boundary = tensor->evaluate_function_at_index_unstaggered(constants.Nx_staggered - 1, j, k, func);
           const Real dv_dy = (v.evaluate_function_at_index(
-                                  time, constants.Nx - 1, j + 1, k, v_exact) -
+                                  constants.Nx - 1, j + 1, k, exact_velocity.f_v) -
                               v.evaluate_function_at_index(
-                                  time, constants.Nx - 1, j, k, v_exact)) *
+                                  constants.Nx - 1, j, k, exact_velocity.f_v)) *
                              constants.one_over_dy;
           const Real dw_dz = (w.evaluate_function_at_index(
-                                  time, constants.Nx - 1, j, k + 1, w_exact) -
+                                  constants.Nx - 1, j, k + 1, exact_velocity.f_w) -
                               w.evaluate_function_at_index(
-                                  time, constants.Nx - 1, j, k, w_exact)) *
+                                  constants.Nx - 1, j, k, exact_velocity.f_w)) *
                              constants.one_over_dz;
           u(constants.Nx_staggered - 1, j, k) =
               u_at_boundary - constants.dx_over_2 * (dv_dy + dw_dz);
@@ -256,7 +255,7 @@ void VelocityTensor::apply_all_dirichlet_bc(Real time) {
       for (size_t j = 0; j < sizes[1]; j++) {
         for (size_t k = 0; k < sizes[2]; k++) {
           (*tensor)(constants.Nx - 1, j, k) =
-              tensor->evaluate_function_at_index(time, constants.Nx - 1, j, k,
+              tensor->evaluate_function_at_index(constants.Nx - 1, j, k,
                                                  func);
         }
       }

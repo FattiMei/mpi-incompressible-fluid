@@ -1,9 +1,9 @@
 #ifndef VELOCITY_TENSOR_MACROS_H
 #define VELOCITY_TENSOR_MACROS_H
 
-// Execute "CODE" over all points for a velocity component, or over all internal 
+// Execute "CODE" over all points for a staggered tensor, or over all internal 
 // points if include_border is false.
-#define VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(tensor, include_border, CODE)  \
+#define STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(tensor, include_border, CODE) \
   {                                                                            \
     size_t lower_limit, upper_limit_x, upper_limit_y, upper_limit_z;           \
     const std::array<size_t, 3> &sizes = tensor.sizes();                       \
@@ -36,9 +36,9 @@
     }                                                                          \
   }
 
-// Set the values of a component of velocity calculating a function over
+// Set the values of a staggered tensor calculating a function over
 // all of its points, or all internal points if include_border is false.
-#define VELOCITY_TENSOR_FUNCTION_ON_ALL_POINTS(tensor, function,               \
+#define STAGGERED_TENSOR_FUNCTION_ON_ALL_POINTS(tensor, function,              \
                                                include_border, args...)        \
   VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(tensor, include_border,              \
   tensor(i, j, k) = function(args);)

@@ -48,10 +48,10 @@ if __name__ == "__main__":
     # Generate the C code through sympy's codegen utility.
     [(c_name, c_code), (h_name, c_header)] = codegen(
         [
-            ("u_exact", u),
-            ("v_exact", v),
-            ("w_exact", w),
-            ("p_exact", p),
+            ("u_exact_p_test", u),
+            ("v_exact_p_test", v),
+            ("w_exact_p_test", w),
+            ("p_exact_p_test", p),
         ],
         language="C99",
         prefix="ManufacturedPressure",

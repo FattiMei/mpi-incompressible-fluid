@@ -13,7 +13,7 @@ namespace mif {
 // setting Dirichlet boundary conditions.
 // MPI messages with tags in [0, 35] will be used.
 void timestep_velocity(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
-                       VelocityTensor &rhs_buffer, Real t_n);
+                       VelocityTensor &rhs_buffer, const TimeVectorFunction &exact_velocity, Real t_n);
 
 } // namespace mif
 

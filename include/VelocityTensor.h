@@ -100,7 +100,7 @@ public:
   // Apply Dirichlet boundary conditions to all components of the velocity
   // on all boundaries. The function assumes the velocity field is
   // divergence free.
-  void apply_all_dirichlet_bc(Real time);
+  void apply_all_dirichlet_bc(const VectorFunction &exact_velocity);
 };
 
 } // namespace mif

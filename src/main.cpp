@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
   VelocityTensor rhs_buffer(constants);
 
   // Set the initial conditions.
-  TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
+  TimeVectorFunction exact_velocity(u_exact_v_test, v_exact_v_test, w_exact_v_test);
   velocity.set_initial(exact_velocity.set_time(0.0));
 
   // Compute the solution.
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     const Real current_time = time_step * constants.dt;
 
     // Update the solution inside the mesh.
-    timestep_velocity(velocity, velocity_buffer, rhs_buffer, current_time);
+    timestep_velocity(velocity, velocity_buffer, rhs_buffer, exact_velocity, current_time);
   }
 
   // Compute the norms of the error.

@@ -46,10 +46,10 @@ int main(int argc, char *argv[]) {
 
     // Create 2decomp objects.
     bool neumannBC[3] = {true, true, true};
-    C2Decomp *c2d = new C2Decomp(Nx, Ny, Nz, 1, 1, neumannBC);
+    C2Decomp c2d = C2Decomp(Nx, Ny, Nz, 1, 1, neumannBC);
 
     // Transpose.
-    c2d->transposeX2Y_MajorIndex(static_cast<Real*>(tensor.raw_data()), static_cast<Real*>(tensor.raw_data()));
+    c2d.transposeX2Y_MajorIndex(static_cast<Real*>(tensor.raw_data()), static_cast<Real*>(tensor.raw_data()));
     std::cout << "Transposed tensor X2Y: " << std::endl;
     for (size_t i = 0; i < Nx*Ny*Nz; i++) {
         std::cout << (static_cast<Real*>(tensor.raw_data()))[i] << " ";
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Strides: x=Ny*Nz, y=1, z=Ny" << std::endl;
 
     // Transpose again.
-    c2d->transposeY2Z_MajorIndex(static_cast<Real*>(tensor.raw_data()), static_cast<Real*>(tensor.raw_data()));
+    c2d.transposeY2Z_MajorIndex(static_cast<Real*>(tensor.raw_data()), static_cast<Real*>(tensor.raw_data()));
     std::cout << "Transposed tensor Y2Z: " << std::endl;
     for (size_t i = 0; i < Nx*Ny*Nz; i++) {
         std::cout << (static_cast<Real*>(tensor.raw_data()))[i] << " ";
@@ -67,8 +67,8 @@ int main(int argc, char *argv[]) {
     std::cout << "Strides: x=Nz, y=Nx*Nz, z=1" << std::endl;
     
     // Transpose back.
-    c2d->transposeZ2Y_MajorIndex(static_cast<Real*>(tensor.raw_data()), static_cast<Real*>(tensor.raw_data()));
-    c2d->transposeY2X_MajorIndex(static_cast<Real*>(tensor.raw_data()), static_cast<Real*>(tensor.raw_data()));
+    c2d.transposeZ2Y_MajorIndex(static_cast<Real*>(tensor.raw_data()), static_cast<Real*>(tensor.raw_data()));
+    c2d.transposeY2X_MajorIndex(static_cast<Real*>(tensor.raw_data()), static_cast<Real*>(tensor.raw_data()));
     std::cout << "Copy of original tensor: " << std::endl;
     for (size_t i = 0; i < Nx*Ny*Nz; i++) {
         std::cout << (static_cast<Real*>(tensor.raw_data()))[i] << " ";

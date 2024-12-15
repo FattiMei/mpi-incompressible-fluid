@@ -34,7 +34,7 @@ static void timestepper(benchmark::State &state) {
   VelocityTensor velocity_buffer(constants);
   VelocityTensor rhs_buffer(constants);
 
-  TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
+  TimeVectorFunction exact_velocity(u_exact_v_test, v_exact_v_test, w_exact_v_test);
   velocity.set_initial(exact_velocity.set_time(0.0));
 
   TimeVectorFunction forcing_term(forcing_x, forcing_y, forcing_z);
@@ -43,7 +43,7 @@ static void timestepper(benchmark::State &state) {
   for (auto _ : state) {
     const Real t = step * constants.dt;
 
-    timestep_velocity(velocity, velocity_buffer, rhs_buffer, t);
+    timestep_velocity(velocity, velocity_buffer, rhs_buffer, exact_velocity, t);
 
     ++step;
   }

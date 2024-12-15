@@ -63,9 +63,9 @@ if __name__ == "__main__":
     # Generate the C code through sympy's codegen utility.
     [(c_name, c_code), (h_name, c_header)] = codegen(
         [
-            ("u_exact", u),
-            ("v_exact", v),
-            ("w_exact", w),
+            ("u_exact_v_test", u),
+            ("v_exact_v_test", v),
+            ("w_exact_v_test", w),
             ("forcing_x", fx),
             ("forcing_y", fy),
             ("forcing_z", fz),

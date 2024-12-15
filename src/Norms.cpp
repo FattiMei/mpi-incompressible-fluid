@@ -1,7 +1,6 @@
 #include "Norms.h"
 #include <cmath>
 #include <mpi.h>
-#include "ManufacturedVelocity.h"
 
 namespace mif {
 
