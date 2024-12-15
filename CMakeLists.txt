@@ -57,6 +57,8 @@ set(DECOMP_DIR "${CMAKE_SOURCE_DIR}/deps/2Decomp_C")
 
 set(FORCING_TERM_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol_velocity.py)
 set(FORCING_TERM_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol_velocity.cpp)
+set(PRESSURE_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol_pressure.py)
+set(PRESSURE_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol_pressure.cpp)
 set(EXACT_SOLUTION_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol.py)
 set(EXACT_SOLUTION_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp)
 
@@ -75,6 +77,8 @@ add_library(
 	${SOURCE_DIR}/VectorFunction.cpp
 	${SOURCE_DIR}/VelocityTensor.cpp
 	${FORCING_TERM_ARTIFACT}
+	${PRESSURE_ARTIFACT}
+	${EXACT_SOLUTION_ARTIFACT}
 )
 
 
@@ -134,11 +138,15 @@ add_custom_command(
 	DEPENDS ${FORCING_TERM_GENERATOR}
 	COMMAND ${Python3_EXECUTABLE} ${FORCING_TERM_GENERATOR} > ${FORCING_TERM_ARTIFACT}
 )
-
 add_custom_command(
 	OUTPUT ${EXACT_SOLUTION_ARTIFACT}
 	DEPENDS ${EXACT_SOLUTION_GENERATOR}
 	COMMAND ${Python3_EXECUTABLE} ${EXACT_SOLUTION_GENERATOR} > ${EXACT_SOLUTION_ARTIFACT}
+)
+add_custom_command(
+	OUTPUT ${PRESSURE_ARTIFACT}
+	DEPENDS ${PRESSURE_GENERATOR}
+	COMMAND ${Python3_EXECUTABLE} ${PRESSURE_GENERATOR} > ${PRESSURE_ARTIFACT}
 )
 
 add_custom_command(

@@ -17,7 +17,7 @@ namespace mif {
         const Constants &constants = velocity.constants;
 
         // Fill the rhs buffer with the divergence of the velocity.
-        VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, false, b_buffer(i,j,k) = calculate_velocity_divergence(velocity,i,j,k);)
+        VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, false, b_buffer(i,j,k) = calculate_velocity_divergence(velocity,i,j,k) / constants.dt;)
 
         // By default, starting from z direction.
         // Create 2decomp object.
@@ -143,7 +143,7 @@ namespace mif {
 
                 // Copy the transformed data.
                 for (size_t k = 0; k < constants.Nz; k++) {
-                    pressure_tilde_buffer(i,j,k) = temp2[i];
+                    pressure_tilde_buffer(i,j,k) = temp2[i] / (2.0*(constants.Nz-1));
                 }
             }
         }
@@ -171,7 +171,7 @@ namespace mif {
 
                 // Copy the transformed data.
                 for (size_t j = 0; j < constants.Ny; j++){
-                    pressure_tilde_buffer(i,j,k) = temp2[j];
+                    pressure_tilde_buffer(i,j,k) = temp2[j] / (2.0*(constants.Ny-1));
                 }
             }
         }
@@ -196,7 +196,7 @@ namespace mif {
 
                 // Copy the transformed data.
                 for (size_t i = 0; i < constants.Nx; i++) {
-                    pressure_tilde_buffer(i,j,k) = temp2[i];
+                    pressure_tilde_buffer(i,j,k) = temp2[i] / (2.0*(constants.Nx-1));
                 }
             }
         }
