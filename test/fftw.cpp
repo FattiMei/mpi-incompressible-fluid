@@ -68,6 +68,7 @@ int main() {
     x[0]   *= sqrt(2);
     x[N-1] *= sqrt(2);
 	const double constant = xex[0] - x[0];
+	(void) constant;
 
 	for (int i = 0; i < N; ++i) {
 		assert(std::abs(xex[i] - x[i] - constant) < 1e-6);

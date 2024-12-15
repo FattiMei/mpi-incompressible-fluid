@@ -1,6 +1,9 @@
 #include <iostream>
-#include "../deps/2Decomp_C/C2Decomp.hpp"
 #include "StaggeredTensor.h"
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#include "../deps/2Decomp_C/C2Decomp.hpp"
+#pragma GCC diagnostic pop
 
 // A simple test to verify how 2decomp operates on tensors.
 int main(int argc, char *argv[]) {

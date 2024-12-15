@@ -81,6 +81,7 @@ add_library(
 	${DECOMP_DIR}/Best2DGrid.cpp
 	${DECOMP_DIR}/Halo.cpp
 )
+target_compile_options(decomp PRIVATE -w) # Ignore all warnings from 2decomp.
 
 add_executable(${EXE_NAME} "${SOURCE_DIR}/main.cpp")
 target_link_libraries(${EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})

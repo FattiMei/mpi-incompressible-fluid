@@ -1,7 +1,10 @@
 #include <cassert>
-#include <mpi.h>
 #include <iostream>
 #include <vector>
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#include <mpi.h>
+#pragma GCC diagnostic pop
 
 int main(int argc, char *argv[]) {
   int rank;

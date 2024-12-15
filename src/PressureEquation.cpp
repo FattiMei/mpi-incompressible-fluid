@@ -1,8 +1,11 @@
 #include "PressureEquation.h"
 #include "VelocityDivergence.h"
 #include "VelocityTensorMacros.h"
-#include "../deps/2Decomp_C/C2Decomp.hpp"
 #include <fftw3.h>
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#include "../deps/2Decomp_C/C2Decomp.hpp"
+#pragma GCC diagnostic pop
 
 namespace mif {
     inline Real compute_eigenvalue_neumann(size_t index, size_t N) {

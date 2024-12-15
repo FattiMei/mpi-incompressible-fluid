@@ -3,9 +3,12 @@
 #include <vector>
 #include <cassert>
 #include <fftw3.h>
-#include <mpi.h>
 #include <stdlib.h>
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#include <mpi.h>
 #include "../deps/2Decomp_C/C2Decomp.hpp"
+#pragma GCC diagnostic pop
 
 constexpr double PI = 3.141592653589793;
 
@@ -35,6 +38,7 @@ int main(int argc, char *argv[]) {
     Nz = N;
 
     int ierr, totRank, mpiRank;
+    (void) ierr;
 
     ierr = MPI_Init( &argc, &argv);
 
@@ -54,8 +58,6 @@ int main(int argc, char *argv[]) {
     	// cout << endl;
 
     }
-
-	int total_points = N;
 
 	int size = Nx * Ny * Nz;
 
