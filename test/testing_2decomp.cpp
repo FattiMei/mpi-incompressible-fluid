@@ -39,13 +39,19 @@ int main(int argc, char *argv[]) {
     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
 
     int N = 10;
-    int size = N*N*N;
+    // int size = N*N*N;
 
-    double *Uex    = (double*) fftw_malloc(sizeof(double) * size);
+    // double *b      = (double*) fftw_malloc(sizeof(double) * size);
 
-    //double *b      = (double*) fftw_malloc(sizeof(double) * size);
-
-    //double *xFinal    = (double*) fftw_malloc(sizeof(double) * size);
+    // double h = 2*PI/(N-1) ;
+    // for (int i = 0; i < Nx; i++) {
+    //     for (int j = 0; j < Ny; j++) {
+    //         for (int k = 0; k < Nz; k++) {
+    //             Uex[index3D(i,  j,  k,  N)] = std::cos(h*i) * std::cos(h*j) * std::cos(h*k) ;
+    //             b[index3D(i, j, k, N)] = -3.0*Uex[index3D(i,  j,  k,  N)];
+    //         }    
+    //     }
+    // }
 
     if(!mpiRank){
         cout << endl;
@@ -53,63 +59,25 @@ int main(int argc, char *argv[]) {
     	cout << " C2Decomp Testing " << endl;
     	cout << "-------------------" << endl;
     	cout << endl;
-
-        
-        try
-        {
-            if (argc > 1) {
-                N = std::stoi(argv[1]); // Use std::stoi for better error detection
-                cout << "N set equal to " << N << endl <<endl;
-            } else {
-                cout << "No argument provided. N set to default value: 3" << endl << endl;
-            }
-        }catch (const std::invalid_argument& e) {
-            cout << "N set equal to 3"<<endl<<endl;
-        }catch (...) {
-            std::cerr << "Unknown error occurred. N set to default value: 3" << std::endl << std::endl;
-        }
-
-        int Nx, Ny, Nz;
-        Nx = N;
-        Ny = N;
-        Nz = N;
-
-        size = Nx * Ny * Nz;
-
-        double h = 2*PI/(N-1) ;
-        for (int i = 0; i < Nx; i++) {
-            for (int j = 0; j < Ny; j++) {
-                for (int k = 0; k < Nz; k++) {
-                    Uex[index3D(i,  j,  k,  N)] = std::cos(h*i) * std::cos(h*j) * std::cos(h*k) ;
-                    //b[index3D(i, j, k, N)] = -3.0*Uex[index3D(i,  j,  k,  N)];
-                }    
-            }
-        }
-
     }
 
-    double *b11      = new double[N * N * N];
-    double *b12      = new double[N * N * N];
 
-    for (int i = 0; i < size; i++){
-        b11[i] = i+1;
-    }
 	
-    MPI_Barrier(MPI_COMM_WORLD);
+    //MPI_Barrier(MPI_COMM_WORLD);
     // Create forcing term manufactured from manufactured sulotion (u =-3cx*cy*cz, x, y, z = [0, 2pi])
     
     
 
     // pRow*pCol = rankMPI to work properly!!
 
-    int pCol = 0;
-    int pRow = 0;
+    
 
     bool neumannBC[3] = {true, true, true};
 
     if(!mpiRank) cout << "initializing " << endl;
+
     C2Decomp *c2d = new C2Decomp(N, N, N, 0, 0, neumannBC);
-    
+
     if(!mpiRank) cout << "done initializing " << endl;
 
     int xSize[3] = {c2d->xSize[0], c2d->xSize[1], c2d->xSize[2]};
@@ -120,7 +88,9 @@ int main(int argc, char *argv[]) {
 
     double *u1, *u2, *u3, *div1, *div2, *div3;
 
+    double *Uex    = (double*) fftw_malloc(sizeof(double) * xSize[2] * xSize[1] * xSize[0]);
 
+    //cout << "From processor "<< mpiRank << ". My starting point: "<< c2d->xStart[2] << " " << c2d->xStart[1] << " " << c2d->xStart[0] << " "<< ". And total size "  << xSize[2]*xSize[1]*xSize[0] << endl;
 
     c2d->allocX(u1);
     c2d->allocY(u2);
@@ -129,20 +99,31 @@ int main(int argc, char *argv[]) {
     c2d->allocY(div2);
     c2d->allocZ(div3);
 
-    for(int ip = 0; ip < xSize[2]*xSize[1]*xSize[0]; ip++){
-	    div1[ip] = ip + 1;
+
+    double h = 2*PI/(N-1) ;
+
+    for (int i = c2d->xStart[2]; i < xSize[2]; i++) {
+        for (int j = c2d->xStart[1]; j < xSize[1]; j++){
+            for (int k = c2d->xStart[0]; k < xSize[0]; k++){
+                Uex[i*xSize[1]*xSize[0] + j*xSize[0] + k] = std::cos(h*i) * std::cos(h*j) * std::cos(h*k) ;
+                div1[i*xSize[1]*xSize[0] + j*xSize[0] + k] = -3.0*Uex[i*xSize[1]*xSize[0] + j*xSize[0] + k];// i*xSize[1]*xSize[0] + j*xSize[0] + k + 1;
+                //cout<< div1[i*xSize[1]*xSize[0] + j*xSize[0] + k] << " ("<< mpiRank << ") ";
+            }
+        }
     }
+    //cout<<endl;
+    
 
     temp1 = new double[xSize[0]];
     temp2 = new double[xSize[0]];
 
     fftw_plan b_to_btilde_plan = fftw_plan_r2r_1d(xSize[0], temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
 
-    for (int i = 0; i < xSize[2]; i++) {
-        for (int j = 0; j < xSize[1]; j++){
+    for (int i = c2d->xStart[2]; i < xSize[2]; i++) {
+        for (int j = c2d->xStart[1]; j < xSize[1]; j++){
             extract_array(div1, xSize[0], i*xSize[1]*xSize[0] + j*xSize[0], temp1);
             fftw_execute(b_to_btilde_plan);
-            for (int k = 0; k < xSize[0]; k++){
+            for (int k = c2d->xStart[0]; k < xSize[0]; k++){
                 u1[i*xSize[1]*xSize[0] + j*xSize[0] + k] = temp2[k];
             }
         }
@@ -151,8 +132,8 @@ int main(int argc, char *argv[]) {
     free(temp1);
     free(temp2);
 
-    c2d->transposeX2Y(u1, u2);
-    c2d->transposeX2Y(div1, div2);
+    c2d->transposeX2Y_MajorIndex(u1, u2);
+    c2d->transposeX2Y_MajorIndex(div1, div2);
 
     
 
@@ -161,11 +142,11 @@ int main(int argc, char *argv[]) {
 
     b_to_btilde_plan = fftw_plan_r2r_1d(ySize[0], temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
 
-    for (int i = 0; i < ySize[2]; i++) {
-        for (int j = 0; j < ySize[1]; j++){
-            extract_array(div2, ySize[0], i*ySize[1]*ySize[0] + j*ySize[0], temp1);
+    for (int i = c2d->yStart[2]; i < ySize[2]; i++) {
+        for (int j = c2d->yStart[1]; j < ySize[1]; j++){
+            extract_array(u2, ySize[0], i*ySize[1]*ySize[0] + j*ySize[0], temp1);
             fftw_execute(b_to_btilde_plan);
-            for (int k = 0; k < ySize[0]; k++){
+            for (int k = c2d->yStart[0]; k < ySize[0]; k++){
                 u2[i*ySize[1]*ySize[0] + j*ySize[0] + k] = temp2[k];
             }
         }
@@ -183,11 +164,11 @@ int main(int argc, char *argv[]) {
 
     b_to_btilde_plan = fftw_plan_r2r_1d(zSize[0], temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
 
-    for (int i = 0; i < zSize[2]; i++) {
-        for (int j = 0; j < zSize[1]; j++){
-            extract_array(div3, zSize[0], i*zSize[1]*zSize[0] + j*zSize[0], temp1);
+    for (int i = c2d->zStart[2]; i < zSize[2]; i++) {
+        for (int j = c2d->zStart[1]; j < zSize[1]; j++){
+            extract_array(u3, zSize[0], i*zSize[1]*zSize[0] + j*zSize[0], temp1);
             fftw_execute(b_to_btilde_plan);
-            for (int k = 0; k < zSize[0]; k++){
+            for (int k = c2d->zStart[0]; k < zSize[0]; k++){
                 u3[i*zSize[1]*zSize[0] + j*zSize[0] + k] = temp2[k];
             }
         }
@@ -201,22 +182,33 @@ int main(int argc, char *argv[]) {
     c2d->transposeY2X_MajorIndex(u2, u1);
     c2d->transposeY2X_MajorIndex(div2, div1);
 
-
-    MPI_Barrier(MPI_COMM_WORLD);
-
     // finish 1 time transform
+
+    for (int i = c2d->xStart[2]; i < xSize[2]; i++) {
+        double t1= compute_eigenvalue_neumann(i, N);
+        for (int j = c2d->xStart[1]; j < xSize[1]; j++){
+            double t2= compute_eigenvalue_neumann(j, N);
+            for (int k = c2d->xStart[0]; k < xSize[0]; k++){
+                u1[i*xSize[1]*xSize[0] + j*xSize[0] + k] /= (t1 + t2 + compute_eigenvalue_neumann(k, N) )/std::pow(h, 2);
+            }
+        }
+    }
+
+    u1[c2d->xStart[0]] = 0;
+
+    // Init anti transform
 
     temp1 = new double[xSize[0]];
     temp2 = new double[xSize[0]];
 
     b_to_btilde_plan = fftw_plan_r2r_1d(xSize[0], temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
 
-    for (int i = 0; i < xSize[2]; i++) {
-        for (int j = 0; j < xSize[1]; j++){
-            extract_array(div1, xSize[0], i*xSize[1]*xSize[0] + j*xSize[0], temp1);
+    for (int i = c2d->xStart[2]; i < xSize[2]; i++) {
+        for (int j = c2d->xStart[1]; j < xSize[1]; j++){
+            extract_array(u1, xSize[0], i*xSize[1]*xSize[0] + j*xSize[0], temp1);
             fftw_execute(b_to_btilde_plan);
-            for (int k = 0; k < xSize[0]; k++){
-                u1[i*xSize[1]*xSize[0] + j*xSize[0] + k] = temp2[k];
+            for (int k = c2d->xStart[0]; k < xSize[0]; k++){
+                u1[i*xSize[1]*xSize[0] + j*xSize[0] + k] = ( temp2[k] )/( 2.0 * (N-1) );
             }
         }
     }
@@ -224,8 +216,8 @@ int main(int argc, char *argv[]) {
     free(temp1);
     free(temp2);
 
-    c2d->transposeX2Y(u1, u2);
-    c2d->transposeX2Y(div1, div2);
+    c2d->transposeX2Y_MajorIndex(u1, u2);
+    c2d->transposeX2Y_MajorIndex(div1, div2);
 
     
 
@@ -234,12 +226,12 @@ int main(int argc, char *argv[]) {
 
     b_to_btilde_plan = fftw_plan_r2r_1d(ySize[0], temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
 
-    for (int i = 0; i < ySize[2]; i++) {
-        for (int j = 0; j < ySize[1]; j++){
-            extract_array(div2, ySize[0], i*ySize[1]*ySize[0] + j*ySize[0], temp1);
+    for (int i = c2d->yStart[2]; i < ySize[2]; i++) {
+        for (int j = c2d->yStart[1]; j < ySize[1]; j++){
+            extract_array(u2, ySize[0], i*ySize[1]*ySize[0] + j*ySize[0], temp1);
             fftw_execute(b_to_btilde_plan);
-            for (int k = 0; k < ySize[0]; k++){
-                u2[i*ySize[1]*ySize[0] + j*ySize[0] + k] = temp2[k];
+            for (int k = c2d->yStart[0]; k < ySize[0]; k++){
+                u2[i*ySize[1]*ySize[0] + j*ySize[0] + k] = ( temp2[k] )/( 2.0 * (N-1) );
             }
         }
     }
@@ -256,12 +248,12 @@ int main(int argc, char *argv[]) {
 
     b_to_btilde_plan = fftw_plan_r2r_1d(zSize[0], temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
 
-    for (int i = 0; i < zSize[2]; i++) {
-        for (int j = 0; j < zSize[1]; j++){
-            extract_array(div3, zSize[0], i*zSize[1]*zSize[0] + j*zSize[0], temp1);
+    for (int i = c2d->zStart[2]; i < zSize[2]; i++) {
+        for (int j = c2d->zStart[1]; j < zSize[1]; j++){
+            extract_array(u3, zSize[0], i*zSize[1]*zSize[0] + j*zSize[0], temp1);
             fftw_execute(b_to_btilde_plan);
-            for (int k = 0; k < zSize[0]; k++){
-                u3[i*zSize[1]*zSize[0] + j*zSize[0] + k] = temp2[k];
+            for (int k = c2d->zStart[0]; k < zSize[0]; k++){
+                u3[i*zSize[1]*zSize[0] + j*zSize[0] + k] = ( temp2[k] )/( 2.0 * (N-1) );
             }
         }
     }
@@ -274,28 +266,63 @@ int main(int argc, char *argv[]) {
     c2d->transposeY2X_MajorIndex(u2, u1);
     c2d->transposeY2X_MajorIndex(div2, div1);
 
-    
+    //MPI_Barrier(MPI_COMM_WORLD);
 
-    for (int i = 0; i < totRank; i++){
-        if(mpiRank == i){
-            cout<< "From Processor " << mpiRank <<endl;
-            double difff = div1[0] - 1;
-            for (int i = 0; i < xSize[2] * xSize[1] * xSize[0]; i++){
-                cout << std::abs(div1[i] +1 - i - difff) << " ";
+    double difff = u1[c2d->xStart[0]] - Uex[c2d->xStart[0]];
+
+    double max = 0.0;
+
+
+    for (int i = c2d->xStart[2]; i < xSize[2]; i++) {
+        for (int j = c2d->xStart[1]; j < xSize[1]; j++){
+            for (int k = c2d->xStart[0]; k < xSize[0]; k++){
+                //cout<< div1[i*xSize[1]*xSize[0] + j*xSize[0] + k] << " ";
+                double temppp = std::abs(u1[i*xSize[1]*xSize[0] + j*xSize[0] + k] - Uex[i*xSize[1]*xSize[0] + j*xSize[0] + k] - difff);
+                if (max < temppp)
+                    max = temppp;
             }
-            cout<<endl;
-            for(int i = 0; i < 3; i++){
-                cout << xSize[i] << " "<< ySize[i] << " "<< zSize[i] << endl;
-            }
-            cout<<endl;
         }
-        MPI_Barrier(MPI_COMM_WORLD);
     }
+    
+    cout <<endl<< "And the max error from processor " <<  mpiRank << " is "<< max <<endl << endl;
+
+    // for (int iii = 0; iii < totRank; iii++){
+    //     if(mpiRank == iii){
+    //         cout<< "From Processor " << mpiRank <<endl;
+    //         double difff = u1[c2d->xStart[0]] - Uex[c2d->xStart[0]];
+
+    //         double max = 0.0;
+
+    //         for (int i = c2d->xStart[2]; i < xSize[2]; i++) {
+    //             for (int j = c2d->xStart[1]; j < xSize[1]; j++){
+    //                 for (int k = c2d->xStart[0]; k < xSize[0]; k++){
+    //                     //cout<< div1[i*xSize[1]*xSize[0] + j*xSize[0] + k] << " ";
+    //                     double temppp = std::abs(u1[i*xSize[1]*xSize[0] + j*xSize[0] + k] - Uex[i*xSize[1]*xSize[0] + j*xSize[0] + k] - difff);
+    //                     if (max < temppp)
+    //                         max = temppp;
+    //                 }
+    //             }
+    //         }
+
+    //         cout <<endl<< "And the max error is "<< max <<endl << endl;
+    //         // for(int i = 0; i < 3; i++){
+    //         //     cout << xSize[i] << " "<< ySize[i] << " "<< zSize[i] << endl;
+    //         // }
+    //         // cout<<endl;
+    //     }
+    //     MPI_Barrier(MPI_COMM_WORLD);
+    // }
 
 
     fftw_free(Uex);
-    fftw_free(b11);
-    fftw_free(b12);
+    fftw_destroy_plan(b_to_btilde_plan);
+
+    c2d->deallocXYZ(u1);
+    c2d->deallocXYZ(div1);
+    c2d->deallocXYZ(u2);
+    c2d->deallocXYZ(div2);
+    c2d->deallocXYZ(u3);
+    c2d->deallocXYZ(div3);
 
     fftw_cleanup();
     MPI_Finalize();
