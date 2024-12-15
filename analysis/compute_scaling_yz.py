@@ -15,11 +15,11 @@ P_list = [1]
 while P_list[-1] < P_max:
     P_list.append(P_list[-1] * 2)
 
-# Run (convergence over xy).
+# Run (convergence over yz).
 times = []
 for i in range(len(P_list)):
-    Px = P_list[i]
-    Py = P_max // Px
+    Pz = P_list[i]
+    Py = P_max // Pz
     before = time.time_ns()
     os.system(
         "mpirun -n "
@@ -29,11 +29,11 @@ for i in range(len(P_list)):
         + " "
         + str(time_steps)
         + " "
-        + str(Px)
+        + str(Pz)
         + " >/dev/null"
     )
     after = time.time_ns()
-    times.append(((Px, Py), after - before))
+    times.append(((Pz, Py), after - before))
 
 # Run (serial).
 before = time.time_ns()
@@ -42,6 +42,6 @@ after = time.time_ns()
 serial_time = after - before
 
 for value in times:
-    Px, Py = value[0]
+    Pz, Py = value[0]
     P_time = value[1]
-    print(f"Px: {Px}, Py: {Py}, time: {P_time}ns, speedup: {serial_time/P_time}")
+    print(f"Pz: {Pz}, Py: {Py}, time: {P_time}ns, speedup: {serial_time/P_time}")

@@ -17,7 +17,7 @@ namespace mif {
         const Constants &constants = velocity.constants;
 
         // Fill the rhs buffer with the divergence of the velocity.
-        VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, false, b_buffer(i,j,k) = calculate_velocity_divergence(velocity,i,j,k) / constants.dt;)
+        VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, b_buffer(i,j,k) = calculate_velocity_divergence(velocity,i,j,k) / constants.dt;)
 
         // By default, starting from z direction.
         // Create 2decomp object.

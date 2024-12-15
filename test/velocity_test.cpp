@@ -78,9 +78,9 @@ int main(int argc, char *argv[]) {
   }
 
   // Compute the norms of the error.
-  const Real error_l1_local = ErrorL1Norm(velocity, final_time);
-  const Real error_l2_local = ErrorL2Norm(velocity, final_time);
-  const Real error_lInf_local = ErrorLInfNorm(velocity, final_time);
+  const Real error_l1_local = ErrorL1Norm(velocity, exact_velocity, final_time);
+  const Real error_l2_local = ErrorL2Norm(velocity, exact_velocity, final_time);
+  const Real error_lInf_local = ErrorLInfNorm(velocity, exact_velocity, final_time);
   
   // The global error is computed by accumulating the errors on the processor
   // with rank 0.

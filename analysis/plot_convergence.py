@@ -20,10 +20,12 @@ os.system("cd ../build && make -j")
 
 # Run.
 for step in range(num_tests):
-    N = initial_N * 2**(step)
-    time_steps = initial_time_steps * 2**(step)
+    N = initial_N * 2 ** (step)
+    time_steps = initial_time_steps * 2 ** (step)
 
-    os.system("../build/mif " + str(N) + " " + str(time_steps) + " 1 >> results.txt")
+    os.system(
+        "../build/velocity_test " + str(N) + " " + str(time_steps) + " 1 >> results.txt"
+    )
 
 # Get the results.
 with open("results.txt", "r") as f:
@@ -43,8 +45,11 @@ for step in range(num_tests):
         errors[i].append(float(data[step].split(" ")[i]))
 
         if i > 0:
-            if (float(data[step].split(" ")[i]) != 0.0):
-                speedups[i].append(float(data[step-1].split(" ")[i]) / float(data[step].split(" ")[i]))
+            if float(data[step].split(" ")[i]) != 0.0:
+                speedups[i].append(
+                    float(data[step - 1].split(" ")[i])
+                    / float(data[step].split(" ")[i])
+                )
             else:
                 speedups[i].append(float("inf"))
 
@@ -53,7 +58,7 @@ x = []
 y = []
 for i in range(num_tests):
     x.append(2**i)
-    y.append(1.0/2**(2*i)*5*10**-8)
+    y.append(1.0 / 2 ** (2 * i) * 5 * 10**-8)
 
 # Plot the errors as a log-log plot.
 # Plot the l1_errors, l2_errors, and linf_errors.

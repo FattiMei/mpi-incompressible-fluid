@@ -1,7 +1,7 @@
 #ifndef NORMS_H
 #define NORMS_H
 
-#include <functional>
+#include "VectorFunction.h"
 #include "VelocityTensor.h"
 
 namespace mif {
@@ -15,16 +15,21 @@ namespace mif {
 
 // The L1 norm of a vector function is defined as the integral over the whole
 // domain of the norm of the vector.
-Real ErrorL1Norm(const VelocityTensor &velocity, Real time);
+Real ErrorL1Norm(const VelocityTensor &velocity, const TimeVectorFunction &exact_velocity, Real time);
 
 // The L2 norm of a vector function is defined as the square root of the
 // integral over the whole domain of the scalar product of the function with
 // itself.
-Real ErrorL2Norm(const VelocityTensor &velocity, Real time);
+Real ErrorL2Norm(const VelocityTensor &velocity, const TimeVectorFunction &exact_velocity, Real time);
 
 // The Linfinity norm of a vector function is defined as the maximum value of
 // any component of the function.
-Real ErrorLInfNorm(const VelocityTensor &velocity, Real time);
+Real ErrorLInfNorm(const VelocityTensor &velocity, const TimeVectorFunction &exact_velocity, Real time);
+
+// Versions of the same functions for a scalar tensor.
+Real ErrorL1Norm(const StaggeredTensor &pressure, const std::function<Real(Real, Real, Real, Real)> &exact_pressure, Real time);
+Real ErrorL2Norm(const StaggeredTensor &pressure, const std::function<Real(Real, Real, Real, Real)> &exact_pressure, Real time);
+Real ErrorLInfNorm(const StaggeredTensor &pressure, const std::function<Real(Real, Real, Real, Real)> &exact_pressure, Real time);
 
 // Compute the global error in a given norm by accumulating the errors on
 // the processor with rank 0. For all other processors the result will be -1.

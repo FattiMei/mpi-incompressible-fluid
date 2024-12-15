@@ -9,7 +9,7 @@ namespace mif {
 // domain. Depending on the specified reduction_operation, this can be used to
 // define the L1, L2 and Linfinity norms.
 Real compute_error(
-    const VelocityTensor &velocity, Real time,
+    const VelocityTensor &velocity, const TimeVectorFunction &exact_velocity, Real time,
     const std::function<Real(Real, Real, Real, Real)> &reduction_operation) {
   Real integral = 0.0;
   const Constants &constants = velocity.constants;
@@ -34,9 +34,9 @@ Real compute_error(
             (velocity.v(i, j, k) + velocity.v(i, j + 1, k)) / 2.0;
         const Real interpolated_w =
             (velocity.w(i, j, k) + velocity.w(i, j, k + 1)) / 2.0;
-        const Real u_error = u_exact(time, x, y, z) - interpolated_u;
-        const Real v_error = v_exact(time, x, y, z) - interpolated_v;
-        const Real w_error = w_exact(time, x, y, z) - interpolated_w;
+        const Real u_error = exact_velocity.f_u(time, x, y, z) - interpolated_u;
+        const Real v_error = exact_velocity.f_v(time, x, y, z) - interpolated_v;
+        const Real w_error = exact_velocity.f_w(time, x, y, z) - interpolated_w;
 
         integral = reduction_operation(integral, u_error, v_error, w_error);
       }
@@ -46,21 +46,7 @@ Real compute_error(
   return integral;
 }
 
-Real ErrorL2Norm(const VelocityTensor &velocity, Real time) {
-  const Constants &constants = velocity.constants;
-
-  // Accumulate the sum of squared error over the components.
-  const auto reduction_operation = [](Real integral, Real u_error, Real v_error,
-                                      Real w_error) {
-    return integral + u_error * u_error + v_error * v_error + w_error * w_error;
-  };
-  const Real integral = compute_error(velocity, time, reduction_operation);
-
-  // Multiply the integral by the volume of a cell and return its square root.
-  return std::sqrt(integral * constants.dx * constants.dy * constants.dz);
-}
-
-Real ErrorL1Norm(const VelocityTensor &velocity, Real time) {
+Real ErrorL1Norm(const VelocityTensor &velocity, const TimeVectorFunction &exact_velocity, Real time) {
   const Constants &constants = velocity.constants;
 
   // Accumulate the module of the error.
@@ -69,19 +55,74 @@ Real ErrorL1Norm(const VelocityTensor &velocity, Real time) {
     return integral +
            std::sqrt(u_error * u_error + v_error * v_error + w_error * w_error);
   };
-  const Real integral = compute_error(velocity, time, reduction_operation);
+  const Real integral = compute_error(velocity, exact_velocity, time, reduction_operation);
 
   // Multiply the integral by the volume of a cell.
   return integral * constants.dx * constants.dy * constants.dz;
 }
 
-Real ErrorLInfNorm(const VelocityTensor &velocity, Real time) {
+Real ErrorL2Norm(const VelocityTensor &velocity, const TimeVectorFunction &exact_velocity, Real time) {
+  const Constants &constants = velocity.constants;
+
+  // Accumulate the sum of squared error over the components.
+  const auto reduction_operation = [](Real integral, Real u_error, Real v_error,
+                                      Real w_error) {
+    return integral + u_error * u_error + v_error * v_error + w_error * w_error;
+  };
+  const Real integral = compute_error(velocity, exact_velocity, time, reduction_operation);
+
+  // Multiply the integral by the volume of a cell and return its square root.
+  return std::sqrt(integral * constants.dx * constants.dy * constants.dz);
+}
+
+Real ErrorLInfNorm(const VelocityTensor &velocity, const TimeVectorFunction &exact_velocity, Real time) {
   // Return the highest error yet.
   const auto reduction_operation = [](Real integral, Real u_error, Real v_error,
                                       Real w_error) {
     return std::max({integral, std::abs(u_error), std::abs(v_error), std::abs(w_error)});
   };
-  return compute_error(velocity, time, reduction_operation);
+  return compute_error(velocity, exact_velocity, time, reduction_operation);
+}
+
+// Same function for a scalar tensor. No need to skip borders since it is unstaggered.
+Real compute_error(
+    const StaggeredTensor &pressure, const std::function<Real(Real, Real, Real, Real)> &exact_pressure, 
+    Real time, const std::function<Real(Real, Real)> &reduction_operation) {
+  Real integral = 0.0;
+  const Constants &constants = pressure.constants;
+
+  for (size_t k = 0; k < constants.Nz; k++) {
+    const Real z = constants.min_z + k * constants.dz;
+    for (size_t j = 0; j < constants.Ny; j++) {
+      const Real y = constants.min_y + j * constants.dy;
+      for (size_t i = 0; i < constants.Nx; i++) {
+        const Real x = i * constants.dx;
+
+        const Real error = exact_pressure(time, x, y, z) - pressure(i,j,k);
+
+        integral = reduction_operation(integral, error);
+      }
+    }
+  }
+
+  return integral;
+}
+
+Real ErrorL1Norm(const StaggeredTensor &pressure, const std::function<Real(Real, Real, Real, Real)> &exact_pressure, Real time) {
+  const Constants &constants = pressure.constants;
+  const auto reduction_operation = [](Real integral, Real error) { return integral + std::abs(error); };
+  return compute_error(pressure, exact_pressure, time, reduction_operation) * constants.dx * constants.dy * constants.dz;
+}
+
+Real ErrorL2Norm(const StaggeredTensor &pressure, const std::function<Real(Real, Real, Real, Real)> &exact_pressure, Real time) {
+  const Constants &constants = pressure.constants;
+  const auto reduction_operation = [](Real integral, Real error) { return integral + error*error; };
+  return std::sqrt(compute_error(pressure, exact_pressure, time, reduction_operation) * constants.dx * constants.dy * constants.dz);
+}
+
+Real ErrorLInfNorm(const StaggeredTensor &pressure, const std::function<Real(Real, Real, Real, Real)> &exact_pressure, Real time) {
+  const auto reduction_operation = [](Real integral, Real error) { return std::max(integral, std::abs(error)); };
+  return compute_error(pressure, exact_pressure, time, reduction_operation);
 }
 
 // Accumulate errors by sending them to the processor with rank 0, according to reduction_operation.

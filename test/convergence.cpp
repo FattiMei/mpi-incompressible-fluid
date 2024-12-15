@@ -37,8 +37,8 @@ int main() {
     }
 
     std::cout << constants.dx << ',' << constants.dt << ','
-              << ErrorL1Norm(velocity, T) << ',' << ErrorL2Norm(velocity, T)
-              << ',' << ErrorLInfNorm(velocity, T) << std::endl;
+              << ErrorL1Norm(velocity, exact_velocity, T) << ',' << ErrorL2Norm(velocity, exact_velocity, T)
+              << ',' << ErrorLInfNorm(velocity, exact_velocity, T) << std::endl;
   }
 
   return 0;

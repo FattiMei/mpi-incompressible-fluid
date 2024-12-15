@@ -10,8 +10,8 @@ P_max = 6
 # Compile.
 os.system("cd ../build && make -j >/dev/null")
 
-# Run (convergence over x).
-Px_times = []
+# Run (convergence over z).
+Pz_times = []
 for P in range(1, P_max + 1):
     before = time.time_ns()
     os.system(
@@ -26,7 +26,7 @@ for P in range(1, P_max + 1):
         + " >/dev/null"
     )
     after = time.time_ns()
-    Px_times.append((after - before) / (N**3 * time_steps))
+    Pz_times.append((after - before) / (N**3 * time_steps))
 
 # Run (convergence over y).
 Py_times = []
@@ -49,14 +49,14 @@ x = []
 y = []
 for i in range(1, P_max + 1):
     x.append(i)
-    y.append(Px_times[0] / i)
+    y.append(Pz_times[0] / i)
 
 plt.figure()
-plt.plot(x, Px_times, label="Scaling over x")
+plt.plot(x, Pz_times, label="Scaling over z")
 plt.plot(x, Py_times, label="Scaling over y")
 plt.plot(x, y, ":", label="Ideal scaling")
 
-plt.scatter(x, Px_times)
+plt.scatter(x, Pz_times)
 plt.scatter(x, Py_times)
 plt.xlabel("P")
 plt.ylabel("Time (ns) per point, time step")
