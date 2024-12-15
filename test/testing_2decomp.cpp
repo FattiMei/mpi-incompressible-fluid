@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     //Get the local rank
     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
 
-    int N = 4;
+    int N = 50;
     // int size = N*N*N;
 
     // double *b      = (double*) fftw_malloc(sizeof(double) * size);
@@ -76,7 +76,10 @@ int main(int argc, char *argv[]) {
 
     if(!mpiRank) cout << "initializing " << endl;
 
-    C2Decomp *c2d = new C2Decomp(N, N, N, 0, 0, neumannBC);
+    int pRow = 1;
+    int pCol = totRank;
+
+    C2Decomp *c2d = new C2Decomp(N, N, N, pRow, pCol, neumannBC);
 
     if(!mpiRank) cout << "done initializing " << endl;
 
@@ -285,30 +288,30 @@ int main(int argc, char *argv[]) {
     
     // cout <<endl<< "And the max error from processor " <<  mpiRank << " is "<< max <<endl << endl;
 
-    std::vector<double> gathered_results;
+    // std::vector<double> gathered_results;
 
-    if (mpiRank == 0) {
-        gathered_results.resize(N*N*N);
-    }
+    // if (mpiRank == 0) {
+    //     gathered_results.resize(N*N*N);
+    // }
 
-    MPI_Gather(
-        u1,               // Address of the data to send
-        xSize[2]*xSize[1]*xSize[0],                 // Number of elements to send (1 int here)
-        MPI_DOUBLE,           // Data type of the element
-        gathered_results.data(), // Address of the receive buffer on root (only relevant on rank 0)
-        xSize[2]*xSize[1]*xSize[0],                 // Number of elements each process contributes
-        MPI_DOUBLE,           // Data type of the received elements
-        0,                 // Rank of the root process
-        MPI_COMM_WORLD     // Communicator
-    );
+    // MPI_Gather(
+    //     u1,               // Address of the data to send
+    //     xSize[2]*xSize[1]*xSize[0],                 // Number of elements to send (1 int here)
+    //     MPI_DOUBLE,           // Data type of the element
+    //     gathered_results.data(), // Address of the receive buffer on root (only relevant on rank 0)
+    //     xSize[2]*xSize[1]*xSize[0],                 // Number of elements each process contributes
+    //     MPI_DOUBLE,           // Data type of the received elements
+    //     0,                 // Rank of the root process
+    //     MPI_COMM_WORLD     // Communicator
+    // );
 
-    if (mpiRank == 0) {
-        std::cout << "Gathered results at rank 0: ";
-        for (const auto& val : gathered_results) {
-            std::cout << val << " ";
-        }
-        std::cout << std::endl;
-    }
+    // if (mpiRank == 0) {
+    //     std::cout << "Gathered results at rank 0: ";
+    //     for (const auto& val : gathered_results) {
+    //         std::cout << val << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
 
     for (int iii = 0; iii < totRank; iii++){
         if(mpiRank == iii){
@@ -330,11 +333,12 @@ int main(int argc, char *argv[]) {
 
             cout <<endl<< "And the max error is "<< max <<endl << endl;
 
+            cout << "My starting x point: "<< c2d->xStart[2] << " " << c2d->xStart[1] << " " << c2d->xStart[0] << endl;
+            cout << "My starting y point: "<< c2d->yStart[2] << " " << c2d->yStart[1] << " " << c2d->yStart[0] << endl;
+            cout << "My starting z point: "<< c2d->zStart[2] << " " << c2d->zStart[1] << " " << c2d->zStart[0] << endl;
+
             for(int i = 0; i < 3; i++){
                 cout << xSize[i] << " "<< ySize[i] << " "<< zSize[i] << endl;
-                cout << "My starting x point: "<< c2d->xStart[2] << " " << c2d->xStart[1] << " " << c2d->xStart[0] << endl;
-                cout << "My starting y point: "<< c2d->yStart[2] << " " << c2d->yStart[1] << " " << c2d->yStart[0] << endl;
-                cout << "My starting z point: "<< c2d->zStart[2] << " " << c2d->zStart[1] << " " << c2d->zStart[0] << endl;
             }
             cout<<endl;
         }
