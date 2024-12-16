@@ -22,8 +22,8 @@ int main(int argc, char* argv[]) {
     constexpr Real y_size = x_size;
     constexpr Real z_size = x_size;
     const size_t Nx_domains_global = std::atol(argv[1]);
-    const size_t Ny_domains_global = Nx_domains_global;
-    const size_t Nz_domains_global = Nx_domains_global;
+    const size_t Ny_domains_global = Nx_domains_global * 3;
+    const size_t Nz_domains_global = Nx_domains_global * 5;
     constexpr Real time = 1.0;
 
     const int Pz = std::atol(argv[2]);
@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
     for (size_t k = 0; k < constants.Nz; k++) {
         for (size_t j = 0; j < constants.Ny; j++) {
             for (size_t i = 0; i < constants.Nx; i++) {
-                pressure(i,j,k) -= difference;
+                pressure(i,j,k) += difference;
             }
         }
     }

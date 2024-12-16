@@ -129,6 +129,13 @@ void StaggeredTensor::print(const std::function<bool(Real)> &filter) const {
   std::cout << std::endl;
 }
 
+void StaggeredTensor::print_inline() const {
+  for (size_t i = 0; i < constants.Nx * constants.Ny * constants.Nz; i++) {
+    std::cout << this->operator()(i) << " ";
+  }
+  std::cout << std::endl;
+}
+
 void StaggeredTensor::set(const std::function<Real(Real, Real, Real)> &f, bool include_border) {
   const std::array<size_t, 3> &sizes = this->sizes();
   const size_t lower_limit = include_border ? 0 : 1;

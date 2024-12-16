@@ -5,8 +5,8 @@
 
 namespace mif {
     
-    inline Real compute_eigenvalue_neumann(size_t index, size_t N) {
-        return (std::cos(M_PI * index / (N-1)) - 1.0) * (N-1) * (N-1) / (2.0*M_PI*M_PI);
+    inline Real compute_eigenvalue_neumann(size_t index, Real delta) {
+        return 2.0 * (std::cos(index * delta / 2.0) - 1.0) / (delta*delta);
     }
 
     void solve_pressure_equation_neumann(StaggeredTensor &pressure,
@@ -24,17 +24,13 @@ namespace mif {
                 const size_t base_index = constants.Nx*constants.Ny * k + constants.Nx * j;
 
                 // Copy the original data.
-                for (size_t i = 0; i < constants.Nx; i++) {
-                    structures.buffer_x[i] = pressure(base_index+i);
-                }
+                memcpy(structures.buffer_x, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*constants.Nx);
 
                 // Execute the fft.
                 fftw_execute(structures.fft_plan_x);
 
                 // Copy the transformed data.
-                for (size_t i = 0; i < constants.Nx; i++) {
-                    pressure(base_index+i) = structures.buffer_x[i];
-                }
+                memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_x, sizeof(Real)*constants.Nx);
             }
         }
         structures.c2d.transposeX2Y_MajorIndex(static_cast<Real *>(pressure.raw_data()), static_cast<Real *>(pressure.raw_data()));
@@ -46,17 +42,13 @@ namespace mif {
                 const size_t base_index = constants.Nz*constants.Ny * i + constants.Ny * k;
 
                 // Copy the original data.
-                for (size_t j = 0; j < constants.Ny; j++) {
-                    structures.buffer_y[j] = pressure(base_index+j);
-                }
+                memcpy(structures.buffer_y, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*constants.Ny);
 
                 // Execute the fft.
                 fftw_execute(structures.fft_plan_y);
 
                 // Copy the transformed data.
-                for (size_t j = 0; j < constants.Ny; j++){
-                    pressure(base_index+j) = structures.buffer_y[j];
-                }
+                memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_y, sizeof(Real)*constants.Ny);
             }
         }
         structures.c2d.transposeY2Z_MajorIndex(static_cast<Real *>(pressure.raw_data()), static_cast<Real *>(pressure.raw_data()));
@@ -68,29 +60,27 @@ namespace mif {
                 const size_t base_index = constants.Nz*constants.Nx * j + constants.Nz * i;
 
                 // Copy the original data.
-                for (size_t k = 0; k < constants.Nz; k++) {
-                    structures.buffer_z[k] = pressure(base_index+k);
-                }
+                memcpy(structures.buffer_z, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*constants.Nz);
 
                 // Execute the fft.
                 fftw_execute(structures.fft_plan_z);
 
                 // Copy the transformed data.
-                for (size_t k = 0; k < constants.Nz; k++) {
-                    pressure(base_index+k) = structures.buffer_z[k];
-                }
+                memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_z, sizeof(Real)*constants.Nz);
             }
         }
 
 
         // Divide by eigenvalues.
         for (size_t j = 0; j < constants.Ny; j++) {
-            const Real lambda_2 = compute_eigenvalue_neumann(j, constants.Ny);
+            const Real lambda_2 = compute_eigenvalue_neumann(j, constants.dy);
+            const Real base_index_1 = j*constants.Nx*constants.Nz;
             for (size_t i = 0; i < constants.Nx; i++) {
-                const Real lambda_1= compute_eigenvalue_neumann(i, constants.Nx);
+                const Real base_index_2 = base_index_1 + i*constants.Nz;
+                const Real lambda_1 = compute_eigenvalue_neumann(i, constants.dx);
                 for (size_t k = 0; k < constants.Nz; k++) {
-                    const Real lambda_3 = compute_eigenvalue_neumann(k, constants.Nz);
-                    pressure(i,j,k) /= (lambda_1 + lambda_2 + lambda_3);
+                    const Real lambda_3 = compute_eigenvalue_neumann(k, constants.dz);
+                    pressure(base_index_2 + k) /= (lambda_1 + lambda_2 + lambda_3);
                 }
             }
         }
@@ -103,16 +93,14 @@ namespace mif {
                 const size_t base_index = constants.Nz*constants.Nx * j + constants.Nz * i;
 
                 // Copy the original data.
-                for (size_t k = 0; k < constants.Nz; k++) {
-                    structures.buffer_z[k] = pressure(base_index+k);
-                }
+                memcpy(structures.buffer_z, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*constants.Nz);
 
                 // Execute the fft.
                 fftw_execute(structures.fft_plan_z);
 
                 // Copy the transformed data.
                 for (size_t k = 0; k < constants.Nz; k++) {
-                    pressure(base_index+k) = structures.buffer_z[k] / (2.0*(constants.Nz-1));
+                    pressure(base_index+k) = structures.buffer_z[k] / (2.0*constants.Nz_domains_global);
                 }
             }
         }
@@ -125,16 +113,14 @@ namespace mif {
                 const size_t base_index = constants.Nz*constants.Ny * i + constants.Ny * k;
 
                 // Copy the original data.
-                for (size_t j = 0; j < constants.Ny; j++) {
-                    structures.buffer_y[j] = pressure(base_index+j);
-                }
+                memcpy(structures.buffer_y, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*constants.Ny);
 
                 // Execute the fft.
                 fftw_execute(structures.fft_plan_y);
 
                 // Copy the transformed data.
                 for (size_t j = 0; j < constants.Ny; j++){
-                    pressure(base_index+j) = structures.buffer_y[j] / (2.0*(constants.Ny-1));
+                    pressure(base_index+j) = structures.buffer_y[j] / (2.0*constants.Ny_domains_global);
                 }
             }
         }
@@ -147,16 +133,14 @@ namespace mif {
                 const size_t base_index = constants.Nx*constants.Ny * k + constants.Nx * j;
 
                 // Copy the original data.
-                for (size_t i = 0; i < constants.Nx; i++) {
-                    structures.buffer_x[i] = pressure(base_index+i);
-                }
+                memcpy(structures.buffer_x, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*constants.Nx);
 
                 // Execute the fft.
                 fftw_execute(structures.fft_plan_x);
 
                 // Copy the transformed data.
                 for (size_t i = 0; i < constants.Nx; i++) {
-                    pressure(base_index+i) = structures.buffer_x[i] / (2.0*(constants.Nx-1));
+                    pressure(base_index+i) = structures.buffer_x[i] / (2.0*constants.Nx_domains);
                 }
             }
         }

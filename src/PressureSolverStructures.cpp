@@ -9,8 +9,7 @@ namespace mif {
         buffer_z(static_cast<Real*>(fftw_malloc(sizeof(Real) * constants.Nz))),
         fft_plan_x(fftw_plan_r2r_1d(constants.Nx, buffer_x, buffer_x, FFTW_REDFT00, FFTW_ESTIMATE)),
         fft_plan_y(fftw_plan_r2r_1d(constants.Ny, buffer_y, buffer_y, FFTW_REDFT00, FFTW_ESTIMATE)),
-        fft_plan_z(fftw_plan_r2r_1d(constants.Nz, buffer_z, buffer_z, FFTW_REDFT00, FFTW_ESTIMATE)) {
-    }
+        fft_plan_z(fftw_plan_r2r_1d(constants.Nz, buffer_z, buffer_z, FFTW_REDFT00, FFTW_ESTIMATE)) {}
     
     PressureSolverStructures::~PressureSolverStructures() {
         fftw_free(buffer_x);

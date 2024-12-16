@@ -109,6 +109,7 @@ public:
   // A debug function to print the tensor.
   void print() const;
   void print(const std::function<bool(Real)> &filter) const;
+  void print_inline() const;
 
   // Set the values of this tensor to the corresponding values of f, evaluated at all points.
   void set(const std::function<Real(Real, Real, Real)> &f, bool include_border);
