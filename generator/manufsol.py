@@ -26,63 +26,97 @@ def lap(u):
     return diff(u, x, 2) + diff(u, y, 2) + diff(u, z, 2)
 
 
-# Define the manufactured solution function.
-# Note: the asterisk (*) in the function signature indicates that the arguments
-# are keyword-only. This is to minimize the risk of passing wrong arguments.
-def manufsol(*, u, v, w, p, ignore_pressure=False):
-    if ignore_pressure:
-        p = 0
+if __name__ == "__main__":
+    # Parameters.
+    a = sp.pi / 4
+    d = sp.pi / 2
 
-    # Safety check: the proposed manufactured solution must be divergence free.
-    if diff(u, x) + diff(v, y) + diff(w, z) != 0:
-        w = sp.integrate(simp(sp.diff(u, x) + sp.diff(v, y)), z)
+    # Note: pressure boundary conditions must be correct Neumann boundary conditions,
+    # so for the domain [-1,1]^3, dp/di|1 = dp/di|-1 = 0 for all directions i=x,y,z.
+
+    # This is the manufactured solution we want to generate the code for.
+    u = (
+        -a
+        * (
+            sp.exp(a * x) * sp.sin(a * y + d * z)
+            + sp.exp(a * z) * sp.cos(a * x + d * y)
+        )
+        * sp.exp(-d * d * t / Re)
+    )
+    v = (
+        -a
+        * (
+            sp.exp(a * y) * sp.sin(a * z + d * x)
+            + sp.exp(a * x) * sp.cos(a * y + d * z)
+        )
+        * sp.exp(-d * d * t / Re)
+    )
+    w = (
+        -a
+        * (
+            sp.exp(a * z) * sp.sin(a * x + d * y)
+            + sp.exp(a * y) * sp.cos(a * z + d * x)
+        )
+        * sp.exp(-d * d * t / Re)
+    )
+    p = (
+        -a
+        * a
+        / 2
+        * (
+            sp.exp(2 * a * x)
+            + sp.exp(2 * a * y)
+            + sp.exp(2 * a * z)
+            + 2 * sp.sin(a * x + d * y) * sp.cos(a * z + d * x) * sp.exp(a * (y + z))
+            + 2 * sp.sin(a * y + d * z) * sp.cos(a * x + d * y) * sp.exp(a * (z + x))
+            + 2 * sp.sin(a * z + d * x) * sp.cos(a * y + d * z) * sp.exp(a * (x + y))
+        )
+        * sp.exp(-2 * d * d * t / Re)
+    )
+
+    if simp(diff(u, x) + diff(v, y) + diff(w, z)) != 0:
         sys.stderr.write(
-            "[WARNING]: the proposed manufactured solution was \
-                         not divergence free, so the w term was overridden.\n"
+            "[WARNING]: the proposed manufactured solution is not divergence free, the solution will be wrong.\n"
         )
 
-    fx = simp(
-        diff(u, t)
-        + u * diff(u, x)
-        + v * diff(u, y)
-        + w * diff(u, z)
-        + diff(p, x)
-        - lap(u) / Re
-    )
-    fy = simp(
-        diff(v, t)
-        + u * diff(v, x)
-        + v * diff(v, y)
-        + w * diff(v, z)
-        + diff(p, y)
-        - lap(v) / Re
-    )
-    fz = simp(
-        diff(w, t)
-        + u * diff(w, x)
-        + v * diff(w, y)
-        + w * diff(w, z)
-        + diff(p, z)
-        - lap(w) / Re
-    )
+    if (
+        simp(diff(p, x).subs(x, -1)) != 0
+        or simp(diff(p, x).subs(x, 1)) != 0
+        or simp(diff(p, y).subs(y, -1)) != 0
+        or simp(diff(p, y).subs(y, 1)) != 0
+        or simp(diff(p, z).subs(z, -1)) != 0
+        or simp(diff(p, z).subs(z, 1)) != 0
+    ):
+        sys.stderr.write(
+            "[WARNING]: the proposed manufactured solution does not have Neumann boundary conditions, the pressure solution will not converge to the second order.\n"
+        )
 
-    return (u, v, w), (fx, fy, fz)
-
-
-if __name__ == "__main__":
-    # This is the manufactured solution we want to generate the code for.
-    u = sp.sin(x) * sp.cos(y) * sp.sin(z) * sp.sin(t)
-    v = sp.cos(x) * sp.sin(y) * sp.sin(z) * sp.sin(t)
-    w = 2 * sp.cos(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
-
-    # TODO: generate correct u,v,w,p without forcing terms, using a known exact solution.
-
-    # WARNING: this shouldn't be a constant value, otherwise the codegen will
-    # generate a wrong function signature. Use the ignore_pressure flag instead.
-    p = sp.sin(t) * x * y * z
-
-    # Until we tackle the pressure term, we can ignore it.
-    (u, v, w), (fx, fy, fz) = manufsol(u=u, v=v, w=w, p=p, ignore_pressure=True)
+    if (
+        simp(
+            diff(u, t)
+            + (u * diff(u, x) + v * diff(u, y) + w * diff(u, z))
+            - 1 / Re * lap(u)
+            + diff(p, x)
+        )
+        != 0
+        or simp(
+            diff(v, t)
+            + (u * diff(v, x) + v * diff(v, y) + w * diff(v, z))
+            - 1 / Re * lap(v)
+            + diff(p, y)
+        )
+        != 0
+        or simp(
+            diff(w, t)
+            + (u * diff(w, x) + v * diff(w, y) + w * diff(w, z))
+            - 1 / Re * lap(w)
+            + diff(p, z)
+        )
+        != 0
+    ):
+        sys.stderr.write(
+            "[WARNING]: the proposed manufactured solution does not satisfy the momentum equation, the solution will be wrong.\n"
+        )
 
     # Generate the C code through sympy's codegen utility.
     [(c_name, c_code), (h_name, c_header)] = codegen(
@@ -91,9 +125,6 @@ if __name__ == "__main__":
             ("v_exact", v),
             ("w_exact", w),
             ("p_exact", p),
-            ("forcing_x", fx),
-            ("forcing_y", fy),
-            ("forcing_z", fz),
         ],
         language="C99",
         prefix="Manufactured",

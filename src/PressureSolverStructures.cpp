@@ -2,6 +2,7 @@
 
 namespace mif {
     PressureSolverStructures::PressureSolverStructures(const Constants &constants):
+        boundary_conditions{true, true, true},
         c2d(C2Decomp(constants.Nx, constants.Ny, constants.Nz, constants.Pz, constants.Py, boundary_conditions)),
         buffer_x(static_cast<Real*>(fftw_malloc(sizeof(Real) * constants.Nx))),
         buffer_y(static_cast<Real*>(fftw_malloc(sizeof(Real) * constants.Ny))),
@@ -9,9 +10,6 @@ namespace mif {
         fft_plan_x(fftw_plan_r2r_1d(constants.Nx, buffer_x, buffer_x, FFTW_REDFT00, FFTW_ESTIMATE)),
         fft_plan_y(fftw_plan_r2r_1d(constants.Ny, buffer_y, buffer_y, FFTW_REDFT00, FFTW_ESTIMATE)),
         fft_plan_z(fftw_plan_r2r_1d(constants.Nz, buffer_z, buffer_z, FFTW_REDFT00, FFTW_ESTIMATE)) {
-        for (size_t i=0; i<3; i++) {
-            boundary_conditions[i] = true;
-        }
     }
     
     PressureSolverStructures::~PressureSolverStructures() {

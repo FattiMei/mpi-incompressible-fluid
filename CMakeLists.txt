@@ -90,6 +90,7 @@ add_library(
 	${SOURCE_DIR}/PressureEquation.cpp
 	${SOURCE_DIR}/PressureSolverStructures.cpp
 	${SOURCE_DIR}/StaggeredTensor.cpp
+	${SOURCE_DIR}/Timestep.cpp
 	${SOURCE_DIR}/TimestepVelocity.cpp
 	${SOURCE_DIR}/VectorFunction.cpp
 	${SOURCE_DIR}/VelocityTensor.cpp
@@ -99,7 +100,7 @@ add_library(
 )
 
 add_executable(${EXE_NAME} "${SOURCE_DIR}/main.cpp")
-target_link_libraries(${EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})
+target_link_libraries(${EXE_NAME} PRIVATE miflib decomp ${MPI_C_LIBRARIES})
 
 add_executable(${CONVERGENCE_TEST_EXE_NAME} "${TEST_DIR}/convergence.cpp")
 target_link_libraries(${CONVERGENCE_TEST_EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})

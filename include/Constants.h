@@ -16,6 +16,9 @@ public:
   const Real x_size;
   const Real y_size_global;
   const Real z_size_global;
+  const Real min_x_global;
+  const Real min_y_global;
+  const Real min_z_global;
   const Real Re;
   const Real final_time;
   const unsigned int num_time_steps;
@@ -62,6 +65,8 @@ public:
   // Derived constants for the local domain.
   const Real y_size_local;
   const Real z_size_local;
+  const Real min_x;
+  const Real max_x;
   const Real min_y;
   const Real max_y;
   const Real min_z;
@@ -75,7 +80,9 @@ public:
 
   // Constructor.
   Constants(size_t Nx_domains, size_t Ny_domains_global, size_t Nz_domains_global, 
-            Real x_size, Real y_size, Real z_size, Real Re, Real final_time, unsigned int num_time_steps,
+            Real x_size, Real y_size_global, Real z_size_global, 
+            Real min_x_global, Real min_y_global, Real min_z_global, 
+            Real Re, Real final_time, unsigned int num_time_steps,
             int Py, int Pz, int rank);
 };
 

@@ -19,7 +19,7 @@ int main() {
     const size_t Ny = Nx;
     const size_t Nz = Nx;
 
-    const Constants constants(Nx, Ny, Nz, Lx, Ly, Lz, Reynolds, T, ntime_steps, 1, 1, 0);
+    const Constants constants(Nx, Ny, Nz, Lx, Ly, Lz, 0.0, 0.0, 0.0, Reynolds, T, ntime_steps, 1, 1, 0);
 
     VelocityTensor velocity(constants);
     VelocityTensor velocity_buffer(constants);

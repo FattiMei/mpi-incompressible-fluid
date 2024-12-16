@@ -11,6 +11,7 @@ file for more information on how this script is used in the project.
 import sys
 import sympy as sp
 from sympy import diff
+from sympy import simplify as simp
 
 # The codegen callable is not in the sympy namespace automatically.
 from sympy.utilities.codegen import codegen
@@ -40,9 +41,21 @@ if __name__ == "__main__":
     # so for the domain [0,2pi]^3, dp/di|0 = dp/di|2pi = 0 for all directions i=x,y,z.
 
     # Check if the laplacian of the pressure is equal to the divergence of the velocity.
-    if div(u, v, w) != lap(p):
+    if simp(div(u, v, w) - lap(p)) != 0:
         sys.stderr.write(
             "[WARNING]: the proposed manufactured solution is inconsistent. The result is meaningless.\n"
+        )
+
+    if (
+        simp(diff(p, x).subs(x, 0)) != 0
+        or simp(diff(p, x).subs(x, 2 * sp.pi)) != 0
+        or simp(diff(p, y).subs(y, 0)) != 0
+        or simp(diff(p, y).subs(y, 2 * sp.pi)) != 0
+        or simp(diff(p, z).subs(z, 0)) != 0
+        or simp(diff(p, z).subs(z, 2 * sp.pi)) != 0
+    ):
+        sys.stderr.write(
+            "[WARNING]: the proposed manufactured solution does not have Neumann boundary conditions. The result is meaningless.\n"
         )
 
     # Generate the C code through sympy's codegen utility.

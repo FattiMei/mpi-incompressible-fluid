@@ -2,8 +2,8 @@
 // Created by giorgio on 10/10/2024.
 //
 
-#ifndef TIMESTEP_H
-#define TIMESTEP_H
+#ifndef TIMESTEP_VELOCITY_H
+#define TIMESTEP_VELOCITY_H
 
 #include "VelocityTensor.h"
 
@@ -17,4 +17,4 @@ void timestep_velocity(VelocityTensor &velocity, VelocityTensor &velocity_buffer
 
 } // namespace mif
 
-#endif // TIMESTEP_H
+#endif // TIMESTEP_VELOCITY_H

@@ -15,14 +15,14 @@ public:
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.dx * i - constants.dx_over_2, constants.min_y + constants.dy * j,
+    return f(constants.min_x + constants.dx * i - constants.dx_over_2, constants.min_y + constants.dy * j,
              constants.min_z + constants.dz * k);
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.dx * i - constants.dx_over_2, constants.min_y + constants.dy * j,
+    return f(time, constants.min_x + constants.dx * i - constants.dx_over_2, constants.min_y + constants.dy * j,
              constants.min_z + constants.dz * k);
   }
 };
@@ -36,14 +36,14 @@ public:
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.dx * i, constants.min_y + constants.dy * j - constants.dy_over_2,
+    return f(constants.min_x + constants.dx * i, constants.min_y + constants.dy * j - constants.dy_over_2,
              constants.min_z + constants.dz * k);
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.dx * i, constants.min_y + constants.dy * j - constants.dy_over_2,
+    return f(time, constants.min_x + constants.dx * i, constants.min_y + constants.dy * j - constants.dy_over_2,
              constants.min_z + constants.dz * k);
   }
 };
@@ -57,14 +57,14 @@ public:
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.dx * i, constants.min_y + constants.dy * j,
+    return f(constants.min_x + constants.dx * i, constants.min_y + constants.dy * j,
              constants.min_z + constants.dz * k - constants.dz_over_2);
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.dx * i, constants.min_y + constants.dy * j,
+    return f(time, constants.min_x + constants.dx * i, constants.min_y + constants.dy * j,
              constants.min_z + constants.dz * k - constants.dz_over_2);
   }
 };

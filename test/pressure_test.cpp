@@ -15,6 +15,9 @@ int main(int argc, char* argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     // Set parameters.
+    constexpr Real min_x_global = 0.0;
+    constexpr Real min_y_global = 0.0;
+    constexpr Real min_z_global = 0.0;
     constexpr Real x_size = 2 * M_PI;
     constexpr Real y_size = x_size;
     constexpr Real z_size = x_size;
@@ -30,7 +33,9 @@ int main(int argc, char* argv[]) {
 
     // Create the needed objects.
     const Constants constants(Nx_domains_global, Ny_domains_global, Nz_domains_global, 
-                              x_size, y_size, z_size, 1.0, 1.0, 1, Py, Pz, rank);
+                              x_size, y_size, z_size, 
+                              min_x_global, min_y_global, min_z_global,
+                              1.0, 1.0, 1, Py, Pz, rank);
     
     VelocityTensor velocity(constants);
     StaggeredTensor pressure({constants.Nx, constants.Ny, constants.Nz}, constants);

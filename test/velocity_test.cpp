@@ -30,6 +30,9 @@ int main(int argc, char *argv[]) {
   assert(argc == 4);
 
   // Parameters.
+  constexpr Real min_x_global = 0.0;
+  constexpr Real min_y_global = 0.0;
+  constexpr Real min_z_global = 0.0;
   constexpr Real x_size = 1.0;
   constexpr Real y_size = 1.0;
   constexpr Real z_size = 1.0;
@@ -52,7 +55,9 @@ int main(int argc, char *argv[]) {
   // particular processor. All processors will have their own subdomain
   // on which they will compute the solution.
   const Constants constants(Nx_domains_global, Ny_domains_global, Nz_domains_global, 
-                            x_size, y_size, z_size, Re, final_time, num_time_steps, 
+                            x_size, y_size, z_size, 
+                            min_x_global, min_y_global, min_z_global,
+                            Re, final_time, num_time_steps, 
                             Py, Pz, rank);
 
   Reynolds = Re;

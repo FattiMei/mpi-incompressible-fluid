@@ -25,7 +25,7 @@ Real compute_error(
     for (size_t j = 1; j < constants.Ny - 1; j++) {
       const Real y = constants.min_y + j * constants.dy;
       for (size_t i = 1; i < constants.Nx - 1; i++) {
-        const Real x = i * constants.dx;
+        const Real x = constants.min_x + i * constants.dx;
 
         const Real interpolated_u =
             (velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2.0;
@@ -95,7 +95,7 @@ Real compute_error(
     for (size_t j = 0; j < constants.Ny; j++) {
       const Real y = constants.min_y + j * constants.dy;
       for (size_t i = 0; i < constants.Nx; i++) {
-        const Real x = i * constants.dx;
+        const Real x = constants.min_x + i * constants.dx;
 
         const Real error = exact_pressure(time, x, y, z) - pressure(i,j,k);
 
