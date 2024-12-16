@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     //Get the local rank
     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
 
-    int N = 4;
+    int N = 50;
     // int size = N*N*N;
 
     // double *b      = (double*) fftw_malloc(sizeof(double) * size);
@@ -332,45 +332,46 @@ int main(int argc, char *argv[]) {
       std::cout << "Gathered data\n";
     }
 
-    if (mpiRank == 0) {
-      std::cout << "Gathered results at rank 0: ";
-      for (const auto& val : gathered_results) {
-        std::cout << val << " ";
-      }
-      std::cout << '\n\n';
-    }
+    // if (mpiRank == 0) {
+    //   std::cout << "Gathered results at rank 0: ";
+    //   for (const auto& val : gathered_results) {
+    //     std::cout << val << " ";
+    //   }
+    //   std::cout << '\n\n';
+    // }
 
-    for (int iii = 0; iii < totRank; iii++){
-        if(mpiRank == iii){
-            cout<< "From Processor " << mpiRank <<endl;
-            double difff = u1[c2d->xStart[0]] - Uex[c2d->xStart[0]];
+    MPI_Barrier(MPI_COMM_WORLD);
 
-            double max = 0.0;
+    if(mpiRank == 0){
 
-            for (int i = 0; i < xSize[2]; i++) {
-                for (int j = 0; j < xSize[1]; j++){
-                    for (int k = 0; k < xSize[0]; k++){
-                        //cout<< div1[i*xSize[1]*xSize[0] + j*xSize[0] + k] << " ";
-                        double temppp = std::abs(u1[i*xSize[1]*xSize[0] + j*xSize[0] + k] - Uex[i*xSize[1]*xSize[0] + j*xSize[0] + k] - difff);
-                        if (max < temppp)
-                            max = temppp;
-                    }
+        
+        double difff = gathered_results[0] - 1;
+
+        double max = 0.0;
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++){
+                for (int k = 0; k < N; k++){
+                    //cout<< div1[i*xSize[1]*xSize[0] + j*xSize[0] + k] << " ";
+                    double temppp = std::abs(gathered_results[i*N*N + j*N + k] - (std::cos(h*i) * std::cos(h*j) * std::cos(h*k)) - difff);
+                    if (max < temppp)
+                        max = temppp;
                 }
             }
-
-            cout <<endl<< "And the max error is "<< max <<endl << endl;
-
-            cout << "My starting x point: "<< c2d->xStart[2] << " " << c2d->xStart[1] << " " << c2d->xStart[0] << endl;
-            cout << "My starting y point: "<< c2d->yStart[2] << " " << c2d->yStart[1] << " " << c2d->yStart[0] << endl;
-            cout << "My starting z point: "<< c2d->zStart[2] << " " << c2d->zStart[1] << " " << c2d->zStart[0] << endl;
-
-            for(int i = 0; i < 3; i++){
-                cout << xSize[i] << " "<< ySize[i] << " "<< zSize[i] << endl;
-            }
-            cout<<endl;
         }
-        MPI_Barrier(MPI_COMM_WORLD);
+
+        cout <<endl<< "And the max error is "<< max <<endl << endl;
+
+        cout << "My starting x point: "<< c2d->xStart[2] << " " << c2d->xStart[1] << " " << c2d->xStart[0] << endl;
+        cout << "My starting y point: "<< c2d->yStart[2] << " " << c2d->yStart[1] << " " << c2d->yStart[0] << endl;
+        cout << "My starting z point: "<< c2d->zStart[2] << " " << c2d->zStart[1] << " " << c2d->zStart[0] << endl;
+
+        for(int i = 0; i < 3; i++){
+            cout << xSize[i] << " "<< ySize[i] << " "<< zSize[i] << endl;
+        }
+        cout<<endl;
     }
+
 
 
     fftw_free(Uex);
