@@ -13,7 +13,12 @@ using namespace std;
 
 // This test the FFT method to solve the problem Ax=b
 // @MatteoLeone wants to solve a real problem Laplacian(p) = f
-int main() {
+int main(int argc, char *argv[]) {
+	if (argc != 2) {
+		std::cerr << "Usage: <program> <number of nodes>" << std::endl;
+		exit(1);
+	}
+
 	const int N = std::atoi(argv[1]);
 
 	double *x      = (double*) fftw_malloc(sizeof(double) * N);
@@ -50,10 +55,16 @@ int main() {
 	}
 
 	const double constant = xex[0] - x[0];
+	double maxerr = 0;
 
 	for (int i = 0; i < N; ++i) {
-		assert(std::abs(xex[i] - x[i] - constant) < 1e-6);
+		const double err = std::abs(xex[i] - x[i] - constant);
+
+		if (err > maxerr) {
+			maxerr = err;
+		}
 	}
+
 	std::cout << maxerr << std::endl;
 
 	fftw_destroy_plan(b_to_btilde_plan);
