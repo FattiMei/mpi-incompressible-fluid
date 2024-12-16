@@ -20,6 +20,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
 	-funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
 
+set(CMAKE_CXX_COMPILER mpic++)
 
 if(NOT DEFINED VERBOSE)
     set(VERBOSE "FALSE")
@@ -93,6 +94,7 @@ endif()
 add_executable(tensor_usage_test test/tensor_usage_test.cpp)
 add_executable(fftw_Dirichlet3D test/fftw3D_Dirichlet.cpp)
 add_executable(fftw_Dirichlet1D test/fftw1D_Dirichlet.cpp)
+add_executable(fftw_Dirichlet1D_spectral test/fftw1D_Dirichlet_spectral.cpp)
 add_executable(fftw_Neumann3D test/fftw3D_Neumann.cpp)
 add_executable(fftw_Neumann1D test/fftw1D_Neumann.cpp)
 add_executable(testing_2decomp test/testing_2decomp.cpp)
@@ -103,6 +105,7 @@ target_link_libraries(fftw_Dirichlet1D PRIVATE decomp)
 target_link_libraries(fftw_Neumann3D PRIVATE decomp)
 target_link_libraries(fftw_Dirichlet3D PRIVATE decomp)
 target_link_libraries(testing_2decomp PRIVATE decomp)
+target_link_libraries(fftw_Dirichlet1D_spectral PRIVATE decomp)
 
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}
