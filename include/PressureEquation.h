@@ -5,10 +5,7 @@
 
 namespace mif {
     void solve_pressure_equation_neumann(StaggeredTensor &pressure, 
-                                         StaggeredTensor &pressure_tilde_buffer, 
-                                         const VelocityTensor &velocity, 
-                                         StaggeredTensor &b_buffer, 
-                                         StaggeredTensor &b_tilde_buffer);
+                                         const VelocityTensor &velocity);
 }
 
 #endif // PRESSURE_EQUATION_H

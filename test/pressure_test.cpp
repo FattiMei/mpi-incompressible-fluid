@@ -6,6 +6,8 @@
 int main(int argc, char* argv[]) {
     using namespace mif;
 
+    assert(argc == 3);
+
     int rank;
     int size;
     MPI_Init(&argc, &argv);
@@ -32,15 +34,23 @@ int main(int argc, char* argv[]) {
     
     VelocityTensor velocity(constants);
     StaggeredTensor pressure({constants.Nx, constants.Ny, constants.Nz}, constants);
-    StaggeredTensor pressure_buffer({constants.Nx, constants.Ny, constants.Nz}, constants);
-    StaggeredTensor rhs_buffer({constants.Nx, constants.Ny, constants.Nz}, constants);
-    StaggeredTensor rhs_buffer2({constants.Nx, constants.Ny, constants.Nz}, constants);
 
     // Set the right-hand side.
     TimeVectorFunction exact_velocity(u_exact_p_test, v_exact_p_test, w_exact_p_test);
-    velocity.set_initial(exact_velocity.set_time(time));
+    velocity.set(exact_velocity.set_time(time), true);
 
-    solve_pressure_equation_neumann(pressure, pressure_buffer, velocity, rhs_buffer, rhs_buffer2);
+    // Solve.
+    solve_pressure_equation_neumann(pressure, velocity);
+
+    // Remove a constant.
+    const Real difference = p_exact_p_test(time, 0, 0, 0) - pressure(0,0,0);
+    for (size_t k = 0; k < constants.Nz; k++) {
+        for (size_t j = 0; j < constants.Ny; j++) {
+            for (size_t i = 0; i < constants.Nx; i++) {
+                pressure(i,j,k) -= difference;
+            }
+        }
+    }
 
     // Compute the norms of the error.
     const Real error_l1_local = ErrorL1Norm(pressure, p_exact_p_test, time);

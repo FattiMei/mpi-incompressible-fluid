@@ -32,10 +32,10 @@ def div(u, v, w):
 
 if __name__ == "__main__":
     # This is the manufactured solution we want to generate the code for.
-    u = -sp.sin(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
-    v = -sp.cos(x) * sp.sin(y) * sp.cos(z) * sp.sin(t)
-    w = -sp.cos(x) * sp.cos(y) * sp.sin(z) * sp.sin(t)
-    p = sp.cos(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
+    u = -sp.sin(x) * sp.cos(y) * sp.cos(z) * t
+    v = -sp.cos(x) * sp.sin(y) * sp.cos(z) * t
+    w = -sp.cos(x) * sp.cos(y) * sp.sin(z) * t
+    p = sp.cos(x) * sp.cos(y) * sp.cos(z) * t
     # Note: pressure boundary conditions must be correct Neumann boundary conditions,
     # so for the domain [0,2pi]^3, dp/di|0 = dp/di|2pi = 0 for all directions i=x,y,z.
 

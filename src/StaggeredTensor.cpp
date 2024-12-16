@@ -101,9 +101,9 @@ void StaggeredTensor::send_mpi_data(int base_tag) {
 
 void StaggeredTensor::print() const {
   const std::array<size_t, 3> &sizes = this->sizes();
-  for (size_t i = 0; i < sizes[0]; i++) {
+  for (size_t k = 0; k < sizes[2]; k++) {
     for (size_t j = 0; j < sizes[1]; j++) {
-      for (size_t k = 0; k < sizes[2]; k++) {
+      for (size_t i = 0; i < sizes[0]; i++) {
         std::cout << this->operator()(i, j, k) << " ";
       }
       std::cout << std::endl;
@@ -115,9 +115,9 @@ void StaggeredTensor::print() const {
 
 void StaggeredTensor::print(const std::function<bool(Real)> &filter) const {
   const std::array<size_t, 3> &sizes = this->sizes();
-  for (size_t i = 0; i < sizes[0]; i++) {
+  for (size_t k = 0; k < sizes[2]; k++) {
     for (size_t j = 0; j < sizes[1]; j++) {
-      for (size_t k = 0; k < sizes[2]; k++) {
+      for (size_t i = 0; i < sizes[0]; i++) {
         const Real value = this->operator()(i, j, k);
         if (filter(value)) {
           std::cout << "(" << i << "," << j << "," << k << "): " << value
