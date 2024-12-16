@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     //Get the local rank
     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
 
-    int N = 50;
+    int N = 4;
     // int size = N*N*N;
 
     // double *b      = (double*) fftw_malloc(sizeof(double) * size);
@@ -288,30 +288,57 @@ int main(int argc, char *argv[]) {
     
     // cout <<endl<< "And the max error from processor " <<  mpiRank << " is "<< max <<endl << endl;
 
-    // std::vector<double> gathered_results;
+    std::vector<int> recv_sizes;
+    if (mpiRank == 0) {
+      recv_sizes.resize(totRank);
+    }
+    const int local_size_u1 = xSize[2]*xSize[1]*xSize[0];
+    MPI_Gather(&local_size_u1, 1, MPI_INT, recv_sizes.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (mpiRank == 0) {
+      std::cout << "Gathered recv sizes\n";
+      std::cout << "recv sizes: ";
+      for (auto n : recv_sizes) std::cout << n << ' ';
+      std::cout << "\n";
+    }
+  
+    std::vector<int> displacements;
+    int tot_size = 0;
+    if (mpiRank == 0) {
+      displacements.resize(totRank);
+      
+      for (int i=0; i<totRank; ++i) {
+        displacements[i] = tot_size; 
+        tot_size += recv_sizes[i];
+      }
+    }
 
-    // if (mpiRank == 0) {
-    //     gathered_results.resize(N*N*N);
-    // }
+    std::vector<double> gathered_results;
+    if (mpiRank == 0) {
+      std::cout << "Tot size of gather buff: " << tot_size << '\n';
+      gathered_results.resize(tot_size);
+    }
+    MPI_Gatherv(
+        u1,                       
+        local_size_u1,            
+        MPI_DOUBLE,               
+        gathered_results.data(),  
+        recv_sizes.data(),        
+        displacements.data(),
+        MPI_DOUBLE,               
+        0,                        
+        MPI_COMM_WORLD            
+    );
+    if (mpiRank == 0) {
+      std::cout << "Gathered data\n";
+    }
 
-    // MPI_Gather(
-    //     u1,               // Address of the data to send
-    //     xSize[2]*xSize[1]*xSize[0],                 // Number of elements to send (1 int here)
-    //     MPI_DOUBLE,           // Data type of the element
-    //     gathered_results.data(), // Address of the receive buffer on root (only relevant on rank 0)
-    //     xSize[2]*xSize[1]*xSize[0],                 // Number of elements each process contributes
-    //     MPI_DOUBLE,           // Data type of the received elements
-    //     0,                 // Rank of the root process
-    //     MPI_COMM_WORLD     // Communicator
-    // );
-
-    // if (mpiRank == 0) {
-    //     std::cout << "Gathered results at rank 0: ";
-    //     for (const auto& val : gathered_results) {
-    //         std::cout << val << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
+    if (mpiRank == 0) {
+      std::cout << "Gathered results at rank 0: ";
+      for (const auto& val : gathered_results) {
+        std::cout << val << " ";
+      }
+      std::cout << '\n\n';
+    }
 
     for (int iii = 0; iii < totRank; iii++){
         if(mpiRank == iii){
