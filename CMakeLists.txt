@@ -88,6 +88,7 @@ add_library(
 	${SOURCE_DIR}/Constants.cpp
 	${SOURCE_DIR}/Norms.cpp
 	${SOURCE_DIR}/PressureEquation.cpp
+	${SOURCE_DIR}/PressureSolverStructures.cpp
 	${SOURCE_DIR}/StaggeredTensor.cpp
 	${SOURCE_DIR}/TimestepVelocity.cpp
 	${SOURCE_DIR}/VectorFunction.cpp

@@ -35,12 +35,14 @@ int main(int argc, char* argv[]) {
     VelocityTensor velocity(constants);
     StaggeredTensor pressure({constants.Nx, constants.Ny, constants.Nz}, constants);
 
+    PressureSolverStructures structures(constants);
+
     // Set the right-hand side.
     TimeVectorFunction exact_velocity(u_exact_p_test, v_exact_p_test, w_exact_p_test);
     velocity.set(exact_velocity.set_time(time), true);
 
     // Solve.
-    solve_pressure_equation_neumann(pressure, velocity);
+    solve_pressure_equation_neumann(pressure, velocity, structures);
 
     // Remove a constant.
     const Real difference = p_exact_p_test(time, 0, 0, 0) - pressure(0,0,0);
