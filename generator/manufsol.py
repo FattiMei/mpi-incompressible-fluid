@@ -31,9 +31,6 @@ if __name__ == "__main__":
     a = sp.pi / 4
     d = sp.pi / 2
 
-    # Note: pressure boundary conditions must be correct Neumann boundary conditions,
-    # so for the domain [-1,1]^3, dp/di|1 = dp/di|-1 = 0 for all directions i=x,y,z.
-
     # This is the manufactured solution we want to generate the code for.
     u = (
         -a

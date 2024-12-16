@@ -1,6 +1,7 @@
 #include "Timestep.h"
-#include "MomentumEquationPressure.h"
+#include "MomentumEquation.h"
 #include "PressureEquation.h"
+#include "PressureGradient.h"
 #include "StaggeredTensorMacros.h"
 
 namespace mif {
@@ -18,9 +19,10 @@ constexpr Real b3 = (3.0 / 4.0);
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                         \
     const Real dt = velocity.constants.dt;                                                    \
     const Real rhs =                                                                          \
-        calculate_momentum_rhs_with_pressure_##component(velocity, pressure, i, j, k);        \
+        calculate_momentum_rhs_##component(velocity, i, j, k);                                \
     rhs_buffer.component(i,j,k) = rhs;                                                        \
-    velocity_buffer.component(i, j, k) = velocity.component(i, j, k) + dt * a21 * rhs;        \
+    velocity_buffer.component(i, j, k) = velocity.component(i, j, k) + dt * a21 * rhs -       \
+        dt_1 * pressure_gradient_##component(pressure, i, j, k);                              \
   )                                                                                           \
   velocity_buffer.component.send_mpi_data(tag);                                               \
 }
@@ -32,8 +34,9 @@ constexpr Real b3 = (3.0 / 4.0);
     const Real rhs = rhs_buffer.component(i,j,k);                                             \
     rhs_buffer.component(i,j,k) = velocity.component(i, j, k) + dt * (b1 * rhs);              \
     velocity.component(i, j, k) = velocity.component(i, j, k) +                               \
-              dt * (a31 * rhs + a32 * calculate_momentum_rhs_with_pressure_##component(       \
-                                            velocity_buffer, pressure, i, j, k));             \
+        dt * (a31 * rhs + a32 * calculate_momentum_rhs_##component(                           \
+        velocity_buffer, i, j, k)) - dt_2 *                                                   \
+        pressure_gradient_##component(pressure, i, j, k);                                     \
   )                                                                                           \
   velocity.component.send_mpi_data(tag);                                                      \
 }
@@ -44,7 +47,8 @@ constexpr Real b3 = (3.0 / 4.0);
     const Real dt = velocity.constants.dt;                                                    \
     const Real rhs = rhs_buffer.component(i,j,k);                                             \
     velocity_buffer.component(i, j, k) = rhs + dt * (b3 *                                     \
-              calculate_momentum_rhs_with_pressure_##component(velocity, pressure, i, j, k)); \
+        calculate_momentum_rhs_##component(velocity, i, j, k)) -                              \
+        dt_3 * pressure_gradient_##component(pressure, i, j, k);                              \
   )                                                                                           \
   velocity_buffer.component.send_mpi_data(tag);                                               \
 }
@@ -58,10 +62,10 @@ constexpr Real b3 = (3.0 / 4.0);
 }
 
 // Add the pressure gradient adjustment to the velocity.
-#define UPDATE_VELOCITY(velocity, delta_pressure, dt) {                                                                                \
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.u, false, velocity.u(i,j,k) -= dt * pressure_gradient_x(delta_pressure, i, j, k);) \
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.v, false, velocity.v(i,j,k) -= dt * pressure_gradient_y(delta_pressure, i, j, k);) \
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.w, false, velocity.w(i,j,k) -= dt * pressure_gradient_z(delta_pressure, i, j, k);) \
+#define UPDATE_VELOCITY(velocity, delta_pressure) {                                                                               \
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.u, false, velocity.u(i,j,k) -= pressure_gradient_u(delta_pressure, i, j, k);) \
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.v, false, velocity.v(i,j,k) -= pressure_gradient_v(delta_pressure, i, j, k);) \
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.w, false, velocity.w(i,j,k) -= pressure_gradient_w(delta_pressure, i, j, k);) \
 }
 
 void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
@@ -86,7 +90,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Update the pressure.
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, pressure(i,j,k) += pressure_buffer(i,j,k) / dt_1;)
   // Update the velocity.
-  UPDATE_VELOCITY(velocity_buffer, pressure_buffer, dt_1)
+  UPDATE_VELOCITY(velocity_buffer, pressure_buffer)
 
   // Stage 2.
   // Compute the velocity solution inside the domain.
@@ -98,7 +102,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Update the pressure.
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, pressure(i,j,k) += pressure_buffer(i,j,k) / dt_2;)
   // Update the velocity.
-  UPDATE_VELOCITY(velocity, pressure_buffer, dt_2)
+  UPDATE_VELOCITY(velocity, pressure_buffer)
 
   // Stage 3.
   // Compute the velocity solution inside the domain.
@@ -110,7 +114,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Update the pressure.
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, pressure(i,j,k) += pressure_buffer(i,j,k) / dt_3;)
   // Update the velocity.
-  UPDATE_VELOCITY(velocity_buffer, pressure_buffer, dt_3)
+  UPDATE_VELOCITY(velocity_buffer, pressure_buffer)
 
   // Put the velocity solution in the original tensors.
   velocity.swap_data(velocity_buffer);

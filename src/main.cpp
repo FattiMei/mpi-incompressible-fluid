@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   for (size_t k = 0; k < constants.Nz; k++) {
     for (size_t j = 0; j < constants.Ny; j++) {
         for (size_t i = 0; i < constants.Nx; i++) {
-            pressure(i,j,k) -= difference;
+            pressure(i,j,k) += difference;
         }
     }
   }
