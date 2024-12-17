@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cmath>
 #include "ManufacturedPressure.h"
 #include "Norms.h"
@@ -47,7 +48,10 @@ int main(int argc, char* argv[]) {
     velocity.set(exact_velocity.set_time(time), true);
 
     // Solve.
+    const auto before = chrono::high_resolution_clock::now();
     solve_pressure_equation_neumann(pressure, velocity, structures);
+    const auto after = chrono::high_resolution_clock::now();
+    const Real execution_time = (after-before).count() / 1e9;
 
     // Remove a constant.
     const Real difference = p_exact_p_test(time, 0, 0, 0) - pressure(0,0,0);
@@ -71,7 +75,8 @@ int main(int argc, char* argv[]) {
     const Real error_lInf_global = accumulate_error_mpi_linf(error_lInf_local, constants);
 
     if (rank == 0) {
-        std::cout << error_l1_global << " " << error_l2_global << " " << error_lInf_global << std::endl;
+        std::cout << "Time: " << execution_time << "s " << execution_time/Nx_domains_global/Ny_domains_global/Nz_domains_global << std::endl;
+        std::cout << "Errors: " << error_l1_global << " " << error_l2_global << " " << error_lInf_global << std::endl;
     }
 
     MPI_Finalize();

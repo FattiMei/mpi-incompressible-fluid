@@ -40,7 +40,7 @@
 // all of its points, or all internal points if include_border is false.
 #define STAGGERED_TENSOR_FUNCTION_ON_ALL_POINTS(tensor, function,              \
                                                include_border, args...)        \
-  VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(tensor, include_border,              \
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(tensor, include_border,             \
   tensor(i, j, k) = function(args);)
 
 // Set all components of the tensor in all points using the respective
@@ -48,11 +48,11 @@
 #define VELOCITY_TENSOR_SET_FOR_ALL_POINTS(velocity, f_u, f_v, f_w,            \
                                            include_border, args...)            \
   {                                                                            \
-    VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.u, f_u, include_border,   \
+    STAGGERED_TENSOR_FUNCTION_ON_ALL_POINTS(velocity.u, f_u, include_border,   \
                                             args)                              \
-    VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.v, f_v, include_border,   \
+    STAGGERED_TENSOR_FUNCTION_ON_ALL_POINTS(velocity.v, f_v, include_border,   \
                                             args)                              \
-    VELOCITY_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.w, f_w, include_border,   \
+    STAGGERED_TENSOR_FUNCTION_ON_ALL_POINTS(velocity.w, f_w, include_border,   \
                                             args)                              \
   }
 
