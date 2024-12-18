@@ -4,6 +4,7 @@
 #include "Norms.h"
 #include "PressureEquation.h"
 
+// Pressure equation test for homogeneous Neumann boundary conditions.
 int main(int argc, char* argv[]) {
     using namespace mif;
 
@@ -49,7 +50,7 @@ int main(int argc, char* argv[]) {
 
     // Solve.
     const auto before = chrono::high_resolution_clock::now();
-    solve_pressure_equation_neumann(pressure, velocity, structures);
+    solve_pressure_equation_homogeneous_neumann(pressure, velocity, structures);
     const auto after = chrono::high_resolution_clock::now();
     const Real execution_time = (after-before).count() / 1e9;
 

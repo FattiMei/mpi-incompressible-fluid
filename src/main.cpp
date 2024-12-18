@@ -76,6 +76,7 @@ int main(int argc, char *argv[]) {
   velocity.set_initial(exact_velocity.set_time(0.0));
   const std::function<Real(Real, Real, Real)> &initial_pressure = [](Real x, Real y, Real z) { return p_exact(0.0, x, y, z); };
   pressure.set(initial_pressure, true);
+  TimeVectorFunction exact_pressure_gradient(dp_dx_exact_p_test, dp_dy_exact_p_test, dp_dz_exact_p_test);
 
   // Compute the solution.
   for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
@@ -84,7 +85,7 @@ int main(int argc, char *argv[]) {
     const Real current_time = time_step * constants.dt;
 
     // Update the solution inside the mesh.
-    timestep(velocity, velocity_buffer, rhs_buffer, exact_velocity, current_time, pressure, pressure_buffer, structures);
+    timestep(velocity, velocity_buffer, rhs_buffer, exact_velocity, exact_pressure_gradient, current_time, pressure, pressure_buffer, structures);
   }
 
   // Remove a constant from the pressure.

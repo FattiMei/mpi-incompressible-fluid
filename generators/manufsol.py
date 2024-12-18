@@ -77,18 +77,6 @@ if __name__ == "__main__":
         )
 
     if (
-        simp(diff(p, x).subs(x, -1)) != 0
-        or simp(diff(p, x).subs(x, 1)) != 0
-        or simp(diff(p, y).subs(y, -1)) != 0
-        or simp(diff(p, y).subs(y, 1)) != 0
-        or simp(diff(p, z).subs(z, -1)) != 0
-        or simp(diff(p, z).subs(z, 1)) != 0
-    ):
-        sys.stderr.write(
-            "[WARNING]: the proposed manufactured solution does not have Neumann boundary conditions, the pressure solution will not converge to the second order.\n"
-        )
-
-    if (
         simp(
             diff(u, t)
             + (u * diff(u, x) + v * diff(u, y) + w * diff(u, z))
@@ -115,6 +103,10 @@ if __name__ == "__main__":
             "[WARNING]: the proposed manufactured solution does not satisfy the momentum equation, the solution will be wrong.\n"
         )
 
+    dp_dx = simp(diff(p, x))
+    dp_dy = simp(diff(p, y))
+    dp_dz = simp(diff(p, z))
+
     # Generate the C code through sympy's codegen utility.
     [(c_name, c_code), (h_name, c_header)] = codegen(
         [
@@ -122,6 +114,9 @@ if __name__ == "__main__":
             ("v_exact", v),
             ("w_exact", w),
             ("p_exact", p),
+            ("dp_dx_exact", dp_dx),
+            ("dp_dy_exact", dp_dy),
+            ("dp_dz_exact", dp_dz),
         ],
         language="C99",
         prefix="Manufactured",

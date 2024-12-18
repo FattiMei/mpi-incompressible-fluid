@@ -55,11 +55,11 @@ set(TEST_DIR    "${CMAKE_SOURCE_DIR}/test")
 
 set(DECOMP_DIR "${CMAKE_SOURCE_DIR}/deps/2Decomp_C")
 
-set(FORCING_TERM_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol_velocity.py)
+set(FORCING_TERM_GENERATOR ${CMAKE_SOURCE_DIR}/generators/manufsol_velocity.py)
 set(FORCING_TERM_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol_velocity.cpp)
-set(PRESSURE_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol_pressure.py)
+set(PRESSURE_GENERATOR ${CMAKE_SOURCE_DIR}/generators/manufsol_pressure.py)
 set(PRESSURE_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol_pressure.cpp)
-set(EXACT_SOLUTION_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol.py)
+set(EXACT_SOLUTION_GENERATOR ${CMAKE_SOURCE_DIR}/generators/manufsol.py)
 set(EXACT_SOLUTION_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp)
 
 set(CONVERGENCE_REPORT_NAME "convergence_report.csv")
@@ -126,12 +126,14 @@ add_executable(tensor_usage_test test/tensor_usage_test.cpp)
 add_executable(fftw_Dirichlet test/fftw.cpp)
 add_executable(fftw_Neumann test/fftw3D_Neumann.cpp)
 add_executable(2decomp_test test/2decomp_test.cpp)
-add_executable(pressure_test test/pressure_test.cpp)
+add_executable(pressure_test_hn test/pressure_test_hn.cpp)
+add_executable(pressure_test_nhn test/pressure_test_nhn.cpp)
 
 target_link_libraries(fftw_Neumann PRIVATE decomp)
 target_link_libraries(fftw_Dirichlet PRIVATE decomp)
 target_link_libraries(2decomp_test PRIVATE miflib decomp)
-target_link_libraries(pressure_test PRIVATE miflib decomp -w)
+target_link_libraries(pressure_test_hn PRIVATE miflib decomp)
+target_link_libraries(pressure_test_nhn PRIVATE miflib decomp)
 
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}

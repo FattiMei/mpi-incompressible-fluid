@@ -69,7 +69,8 @@ constexpr Real b3 = (3.0 / 4.0);
 }
 
 void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
-              VelocityTensor &rhs_buffer, const TimeVectorFunction &exact_velocity, Real t_n,
+              VelocityTensor &rhs_buffer, const TimeVectorFunction &exact_velocity, 
+              const TimeVectorFunction &exact_pressure_gradient, Real t_n,
               StaggeredTensor &pressure, StaggeredTensor &pressure_buffer, 
               PressureSolverStructures &structures) {
   const Constants &constants = velocity.constants;
@@ -86,7 +87,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Apply Dirichlet boundary conditions to the velocity.
   velocity_buffer.apply_all_dirichlet_bc(exact_velocity.set_time(time_1));
   // Solve the pressure equation.
-  solve_pressure_equation_neumann(pressure_buffer, velocity_buffer, structures);
+  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, velocity_buffer, exact_pressure_gradient.set_time(time_1), structures);
   // Update the pressure.
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, pressure(i,j,k) += pressure_buffer(i,j,k) / dt_1;)
   // Update the velocity.
@@ -98,7 +99,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Apply Dirichlet boundary conditions  to the velocity.
   velocity.apply_all_dirichlet_bc(exact_velocity.set_time(time_2));
   // Solve the pressure equation.
-  solve_pressure_equation_neumann(pressure_buffer, velocity, structures);
+  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, velocity_buffer, exact_pressure_gradient.set_time(time_2), structures);
   // Update the pressure.
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, pressure(i,j,k) += pressure_buffer(i,j,k) / dt_2;)
   // Update the velocity.
@@ -110,7 +111,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Apply Dirichlet boundary conditions  to the velocity.
   velocity_buffer.apply_all_dirichlet_bc(exact_velocity.set_time(final_time));
   // Solve the pressure equation.
-  solve_pressure_equation_neumann(pressure_buffer, velocity_buffer, structures);
+  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, velocity_buffer, exact_pressure_gradient.set_time(final_time), structures);
   // Update the pressure.
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, pressure(i,j,k) += pressure_buffer(i,j,k) / dt_3;)
   // Update the velocity.

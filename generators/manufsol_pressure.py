@@ -46,16 +46,20 @@ if __name__ == "__main__":
             "[WARNING]: the proposed manufactured solution is inconsistent. The result is meaningless.\n"
         )
 
+    dp_dx = simp(diff(p, x))
+    dp_dy = simp(diff(p, y))
+    dp_dz = simp(diff(p, z))
+
     if (
-        simp(diff(p, x).subs(x, 0)) != 0
-        or simp(diff(p, x).subs(x, 2 * sp.pi)) != 0
-        or simp(diff(p, y).subs(y, 0)) != 0
-        or simp(diff(p, y).subs(y, 2 * sp.pi)) != 0
-        or simp(diff(p, z).subs(z, 0)) != 0
-        or simp(diff(p, z).subs(z, 2 * sp.pi)) != 0
+        simp(dp_dx.subs(x, 0)) != 0
+        or simp(dp_dx.subs(x, 2 * sp.pi)) != 0
+        or simp(dp_dy.subs(y, 0)) != 0
+        or simp(dp_dy.subs(y, 2 * sp.pi)) != 0
+        or simp(dp_dz.subs(z, 0)) != 0
+        or simp(dp_dz.subs(z, 2 * sp.pi)) != 0
     ):
         sys.stderr.write(
-            "[WARNING]: the proposed manufactured solution does not have Neumann boundary conditions. The result is meaningless.\n"
+            "[WARNING]: the proposed manufactured solution does not have homogeneous Neumann boundary conditions.\n"
         )
 
     # Generate the C code through sympy's codegen utility.
@@ -65,6 +69,9 @@ if __name__ == "__main__":
             ("v_exact_p_test", v),
             ("w_exact_p_test", w),
             ("p_exact_p_test", p),
+            ("dp_dx_exact_p_test", dp_dx),
+            ("dp_dy_exact_p_test", dp_dy),
+            ("dp_dz_exact_p_test", dp_dz),
         ],
         language="C99",
         prefix="ManufacturedPressure",
