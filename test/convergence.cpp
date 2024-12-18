@@ -26,7 +26,7 @@ int main() {
     VelocityTensor rhs_buffer(constants);
 
     TimeVectorFunction exact_velocity(u_exact_v_test, v_exact_v_test, w_exact_v_test);
-    velocity.set_initial(exact_velocity.set_time(0.0));
+    velocity.set(exact_velocity.set_time(0.0), true);
 
     TimeVectorFunction forcing_term(forcing_x, forcing_y, forcing_z);
 

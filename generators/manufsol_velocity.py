@@ -31,11 +31,10 @@ def lap(u):
 # are keyword-only. This is to minimize the risk of passing wrong arguments.
 def manufsol(*, u, v, w):
     # Safety check: the proposed manufactured solution must be divergence free.
-    if diff(u, x) + diff(v, y) + diff(w, z) != 0:
+    if simp(diff(u, x) + diff(v, y) + diff(w, z)) != 0:
         w = sp.integrate(simp(sp.diff(u, x) + sp.diff(v, y)), z)
         sys.stderr.write(
-            "[WARNING]: the proposed manufactured solution was \
-                         not divergence free, so the w term was overridden.\n"
+            "[WARNING]: the proposed manufactured solution was not divergence free, so the w term was overridden.\n"
         )
 
     fx = simp(
@@ -57,7 +56,6 @@ if __name__ == "__main__":
     v = sp.cos(x) * sp.sin(y) * sp.sin(z) * sp.sin(t)
     w = 2 * sp.cos(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
 
-    # Until we tackle the pressure term, we can ignore it.
     (u, v, w), (fx, fy, fz) = manufsol(u=u, v=v, w=w)
 
     # Generate the C code through sympy's codegen utility.

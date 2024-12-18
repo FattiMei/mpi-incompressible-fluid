@@ -94,9 +94,6 @@ public:
   // components of the function.
   void set(const VectorFunction &f, bool include_border);
 
-  // Same as set, but meant for setting intial conditions.
-  void set_initial(const VectorFunction &f);
-
   // Apply Dirichlet boundary conditions to all components of the velocity
   // on all boundaries. The function assumes the velocity field is
   // divergence free.

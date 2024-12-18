@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     const Real execution_time = (after-before).count() / 1e9;
 
     // Remove a constant.
-    const Real difference = p_exact_p_test(time, 0, 0, 0) - pressure(0,0,0);
+    const Real difference = p_exact_p_test(time, min_x_global, min_y_global, min_z_global) - pressure(0,0,0);
     for (size_t k = 0; k < constants.Nz; k++) {
         for (size_t j = 0; j < constants.Ny; j++) {
             for (size_t i = 0; i < constants.Nx; i++) {

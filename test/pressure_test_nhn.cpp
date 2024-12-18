@@ -17,9 +17,9 @@ int main(int argc, char* argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     // Set parameters.
-    constexpr Real min_x_global = 0.0;
-    constexpr Real min_y_global = 0.0;
-    constexpr Real min_z_global = 0.0;
+    constexpr Real min_x_global = - M_PI / 2.0;
+    constexpr Real min_y_global = - M_PI / 2.0;
+    constexpr Real min_z_global = - M_PI / 2.0;
     constexpr Real x_size = M_PI / 2.0;
     constexpr Real y_size = x_size;
     constexpr Real z_size = x_size;
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     const Real execution_time = (after-before).count() / 1e9;
 
     // Remove a constant.
-    const Real difference = p_exact_p_test(time, 0, 0, 0) - pressure(0,0,0);
+    const Real difference = p_exact_p_test(time, min_x_global, min_y_global, min_z_global) - pressure(0,0,0);
     for (size_t k = 0; k < constants.Nz; k++) {
         for (size_t j = 0; j < constants.Ny; j++) {
             for (size_t i = 0; i < constants.Nx; i++) {

@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 
   // Set the initial conditions.
   TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
-  velocity.set_initial(exact_velocity.set_time(0.0));
+  velocity.set(exact_velocity.set_time(0.0), true);
   const std::function<Real(Real, Real, Real)> &initial_pressure = [](Real x, Real y, Real z) { return p_exact(0.0, x, y, z); };
   pressure.set(initial_pressure, true);
   TimeVectorFunction exact_pressure_gradient(dp_dx_exact_p_test, dp_dy_exact_p_test, dp_dz_exact_p_test);
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Remove a constant from the pressure.
-  const Real difference = p_exact(final_time, 0, 0, 0) - pressure(0,0,0);
+  const Real difference = p_exact(final_time, min_x_global, min_y_global, min_z_global) - pressure(0,0,0);
   for (size_t k = 0; k < constants.Nz; k++) {
     for (size_t j = 0; j < constants.Ny; j++) {
         for (size_t i = 0; i < constants.Nx; i++) {

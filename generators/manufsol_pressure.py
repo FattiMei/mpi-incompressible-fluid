@@ -18,7 +18,7 @@ from sympy.utilities.codegen import codegen
 
 
 # Create the required symbols.
-t, x, y, z, Re = sp.symbols("t, x, y, z, Reynolds")
+t, x, y, z = sp.symbols("t, x, y, z")
 
 
 # Define the laplacian operator.
@@ -37,8 +37,6 @@ if __name__ == "__main__":
     v = -sp.cos(x) * sp.sin(y) * sp.cos(z) * t
     w = -sp.cos(x) * sp.cos(y) * sp.sin(z) * t
     p = sp.cos(x) * sp.cos(y) * sp.cos(z) * t
-    # Note: pressure boundary conditions must be correct Neumann boundary conditions,
-    # so for the domain [0,2pi]^3, dp/di|0 = dp/di|2pi = 0 for all directions i=x,y,z.
 
     # Check if the laplacian of the pressure is equal to the divergence of the velocity.
     if simp(div(u, v, w) - lap(p)) != 0:
@@ -79,7 +77,6 @@ if __name__ == "__main__":
         header=True,
         empty=True,
         argument_sequence=(t, x, y, z),
-        global_vars=[Re],
     )
 
     # This code will be fed to the `manufsol.cpp` file.

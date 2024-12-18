@@ -4,6 +4,8 @@
 #include <cassert>
 #include <iostream>
 
+#include "StaggeredTensorMacros.h"
+
 double Reynolds;
 
 // Simple main for the test case with no pressure and exact solution known.
@@ -69,7 +71,7 @@ int main(int argc, char *argv[]) {
 
   // Set the initial conditions.
   TimeVectorFunction exact_velocity(u_exact_v_test, v_exact_v_test, w_exact_v_test);
-  velocity.set_initial(exact_velocity.set_time(0.0));
+  velocity.set(exact_velocity.set_time(0.0), true);
 
   // Compute the solution.
   for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
