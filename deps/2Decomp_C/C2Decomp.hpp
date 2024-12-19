@@ -8,6 +8,7 @@
 #include <iostream>
 #include <memory.h>
 #include <string>
+#include <array>
 
 using namespace ::std;
 
@@ -24,6 +25,9 @@ public:
 
   // MPI rank info
   int nRank, nProc;
+  
+  // Debug flag
+  bool debug = false;
 
 public:
   // parameters for 2D Cartesian Topology

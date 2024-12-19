@@ -1,4 +1,5 @@
 #include "C2Decomp.hpp"
+#include <cassert>
 
 // template <class T> const T& max (const T& a, const T& b) {
 //  return (a<b)?b:a;     // or: return comp(a,b)?b:a; for version (2)
@@ -146,7 +147,9 @@ void C2Decomp::decompInfoInit() {
   getDist();
 
   int pdim[3] = {0, 1, 2};
+  debug = true;
   partition(nx, ny, nz, pdim, decompMain.xst, decompMain.xen, decompMain.xsz);
+  debug = false;
 
   pdim[0] = 1;
   pdim[1] = 0;
@@ -221,34 +224,93 @@ void C2Decomp::getDist() {
 }
 
 void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
+  int ierr, totRank, mpiRank;
+  // Get the number of processes
+  ierr = MPI_Comm_size(MPI_COMM_WORLD, &totRank);
 
-  int size1, nl, nu;
+  // Get the local rank
+  ierr = MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
 
-  size1 = data1 / proc;
-  nu = data1 - size1 * proc;
-  nl = proc - nu;
+  const auto d1 = [&]() {
+    int size1, nl, nu;
 
-  st[0] = 1;
-  sz[0] = size1;
-  en[0] = size1;
+    size1 = data1 / proc;
+    nu = data1 - size1 * proc;
+    nl = proc - nu;
 
-  for (int i = 1; i < nl; i++) {
-    st[i] = st[i - 1] + size1;
-    sz[i] = size1;
-    en[i] = en[i - 1] + size1;
-  }
+    st[0] = 1;
+    sz[0] = size1;
+    en[0] = size1;
 
-  size1 = size1 + 1;
+    for (int i = 1; i < nl; i++) {
+      st[i] = st[i - 1] + size1;
+      sz[i] = size1;
+      en[i] = en[i - 1] + size1;
+    }
 
-  for (int i = nl; i < proc; i++) {
-    st[i] = en[i - 1] + 1;
-    sz[i] = size1;
-    en[i] = en[i - 1] + size1;
-  }
+    size1 = size1 + 1;
 
-  en[proc - 1] = data1;
-  sz[proc - 1] = data1 - st[proc - 1] + 1;
+    for (int i = nl; i < proc; i++) {
+      st[i] = en[i - 1] + 1;
+      sz[i] = size1;
+      en[i] = en[i - 1] + size1;
+    }
+
+    en[proc - 1] = data1;
+    sz[proc - 1] = data1 - st[proc - 1] + 1;
+  };
+  
+  const auto d2 = [&]() {
+    // assert(data1+1 % proc == 0);
+    
+    int big_size = 0, small_size = 0, n_big_size = 0, n_small_size = 0;
+    if (data1 % proc == 0) {
+      big_size = data1 / proc;
+      n_big_size = proc;
+    } else {
+      assert((data1+1) % proc == 0);
+      small_size = data1 / proc;
+      n_small_size = 1;
+      big_size = small_size+1;
+      n_big_size = proc-1;
+    }
+
+    assert(n_big_size + n_small_size == proc);
+    assert(n_big_size * big_size + n_small_size * small_size == data1);
+    
+    st[0] = 1;
+    sz[0] = big_size;
+    en[0] = big_size;
+    for (unsigned i=1; i<n_big_size; ++i) {
+      st[i] = en[i - 1] + 1;
+      sz[i] = big_size;
+      en[i] = st[i] + big_size - 1;
+    }
+    for (unsigned i=n_big_size; i<proc; i++) {
+      st[i] = en[i - 1] + 1;
+      sz[i] = small_size;
+      en[i] = st[i] + small_size - 1;
+
+    }
+    
+    if (debug) {
+      for (unsigned i=0; i<totRank; ++i) {
+        if (mpiRank == i) {
+          std::cout << "rank " << mpiRank << " split:\n";
+          for (unsigned j=0; j<proc; j++) {
+            std::cout << "start " << st[j] << " end " << en[j] << " size " << sz[i] << '\n'; 
+          }
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+      }
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
+  };
+
+  
+  d2();
 };
+
 
 void C2Decomp::partition(int nx, int ny, int nz, int *pdim, int *lstart,
                          int *lend, int *lsize) {
