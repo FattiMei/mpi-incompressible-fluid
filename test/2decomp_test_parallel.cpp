@@ -308,9 +308,6 @@ int main(int argc, char *argv[]) {
         // processors
         double temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
                                   [c2d->yStart[0] + ip];
-        if (fabs(temp - temp1) > 1E-16) {
-          cout << "Error in blocking X2Y tranposition" << endl;
-        }
         transp_error += abs(temp - temp1);
       }
     }
@@ -331,9 +328,6 @@ int main(int argc, char *argv[]) {
         double temp = u3[ii];
         double temp1 = global_data[c2d->zStart[2] + kp][c2d->zStart[1] + jp]
                                   [c2d->zStart[0] + ip];
-        if (fabs(temp - temp1) > 1E-16) {
-          cout << "Error in blocking Y2Z tranposition" << endl;
-        }
         transp_error += abs(temp - temp1);
       }
     }
@@ -354,9 +348,6 @@ int main(int argc, char *argv[]) {
         double temp = u2[ii];
         double temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
                                   [c2d->yStart[0] + ip];
-        if (fabs(temp - temp1) > 1E-16) {
-          cout << "Error in blocking Z2Y tranposition" << endl;
-        }
         transp_error += abs(temp - temp1);
       }
     }
@@ -377,13 +368,114 @@ int main(int argc, char *argv[]) {
         double temp = u1[ii];
         double temp1 = global_data[c2d->xStart[2] + kp][c2d->xStart[1] + jp]
                                   [c2d->xStart[0] + ip];
-        if (fabs(temp - temp1) > 1E-16) {
-          cout << "Error in blocking Y2X transposition" << endl;
-        }
         transp_error += abs(temp - temp1);
       }
     }
   }
+
+  // allocate new buffers for non-blocking comms
+  double *sbuf = new double[c2d->decompBufSize];
+  double *rbuf = new double[c2d->decompBufSize];
+  MPI_Request x2yHandle;
+  t1 = MPI_Wtime();
+  c2d->transposeX2Y_MajorIndex_Start(x2yHandle, u1, u2, sbuf, rbuf);
+  t2 = MPI_Wtime();
+  c2d->transposeX2Y_MajorIndex_Wait(x2yHandle, u1, u2, sbuf, rbuf);
+  t3 = MPI_Wtime();
+  if (mpiRank == 0) {
+    printf("X2Y Nonblocking Start Elapsed time is %f\n", t2 - t1);
+    printf("X2Y Nonblocking Wait Elapsed time is %f\n", t3 - t2);
+  }
+  // Testing transposition
+  for (int kp = 0; kp < ySize[2]; kp++) {
+    for (int jp = 0; jp < ySize[1]; jp++) {
+      for (int ip = 0; ip < ySize[0]; ip++) {
+        int ii = ip * ySize[1] * ySize[2] + kp * ySize[1] + jp;
+        double temp = u2[ii];
+        double temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
+                            [c2d->yStart[0] + ip];
+        transp_error += abs(temp - temp1);
+      }
+    }
+  }
+
+  MPI_Request y2zHandle;
+  t1 = MPI_Wtime();
+  c2d->transposeY2Z_MajorIndex_Start(y2zHandle, u2, u3, sbuf, rbuf);
+  t2 = MPI_Wtime();
+  c2d->transposeY2Z_MajorIndex_Wait(y2zHandle, u2, u3, sbuf, rbuf);
+  t3 = MPI_Wtime();
+  if (mpiRank == 0) {
+    printf("Y2Z Nonblocking Start Elapsed time is %f\n", t2 - t1);
+    printf("Y2Z Nonblocking Wait Elapsed time is %f\n", t3 - t2);
+  }
+  // Testing transposition
+  for (int kp = 0; kp < zSize[2]; kp++) {
+    for (int jp = 0; jp < zSize[1]; jp++) {
+      for (int ip = 0; ip < zSize[0]; ip++) {
+        int ii = jp * zSize[2] * zSize[0] + ip * zSize[2] + kp;
+        double temp = u3[ii];
+        double temp1 = global_data[c2d->zStart[2] + kp][c2d->zStart[1] + jp]
+                            [c2d->zStart[0] + ip];
+        transp_error += abs(temp - temp1);
+      }
+    }
+  }
+
+  MPI_Request z2yHandle;
+  t1 = MPI_Wtime();
+  c2d->transposeZ2Y_MajorIndex_Start(z2yHandle, u3, u2, sbuf, rbuf);
+  t2 = MPI_Wtime();
+  c2d->transposeZ2Y_MajorIndex_Wait(z2yHandle, u3, u2, sbuf, rbuf);
+  t3 = MPI_Wtime();
+  if (mpiRank == 0) {
+    printf("Z2Y Nonblocking Start Elapsed time is %f\n", t2 - t1);
+    printf("Z2Y Nonblocking Wait Elapsed time is %f\n", t3 - t2);
+  }
+  // Testing transposition
+  for (int kp = 0; kp < ySize[2]; kp++) {
+    for (int jp = 0; jp < ySize[1]; jp++) {
+      for (int ip = 0; ip < ySize[0]; ip++) {
+        int ii = ip * ySize[1] * ySize[2] + kp * ySize[1] + jp;
+        double temp = u2[ii];
+        double temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
+                            [c2d->yStart[0] + ip];
+        transp_error += abs(temp - temp1);
+      }
+    }
+  }
+
+  MPI_Request y2xHandle;
+  t1 = MPI_Wtime();
+  c2d->transposeY2X_MajorIndex_Start(y2xHandle, u2, u1, sbuf, rbuf);
+  t2 = MPI_Wtime();
+  c2d->transposeY2X_MajorIndex_Wait(y2xHandle, u2, u1, sbuf, rbuf);
+  t3 = MPI_Wtime();
+  if (mpiRank == 0) {
+    printf("Y2X Nonblocking Start Elapsed time is %f\n", t2 - t1);
+    printf("Y2X Nonblocking Wait Elapsed time is %f\n", t3 - t2);
+  }
+
+  // Testing transposition
+  for (int kp = 0; kp < xSize[2]; kp++) {
+    for (int jp = 0; jp < xSize[1]; jp++) {
+      for (int ip = 0; ip < xSize[0]; ip++) {
+        int ii = kp * xSize[1] * xSize[0] + jp * xSize[0] + ip;
+        double temp = u1[ii];
+        double temp1 = global_data[c2d->xStart[2] + kp][c2d->xStart[1] + jp]
+                            [c2d->xStart[0] + ip];
+        transp_error += abs(temp - temp1);
+      }
+    }
+  }
+
+  delete[] sbuf;
+  delete[] rbuf;
+  c2d->deallocXYZ(u1);
+  c2d->deallocXYZ(u2);
+  c2d->deallocXYZ(u3);
+
+  delete (c2d);
 
   for (unsigned i = 0; i < totRank; ++i) {
     if (mpiRank == i) {
@@ -394,12 +486,6 @@ int main(int argc, char *argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
   }
   MPI_Barrier(MPI_COMM_WORLD);
-
-  c2d->deallocXYZ(u1);
-  c2d->deallocXYZ(u2);
-  c2d->deallocXYZ(u3);
-
-  delete (c2d);
 
   // Now lets kill MPI
   MPI_Finalize();
