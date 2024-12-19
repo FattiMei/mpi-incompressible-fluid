@@ -124,11 +124,13 @@ add_executable(tensor_usage_test test/tensor_usage_test.cpp)
 add_executable(fftw_Dirichlet test/fftw.cpp)
 add_executable(fftw_Neumann test/fftw3D_Neumann.cpp)
 add_executable(2decomp_test test/2decomp_test.cpp)
+add_executable(2decomp_test_parallel test/2decomp_test_parallel.cpp)
 add_executable(pressure_test test/pressure_test.cpp)
 
 target_link_libraries(fftw_Neumann PRIVATE decomp)
 target_link_libraries(fftw_Dirichlet PRIVATE decomp)
 target_link_libraries(2decomp_test PRIVATE miflib decomp)
+target_link_libraries(2decomp_test_parallel PRIVATE miflib decomp)
 target_link_libraries(pressure_test PRIVATE miflib decomp -w)
 
 add_custom_command(
