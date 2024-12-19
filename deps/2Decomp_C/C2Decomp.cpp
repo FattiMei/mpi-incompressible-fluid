@@ -222,13 +222,7 @@ void C2Decomp::getDist() {
 }
 
 void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
-  int ierr, totRank, mpiRank;
-  // Get the number of processes
-  ierr = MPI_Comm_size(MPI_COMM_WORLD, &totRank);
-
-  // Get the local rank
-  ierr = MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
-
+  // Original version
   const auto d1 = [&]() {
     int size1, nl, nu;
 
@@ -257,10 +251,9 @@ void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
     en[proc - 1] = data1;
     sz[proc - 1] = data1 - st[proc - 1] + 1;
   };
-
+  
+  // Custom versiont
   const auto d2 = [&]() {
-    // assert(data1+1 % proc == 0);
-
     int big_size = 0, small_size = 0, n_big_size = 0, n_small_size = 0;
     if (data1 % proc == 0) {
       big_size = data1 / proc;
@@ -288,20 +281,6 @@ void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
       st[i] = en[i - 1] + 1;
       sz[i] = small_size;
       en[i] = st[i] + small_size - 1;
-    }
-
-    if (debug) {
-      for (unsigned i = 0; i < totRank; ++i) {
-        if (mpiRank == i) {
-          std::cout << "rank " << mpiRank << " split:\n";
-          for (unsigned j = 0; j < proc; j++) {
-            std::cout << "start " << st[j] << " end " << en[j] << " size "
-                      << sz[i] << '\n';
-          }
-        }
-        MPI_Barrier(MPI_COMM_WORLD);
-      }
-      MPI_Barrier(MPI_COMM_WORLD);
     }
   };
 
