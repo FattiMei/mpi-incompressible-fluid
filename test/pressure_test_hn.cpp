@@ -34,6 +34,9 @@ int main(int argc, char* argv[]) {
     assert(Pz > 0 && Py > 0);
 
     // Create the needed objects.
+    // Note: it is necessary that delta t equals one, as manufsol_pressure.py creates 
+    // a velocity field with gradient equal to the divergence of the velocity, without dividing
+    // by delta t, as time dependency is not relevant for this test.
     const Constants constants(Nx_domains_global, Ny_domains_global, Nz_domains_global, 
                               x_size, y_size, z_size, 
                               min_x_global, min_y_global, min_z_global,
@@ -50,19 +53,12 @@ int main(int argc, char* argv[]) {
 
     // Solve.
     const auto before = chrono::high_resolution_clock::now();
-    solve_pressure_equation_homogeneous_neumann(pressure, velocity, structures);
+    solve_pressure_equation_homogeneous_neumann(pressure, velocity, structures, constants.dt);
     const auto after = chrono::high_resolution_clock::now();
     const Real execution_time = (after-before).count() / 1e9;
 
     // Remove a constant.
-    const Real difference = p_exact_p_test(time, min_x_global, min_y_global, min_z_global) - pressure(0,0,0);
-    for (size_t k = 0; k < constants.Nz; k++) {
-        for (size_t j = 0; j < constants.Ny; j++) {
-            for (size_t i = 0; i < constants.Nx; i++) {
-                pressure(i,j,k) += difference;
-            }
-        }
-    }
+    adjust_pressure(pressure, [&time](Real x, Real y, Real z){return p_exact_p_test(time,x,y,z);});
 
     // Compute the norms of the error.
     const Real error_l1_local = ErrorL1Norm(pressure, p_exact_p_test, time);

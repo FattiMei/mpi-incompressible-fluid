@@ -67,13 +67,17 @@ constexpr Real d3 = 1 - c3;
 
 // Add the pressure gradient adjustment to the velocity.
 #define UPDATE_VELOCITY(velocity, delta_pressure, delta_time) {                                                                                \
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.u, false, velocity.u(i,j,k) -= pressure_gradient_u(delta_pressure, i, j, k) * constants.dt;) \
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.v, false, velocity.v(i,j,k) -= pressure_gradient_v(delta_pressure, i, j, k) * constants.dt;) \
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.w, false, velocity.w(i,j,k) -= pressure_gradient_w(delta_pressure, i, j, k) * constants.dt;) \
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.u, false, velocity.u(i,j,k) -= pressure_gradient_u(delta_pressure, i, j, k) * delta_time;) \
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.v, false, velocity.v(i,j,k) -= pressure_gradient_v(delta_pressure, i, j, k) * delta_time;) \
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.w, false, velocity.w(i,j,k) -= pressure_gradient_w(delta_pressure, i, j, k) * delta_time;) \
+}
+
+#define UPDATE_PRESSURE() {                                                                            \
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, pressure(i,j,k) += pressure_buffer(i,j,k);) \
 }
 
 void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
-              VelocityTensor &rhs_buffer, const TimeVectorFunction &exact_velocity, 
+              VelocityTensor &rhs_buffer, const TimeVectorFunction &exact_velocity,
               const TimeVectorFunction &exact_pressure_gradient, Real t_n,
               StaggeredTensor &pressure, StaggeredTensor &pressure_buffer, 
               PressureSolverStructures &structures) {
@@ -91,9 +95,9 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Apply Dirichlet boundary conditions to the velocity.
   velocity_buffer.apply_all_dirichlet_bc(exact_velocity.set_time(time_1));
   // Solve the pressure equation.
-  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, velocity_buffer, exact_pressure_gradient.set_time(time_1), structures);
+  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, velocity_buffer, exact_pressure_gradient.get_difference_over_time(time_1, t_n), structures, dt_1);
   // Update the pressure.
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, pressure(i,j,k) += pressure_buffer(i,j,k) / d1;)
+  UPDATE_PRESSURE()
   // Update the velocity.
   UPDATE_VELOCITY(velocity_buffer, pressure_buffer, dt_1)
 
@@ -103,9 +107,9 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Apply Dirichlet boundary conditions  to the velocity.
   velocity.apply_all_dirichlet_bc(exact_velocity.set_time(time_2));
   // Solve the pressure equation.
-  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, velocity, exact_pressure_gradient.set_time(time_2), structures);
+  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, velocity, exact_pressure_gradient.get_difference_over_time(time_2, time_1), structures, dt_2);
   // Update the pressure.
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, pressure(i,j,k) += pressure_buffer(i,j,k) / d2;)
+  UPDATE_PRESSURE()
   // Update the velocity.
   UPDATE_VELOCITY(velocity, pressure_buffer, dt_2)
 
@@ -115,9 +119,9 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Apply Dirichlet boundary conditions  to the velocity.
   velocity_buffer.apply_all_dirichlet_bc(exact_velocity.set_time(final_time));
   // Solve the pressure equation.
-  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, velocity_buffer, exact_pressure_gradient.set_time(final_time), structures);
+  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, velocity_buffer, exact_pressure_gradient.get_difference_over_time(final_time, time_2), structures, dt_3);
   // Update the pressure.
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, pressure(i,j,k) += pressure_buffer(i,j,k) / d3;)
+  UPDATE_PRESSURE()
   // Update the velocity.
   UPDATE_VELOCITY(velocity_buffer, pressure_buffer, dt_3)
 

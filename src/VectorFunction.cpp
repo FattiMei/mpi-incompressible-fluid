@@ -30,4 +30,14 @@ VectorFunction TimeVectorFunction::set_time(Real time) const {
                         function_at_time(f_w, time));
 }
 
+VectorFunction TimeVectorFunction::get_difference_over_time(Real time_1, Real time_2) const {
+  const std::function<Real(Real, Real, Real)> new_f_u = 
+      [time_1, time_2, this](Real x, Real y, Real z) { return f_u(time_2, x, y, z) - f_u(time_1, x, y, z); };
+  const std::function<Real(Real, Real, Real)> new_f_v = 
+      [time_1, time_2, this](Real x, Real y, Real z) { return f_v(time_2, x, y, z) - f_v(time_1, x, y, z); };
+  const std::function<Real(Real, Real, Real)> new_f_w = 
+      [time_1, time_2, this](Real x, Real y, Real z) { return f_w(time_2, x, y, z) - f_w(time_1, x, y, z); };
+  return VectorFunction(new_f_u, new_f_v, new_f_w);
+}
+
 } // namespace mif

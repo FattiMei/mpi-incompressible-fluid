@@ -54,9 +54,8 @@ void apply_non_homogeneous_neumann(StaggeredTensor &rhs, const VectorFunction &e
 }
 
 // Compute the rhs for homogeneous Neumann boundary conditions.
-void compute_rhs_homogeneous_neumann(StaggeredTensor &rhs, const VelocityTensor &velocity) {
-    const Constants &constants = velocity.constants;
-    STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(rhs, true, rhs(i,j,k) = calculate_velocity_divergence(velocity,i,j,k) / constants.dt;)
+void compute_rhs_homogeneous_neumann(StaggeredTensor &rhs, const VelocityTensor &velocity, Real dt) {
+    STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(rhs, true, rhs(i,j,k) = calculate_velocity_divergence(velocity,i,j,k) / dt;)
 }
     
 inline Real compute_eigenvalue_neumann(size_t index, Real delta, size_t N_domains) {
@@ -201,18 +200,36 @@ void solve_pressure_equation_neumann(StaggeredTensor &pressure,
 
 void solve_pressure_equation_homogeneous_neumann(StaggeredTensor &pressure,
                                                  const VelocityTensor &velocity,
-                                                 PressureSolverStructures &structures) {
-    compute_rhs_homogeneous_neumann(pressure, velocity);
+                                                 PressureSolverStructures &structures,
+                                                 Real dt) {
+    compute_rhs_homogeneous_neumann(pressure, velocity, dt);
     solve_pressure_equation_neumann(pressure, velocity, structures);
 }
 
 void solve_pressure_equation_non_homogeneous_neumann(StaggeredTensor &pressure, 
                                                      const VelocityTensor &velocity,
                                                      const VectorFunction &exact_pressure_gradient,
-                                                     PressureSolverStructures &structures) {
-    compute_rhs_homogeneous_neumann(pressure, velocity);
+                                                     PressureSolverStructures &structures,
+                                                     Real dt) {
+    compute_rhs_homogeneous_neumann(pressure, velocity, dt);
     apply_non_homogeneous_neumann(pressure, exact_pressure_gradient);
     solve_pressure_equation_neumann(pressure, velocity, structures);
+}
+
+void adjust_pressure(StaggeredTensor &pressure,
+                     const std::function<Real(Real, Real, Real)> &exact_pressure) {
+    // Compute the constant difference.
+    const Constants &constants = pressure.constants;
+    const Real difference = exact_pressure(constants.min_x_global, constants.min_y_global, constants.min_z_global) - pressure(0,0,0);
+
+    // Remove the difference from all points.
+    for (size_t k = 0; k < constants.Nz; k++) {
+        for (size_t j = 0; j < constants.Ny; j++) {
+            for (size_t i = 0; i < constants.Nx; i++) {
+                pressure(i,j,k) += difference;
+            }
+        }
+    }
 }
 
 } // mif

@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
   const size_t Ny_domains_global = Nx_domains_global;
   const size_t Nz_domains_global = Nx_domains_global;
   constexpr Real Re = 1e4;
-  constexpr Real final_time = 1e-4;
+  constexpr Real final_time = 1e-2;
   const unsigned int num_time_steps = std::atoi(argv[2]);
 
   // Given the number of processors in the x direction, compute the number of
@@ -77,6 +77,28 @@ int main(int argc, char *argv[]) {
   const std::function<Real(Real, Real, Real)> &initial_pressure = [](Real x, Real y, Real z) { return p_exact(0.0, x, y, z); };
   pressure.set(initial_pressure, true);
   TimeVectorFunction exact_pressure_gradient(dp_dx_exact_p_test, dp_dy_exact_p_test, dp_dz_exact_p_test);
+
+  // Compute and print convergence conditions.
+  // Note: assuming the highest velocity value is obtained at time 0.
+  Real highest_velocity = 0.0;
+  for (size_t k = 0; k < constants.Nz; k++) {
+    for (size_t j = 0; j < constants.Ny; j++) {
+      for (size_t i = 0; i < constants.Nx; i++) {
+        if (std::abs(velocity.u(i,j,k)) > highest_velocity) {
+          highest_velocity = std::abs(velocity.u(i,j,k));
+        }
+        if (std::abs(velocity.v(i,j,k)) > highest_velocity) {
+          highest_velocity = std::abs(velocity.v(i,j,k));
+        }
+        if (std::abs(velocity.w(i,j,k)) > highest_velocity) {
+          highest_velocity = std::abs(velocity.w(i,j,k));
+        }
+      }
+    }
+  }
+  const Real space_step = std::min({constants.dx, constants.dy, constants.dz});
+  std::cout << "CFL: " << constants.dt / space_step * highest_velocity << std::endl;
+  std::cout << "Reynolds condition: " << constants.dt / (Re*space_step*space_step) << std::endl;
 
   // Compute the solution.
   for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
