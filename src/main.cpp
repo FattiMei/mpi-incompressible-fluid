@@ -1,5 +1,6 @@
 #include "Manufactured.h"
 #include "Norms.h"
+#include "PressureEquation.h"
 #include "Timestep.h"
 #include <cassert>
 #include <iostream>
@@ -111,14 +112,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Remove a constant from the pressure.
-  const Real difference = p_exact(final_time, min_x_global, min_y_global, min_z_global) - pressure(0,0,0);
-  for (size_t k = 0; k < constants.Nz; k++) {
-    for (size_t j = 0; j < constants.Ny; j++) {
-        for (size_t i = 0; i < constants.Nx; i++) {
-            pressure(i,j,k) += difference;
-        }
-    }
-  }
+  adjust_pressure(pressure, [&final_time](Real x, Real y, Real z){return p_exact(final_time,x,y,z);});
 
   // Compute the norms of the error.
   const Real error_l1_local_v = ErrorL1Norm(velocity, exact_velocity, final_time);
