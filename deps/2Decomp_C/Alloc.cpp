@@ -7,6 +7,7 @@ int C2Decomp::allocX(double *&var) {
   int zsize = decompMain.xsz[2];
 
   var = new double[xsize * ysize * zsize];
+  return xsize * ysize * zsize;
 }
 
 int C2Decomp::allocY(double *&var) {
@@ -16,6 +17,7 @@ int C2Decomp::allocY(double *&var) {
   int zsize = decompMain.ysz[2];
 
   var = new double[xsize * ysize * zsize];
+  return xsize * ysize * zsize;
 }
 
 int C2Decomp::allocZ(double *&var) {
@@ -25,6 +27,7 @@ int C2Decomp::allocZ(double *&var) {
   int zsize = decompMain.zsz[2];
 
   var = new double[xsize * ysize * zsize];
+  return xsize * ysize * zsize;
 }
 
 void C2Decomp::deallocXYZ(double *&var) {
