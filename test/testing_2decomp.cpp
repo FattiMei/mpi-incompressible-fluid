@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     //Get the local rank
     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
 
-    int N = 50;
+    int N = 64;
     // int size = N*N*N;
 
     // double *b      = (double*) fftw_malloc(sizeof(double) * size);
@@ -76,8 +76,14 @@ int main(int argc, char *argv[]) {
 
     if(!mpiRank) cout << "initializing " << endl;
 
-    int pRow = 1;
-    int pCol = totRank;
+
+    int pCol=0, pRow = 0;
+    if(totRank > 1){
+        pCol= totRank / 2;
+        pRow = totRank / pCol;
+    }
+
+    
 
     C2Decomp *c2d = new C2Decomp(N, N, N, pRow, pCol, neumannBC);
 
@@ -106,8 +112,8 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < xSize[2]; i++) {
         for (int j = 0; j < xSize[1]; j++){
             for (int k = 0; k < xSize[0]; k++){
-                //div1[i*xSize[1]*xSize[0] + j*xSize[0] + k] = (i + c2d->xStart[2])*xSize[1]*xSize[0] + (j + c2d->xStart[1])*xSize[0] + (k + c2d->xStart[0]);
-                Uex[i*xSize[1]*xSize[0] + j*xSize[0] + k] = std::cos(h*(i + c2d->xStart[2])) * std::cos(h*(j + c2d->xStart[1])) * std::cos(h*(k + c2d->xStart[0])) ;
+                //div1[i*xSize[1]*xSize[0] + j*xSize[0] + k] = (i + c2d->xStart[2])*xSize[0]*xSize[0] + (j + c2d->xStart[1])*xSize[0] + (k + c2d->xStart[0]);
+                Uex[i*xSize[1]*xSize[0] + j*xSize[0] + k] = std::cos(h*(i + c2d->xStart[2])*N*N) * std::cos(h*(j + c2d->xStart[1])*N) * std::cos(h*(k + c2d->xStart[0])) ;
                 div1[i*xSize[1]*xSize[0] + j*xSize[0] + k] = -3.0*Uex[i*xSize[1]*xSize[0] + j*xSize[0] + k];// i*xSize[1]*xSize[0] + j*xSize[0] + k + 1;
                 // cout<< div1[i*xSize[1]*xSize[0] + j*xSize[0] + k] << " ("<< mpiRank << ") ";
             }
@@ -340,37 +346,70 @@ int main(int argc, char *argv[]) {
     //   std::cout << '\n\n';
     // }
 
-    MPI_Barrier(MPI_COMM_WORLD);
 
-    if(mpiRank == 0){
+    for(int r = 0; r < totRank; ++r){
+        if(mpiRank == r){
 
-        
-        double difff = gathered_results[0] - 1;
+            double difff = u1[0] - Uex[0];
 
-        double max = 0.0;
+            double max = 0.0;
 
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++){
-                for (int k = 0; k < N; k++){
-                    //cout<< div1[i*xSize[1]*xSize[0] + j*xSize[0] + k] << " ";
-                    double temppp = std::abs(gathered_results[i*N*N + j*N + k] - (std::cos(h*i) * std::cos(h*j) * std::cos(h*k)) - difff);
-                    if (max < temppp)
-                        max = temppp;
+            cout<<"total "<<endl;
+
+            for (int i = 0; i < xSize[2]; i++) {
+                for (int j = 0; j < xSize[1]; j++){
+                    for (int k = 0; k < xSize[0]; k++){
+                        //cout<< gathered_results[i*N*N + j*N + k] << " ";
+                        double temppp = std::abs(u1[i*xSize[1]*xSize[0] + j*xSize[0] + k] - Uex[i*xSize[1]*xSize[0] + j*xSize[0] + k] - difff);
+                        if (max < temppp)
+                            max = temppp;
+                    }
                 }
             }
-        }
 
-        cout <<endl<< "And the max error is "<< max <<endl << endl;
 
-        cout << "My starting x point: "<< c2d->xStart[2] << " " << c2d->xStart[1] << " " << c2d->xStart[0] << endl;
-        cout << "My starting y point: "<< c2d->yStart[2] << " " << c2d->yStart[1] << " " << c2d->yStart[0] << endl;
-        cout << "My starting z point: "<< c2d->zStart[2] << " " << c2d->zStart[1] << " " << c2d->zStart[0] << endl;
-
-        for(int i = 0; i < 3; i++){
-            cout << xSize[i] << " "<< ySize[i] << " "<< zSize[i] << endl;
+            cout << "From processor " << r<< " max error is "<< max <<endl <<endl;
+  
         }
         cout<<endl;
+        MPI_Barrier(MPI_COMM_WORLD);
     }
+
+
+    // MPI_Barrier(MPI_COMM_WORLD);
+
+    // if(mpiRank == 0){
+
+        
+    //     double difff = gathered_results[0] - 1;
+
+    //     double max = 0.0;
+
+    //     cout<<"total "<<endl;
+
+    //     for (int i = 0; i < N; i++) {
+    //         for (int j = 0; j < N; j++){
+    //             for (int k = 0; k < N; k++){
+    //                 cout<< gathered_results[i*N*N + j*N + k] << " ";
+    //                 double temppp = std::abs(gathered_results[i*N*N + j*N + k] - (std::cos(h*i) * std::cos(h*j) * std::cos(h*k)) - difff);
+    //                 if (max < temppp)
+    //                     max = temppp;
+    //             }
+    //         }
+    //     }
+    //     cout<<endl;
+
+    //     cout <<endl<< "And the max error is "<< max <<endl << endl;
+
+    //     cout << "My starting x point: "<< c2d->xStart[2] << " " << c2d->xStart[1] << " " << c2d->xStart[0] << endl;
+    //     cout << "My starting y point: "<< c2d->yStart[2] << " " << c2d->yStart[1] << " " << c2d->yStart[0] << endl;
+    //     cout << "My starting z point: "<< c2d->zStart[2] << " " << c2d->zStart[1] << " " << c2d->zStart[0] << endl;
+
+    //     for(int i = 0; i < 3; i++){
+    //         cout << xSize[i] << " "<< ySize[i] << " "<< zSize[i] << endl;
+    //     }
+    //     cout<<endl;
+    // }
 
 
 
