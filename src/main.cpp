@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   const size_t Ny_domains_global = Nx_domains_global;
   const size_t Nz_domains_global = Nx_domains_global;
   constexpr Real Re = 1e4;
-  constexpr Real final_time = 1e-2;
+  constexpr Real final_time = 1e-4;
   const unsigned int num_time_steps = std::atoi(argv[2]);
 
   // Given the number of processors in the x direction, compute the number of
