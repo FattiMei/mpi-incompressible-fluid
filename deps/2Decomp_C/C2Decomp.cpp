@@ -1,5 +1,6 @@
 #include "C2Decomp.hpp"
 #include <cassert>
+#include <cstring>
 
 // template <class T> const T& max (const T& a, const T& b) {
 //  return (a<b)?b:a;     // or: return comp(a,b)?b:a; for version (2)
@@ -140,9 +141,13 @@ void C2Decomp::decompInfoInit() {
   }
 
   decompMain.x1dist = new int[dims[0]];
+  std::memset(decompMain.x1dist, 0, sizeof(int) * dims[0]);
   decompMain.y1dist = new int[dims[0]];
+  std::memset(decompMain.y1dist, 0, sizeof(int) * dims[0]);
   decompMain.y2dist = new int[dims[1]];
+  std::memset(decompMain.y2dist, 0, sizeof(int) * dims[1]);
   decompMain.z2dist = new int[dims[1]];
+  std::memset(decompMain.z2dist, 0, sizeof(int) * dims[1]);
 
   getDist();
 
@@ -160,14 +165,22 @@ void C2Decomp::decompInfoInit() {
   partition(nx, ny, nz, pdim, decompMain.zst, decompMain.zen, decompMain.zsz);
 
   decompMain.x1cnts = new int[dims[0]];
+  std::memset(decompMain.x1cnts, 0, sizeof(int) * dims[0]);
   decompMain.y1cnts = new int[dims[0]];
+  std::memset(decompMain.y1cnts, 0, sizeof(int) * dims[0]);
   decompMain.y2cnts = new int[dims[1]];
+  std::memset(decompMain.y2cnts, 0, sizeof(int) * dims[1]);
   decompMain.z2cnts = new int[dims[1]];
+  std::memset(decompMain.z2cnts, 0, sizeof(int) * dims[1]);
 
   decompMain.x1disp = new int[dims[0]];
+  std::memset(decompMain.x1disp, 0, sizeof(int) * dims[0]);
   decompMain.y1disp = new int[dims[0]];
+  std::memset(decompMain.y1disp, 0, sizeof(int) * dims[0]);
   decompMain.y2disp = new int[dims[1]];
+  std::memset(decompMain.y2disp, 0, sizeof(int) * dims[1]);
   decompMain.z2disp = new int[dims[1]];
+  std::memset(decompMain.z2disp, 0, sizeof(int) * dims[1]);
 
   prepareBuffer(&decompMain);
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.20)
 project(mpi_incompressible_fluid)
 
 
@@ -29,8 +29,8 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 
 # Set custom flags for Debug build.
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
-     -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
+# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
+#      -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
 
 # Set custom flags for Release build.
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG} -DNDEBUG")
