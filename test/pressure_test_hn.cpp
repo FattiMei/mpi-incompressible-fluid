@@ -1,10 +1,14 @@
+#include <chrono>
 #include <cmath>
 #include "ManufacturedPressure.h"
 #include "Norms.h"
 #include "PressureEquation.h"
 
+// Pressure equation test for homogeneous Neumann boundary conditions.
 int main(int argc, char* argv[]) {
     using namespace mif;
+
+    assert(argc == 3);
 
     int rank;
     int size;
@@ -13,12 +17,15 @@ int main(int argc, char* argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     // Set parameters.
+    constexpr Real min_x_global = 0.0;
+    constexpr Real min_y_global = 0.0;
+    constexpr Real min_z_global = 0.0;
     constexpr Real x_size = 2 * M_PI;
     constexpr Real y_size = x_size;
     constexpr Real z_size = x_size;
     const size_t Nx_domains_global = std::atol(argv[1]);
-    const size_t Ny_domains_global = Nx_domains_global;
-    const size_t Nz_domains_global = Nx_domains_global;
+    const size_t Ny_domains_global = Nx_domains_global * 3;
+    const size_t Nz_domains_global = Nx_domains_global * 5;
     constexpr Real time = 1.0;
 
     const int Pz = std::atol(argv[2]);
@@ -27,20 +34,31 @@ int main(int argc, char* argv[]) {
     assert(Pz > 0 && Py > 0);
 
     // Create the needed objects.
+    // Note: it is necessary that delta t equals one, as manufsol_pressure.py creates 
+    // a velocity field with gradient equal to the divergence of the velocity, without dividing
+    // by delta t, as time dependency is not relevant for this test.
     const Constants constants(Nx_domains_global, Ny_domains_global, Nz_domains_global, 
-                              x_size, y_size, z_size, 1.0, 1.0, 1, Py, Pz, rank);
+                              x_size, y_size, z_size, 
+                              min_x_global, min_y_global, min_z_global,
+                              1.0, 1.0, 1, Py, Pz, rank);
     
     VelocityTensor velocity(constants);
     StaggeredTensor pressure({constants.Nx, constants.Ny, constants.Nz}, constants);
-    StaggeredTensor pressure_buffer({constants.Nx, constants.Ny, constants.Nz}, constants);
-    StaggeredTensor rhs_buffer({constants.Nx, constants.Ny, constants.Nz}, constants);
-    StaggeredTensor rhs_buffer2({constants.Nx, constants.Ny, constants.Nz}, constants);
+
+    PressureSolverStructures structures(constants);
 
     // Set the right-hand side.
     TimeVectorFunction exact_velocity(u_exact_p_test, v_exact_p_test, w_exact_p_test);
-    velocity.set_initial(exact_velocity.set_time(time));
+    velocity.set(exact_velocity.set_time(time), true);
 
-    solve_pressure_equation_neumann(pressure, pressure_buffer, velocity, rhs_buffer, rhs_buffer2);
+    // Solve.
+    const auto before = chrono::high_resolution_clock::now();
+    solve_pressure_equation_homogeneous_neumann(pressure, velocity, structures, constants.dt);
+    const auto after = chrono::high_resolution_clock::now();
+    const Real execution_time = (after-before).count() / 1e9;
+
+    // Remove a constant.
+    adjust_pressure(pressure, [&time](Real x, Real y, Real z){return p_exact_p_test(time,x,y,z);});
 
     // Compute the norms of the error.
     const Real error_l1_local = ErrorL1Norm(pressure, p_exact_p_test, time);
@@ -54,7 +72,8 @@ int main(int argc, char* argv[]) {
     const Real error_lInf_global = accumulate_error_mpi_linf(error_lInf_local, constants);
 
     if (rank == 0) {
-        std::cout << error_l1_global << " " << error_l2_global << " " << error_lInf_global << std::endl;
+        std::cout << "Time: " << execution_time << "s " << execution_time/Nx_domains_global/Ny_domains_global/Nz_domains_global << std::endl;
+        std::cout << "Errors: " << error_l1_global << " " << error_l2_global << " " << error_lInf_global << std::endl;
     }
 
     MPI_Finalize();

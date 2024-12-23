@@ -11,13 +11,14 @@ file for more information on how this script is used in the project.
 import sys
 import sympy as sp
 from sympy import diff
+from sympy import simplify as simp
 
 # The codegen callable is not in the sympy namespace automatically.
 from sympy.utilities.codegen import codegen
 
 
 # Create the required symbols.
-t, x, y, z, Re = sp.symbols("t, x, y, z, Reynolds")
+t, x, y, z = sp.symbols("t, x, y, z")
 
 
 # Define the laplacian operator.
@@ -32,17 +33,31 @@ def div(u, v, w):
 
 if __name__ == "__main__":
     # This is the manufactured solution we want to generate the code for.
-    u = -sp.sin(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
-    v = -sp.cos(x) * sp.sin(y) * sp.cos(z) * sp.sin(t)
-    w = -sp.cos(x) * sp.cos(y) * sp.sin(z) * sp.sin(t)
-    p = sp.cos(x) * sp.cos(y) * sp.cos(z) * sp.sin(t)
-    # Note: pressure boundary conditions must be correct Neumann boundary conditions,
-    # so for the domain [0,2pi]^3, dp/di|0 = dp/di|2pi = 0 for all directions i=x,y,z.
+    u = -sp.sin(x) * sp.cos(y) * sp.cos(z) * t
+    v = -sp.cos(x) * sp.sin(y) * sp.cos(z) * t
+    w = -sp.cos(x) * sp.cos(y) * sp.sin(z) * t
+    p = sp.cos(x) * sp.cos(y) * sp.cos(z) * t
 
     # Check if the laplacian of the pressure is equal to the divergence of the velocity.
-    if div(u, v, w) != lap(p):
+    if simp(div(u, v, w) - lap(p)) != 0:
         sys.stderr.write(
             "[WARNING]: the proposed manufactured solution is inconsistent. The result is meaningless.\n"
+        )
+
+    dp_dx = simp(diff(p, x))
+    dp_dy = simp(diff(p, y))
+    dp_dz = simp(diff(p, z))
+
+    if (
+        simp(dp_dx.subs(x, 0)) != 0
+        or simp(dp_dx.subs(x, 2 * sp.pi)) != 0
+        or simp(dp_dy.subs(y, 0)) != 0
+        or simp(dp_dy.subs(y, 2 * sp.pi)) != 0
+        or simp(dp_dz.subs(z, 0)) != 0
+        or simp(dp_dz.subs(z, 2 * sp.pi)) != 0
+    ):
+        sys.stderr.write(
+            "[WARNING]: the proposed manufactured solution does not have homogeneous Neumann boundary conditions.\n"
         )
 
     # Generate the C code through sympy's codegen utility.
@@ -52,6 +67,9 @@ if __name__ == "__main__":
             ("v_exact_p_test", v),
             ("w_exact_p_test", w),
             ("p_exact_p_test", p),
+            ("dp_dx_exact_p_test", dp_dx),
+            ("dp_dy_exact_p_test", dp_dy),
+            ("dp_dz_exact_p_test", dp_dz),
         ],
         language="C99",
         prefix="ManufacturedPressure",
@@ -59,7 +77,6 @@ if __name__ == "__main__":
         header=True,
         empty=True,
         argument_sequence=(t, x, y, z),
-        global_vars=[Re],
     )
 
     # This code will be fed to the `manufsol.cpp` file.

@@ -28,14 +28,14 @@ static void timestepper(benchmark::State &state) {
   const size_t Ny = Nx;
   const size_t Nz = Nx;
 
-  const Constants constants(Nx, Ny, Nz, Lx, Ly, Lz, Reynolds, deltat, 1, 1, 1, 0);
+  const Constants constants(Nx, Ny, Nz, Lx, Ly, Lz, 0.0, 0.0, 0.0, Reynolds, deltat, 1, 1, 1, 0);
 
   VelocityTensor velocity(constants);
   VelocityTensor velocity_buffer(constants);
   VelocityTensor rhs_buffer(constants);
 
   TimeVectorFunction exact_velocity(u_exact_v_test, v_exact_v_test, w_exact_v_test);
-  velocity.set_initial(exact_velocity.set_time(0.0));
+  velocity.set(exact_velocity.set_time(0.0), true);
 
   TimeVectorFunction forcing_term(forcing_x, forcing_y, forcing_z);
 

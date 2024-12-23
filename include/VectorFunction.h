@@ -42,6 +42,11 @@ public:
   // This method projects the TimeVectorFunction to a VectorFunction at a
   // given time, by removing the time dependency.
   VectorFunction set_time(Real time) const;
+
+  // Return a VectorFunction whose entries are the entries of this function
+  // after setting time_2, minus the entries of this function after setting
+  // time_1.
+  VectorFunction get_difference_over_time(Real time_1, Real time_2) const;
 };
 
 } // namespace mif

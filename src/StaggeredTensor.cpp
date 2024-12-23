@@ -101,9 +101,9 @@ void StaggeredTensor::send_mpi_data(int base_tag) {
 
 void StaggeredTensor::print() const {
   const std::array<size_t, 3> &sizes = this->sizes();
-  for (size_t i = 0; i < sizes[0]; i++) {
+  for (size_t k = 0; k < sizes[2]; k++) {
     for (size_t j = 0; j < sizes[1]; j++) {
-      for (size_t k = 0; k < sizes[2]; k++) {
+      for (size_t i = 0; i < sizes[0]; i++) {
         std::cout << this->operator()(i, j, k) << " ";
       }
       std::cout << std::endl;
@@ -115,9 +115,9 @@ void StaggeredTensor::print() const {
 
 void StaggeredTensor::print(const std::function<bool(Real)> &filter) const {
   const std::array<size_t, 3> &sizes = this->sizes();
-  for (size_t i = 0; i < sizes[0]; i++) {
+  for (size_t k = 0; k < sizes[2]; k++) {
     for (size_t j = 0; j < sizes[1]; j++) {
-      for (size_t k = 0; k < sizes[2]; k++) {
+      for (size_t i = 0; i < sizes[0]; i++) {
         const Real value = this->operator()(i, j, k);
         if (filter(value)) {
           std::cout << "(" << i << "," << j << "," << k << "): " << value
@@ -127,6 +127,29 @@ void StaggeredTensor::print(const std::function<bool(Real)> &filter) const {
     }
   }
   std::cout << std::endl;
+}
+
+void StaggeredTensor::print_inline() const {
+  for (size_t i = 0; i < constants.Nx * constants.Ny * constants.Nz; i++) {
+    std::cout << this->operator()(i) << " ";
+  }
+  std::cout << std::endl;
+}
+
+void StaggeredTensor::set(const std::function<Real(Real, Real, Real)> &f, bool include_border) {
+  const std::array<size_t, 3> &sizes = this->sizes();
+  const size_t lower_limit = include_border ? 0 : 1;
+  const size_t upper_limit_i = include_border ? sizes[0] : sizes[0] - 1;
+  const size_t upper_limit_j = include_border ? sizes[1] : sizes[1] - 1;
+  const size_t upper_limit_k = include_border ? sizes[2] : sizes[2] - 1;
+
+  for (size_t i = lower_limit; i < upper_limit_i; i++) {
+    for (size_t j = lower_limit; j < upper_limit_j; j++) {
+      for (size_t k = lower_limit; k < upper_limit_k; k++) {
+        this->operator()(i, j, k) = evaluate_function_at_index(i, j, k, f);
+      }
+    }
+  }
 }
 
 }

@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     const size_t Nx = 4;
     const size_t Ny = 3;
     const size_t Nz = 2;
-    const Constants constants(Nx, Ny, Nz, 1.0, 1.0, 1.0, 1.0, 1.0, 1, 1, 1, 0);
+    const Constants constants(Nx, Ny, Nz, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1, 1, 1, 0);
     StaggeredTensor tensor({Nx, Ny, Nz}, constants);
 
     // Initialize the tensor with easily recognizable values.

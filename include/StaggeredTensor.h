@@ -80,7 +80,7 @@ public:
   inline Real evaluate_function_at_index_unstaggered(
     Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const {
-    return f(time, constants.dx * i, constants.min_y + constants.dy * j,
+    return f(time, constants.min_x + constants.dx * i, constants.min_y + constants.dy * j,
              constants.min_z + constants.dz * k);    
   }
 
@@ -88,7 +88,7 @@ public:
   inline Real evaluate_function_at_index_unstaggered(
     size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const {
-    return f(constants.dx * i, constants.min_y + constants.dy * j,
+    return f(constants.min_x + constants.dx * i, constants.min_y + constants.dy * j,
              constants.min_z + constants.dz * k);
   }
 
@@ -109,6 +109,10 @@ public:
   // A debug function to print the tensor.
   void print() const;
   void print(const std::function<bool(Real)> &filter) const;
+  void print_inline() const;
+
+  // Set the values of this tensor to the corresponding values of f, evaluated at all points.
+  void set(const std::function<Real(Real, Real, Real)> &f, bool include_border);
 };
 
 } // mif

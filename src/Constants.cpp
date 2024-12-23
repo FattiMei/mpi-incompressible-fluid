@@ -56,11 +56,13 @@ namespace mif {
  * @param rank Rank of the current processor.
  */
 Constants::Constants(size_t Nx_domains, size_t Ny_domains_global, size_t Nz_domains_global, 
-                     Real x_size, Real y_size_global, Real z_size_global, Real Re, 
-                     Real final_time, unsigned int num_time_steps,
+                     Real x_size, Real y_size_global, Real z_size_global, 
+                     Real min_x_global, Real min_y_global, Real min_z_global,
+                     Real Re, Real final_time, unsigned int num_time_steps,
                      int Py, int Pz, int rank)
     : Nx_domains(Nx_domains), Ny_domains_global(Ny_domains_global), Nz_domains_global(Nz_domains_global),
       x_size(x_size), y_size_global(y_size_global), z_size_global(z_size_global), 
+      min_x_global(min_x_global), min_y_global(min_y_global), min_z_global(min_z_global),
       Re(Re), final_time(final_time), num_time_steps(num_time_steps),
       Py(Py), Pz(Pz), rank(rank), y_rank(rank / Pz), z_rank(rank % Pz),
       dt(final_time / num_time_steps), dx(x_size / Nx_domains), 
@@ -80,8 +82,9 @@ Constants::Constants(size_t Nx_domains, size_t Ny_domains_global, size_t Nz_doma
       
       // Calculate the minimum and maximum values of y and z for the current
       // processor. Each processor will have a different subset of the domain.
-      min_y(y_size_local * y_rank), max_y(min_y + y_size_local + ((y_rank == Py - 1) ? 0.0 : dy)),
-      min_z(z_size_local * z_rank), max_z(min_z + z_size_local + ((z_rank == Pz - 1) ? 0.0 : dz)),
+      min_x(min_x_global), max_x(min_x_global+x_size),
+      min_y(min_y_global + y_size_local * y_rank), max_y(min_y + y_size_local + ((y_rank == Py - 1) ? 0.0 : dy)),
+      min_z(min_z_global + z_size_local * z_rank), max_z(min_z + z_size_local + ((z_rank == Pz - 1) ? 0.0 : dz)),
       
       // Calculate the neighbouring processors in the y and z directions based
       // on the rank.
