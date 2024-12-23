@@ -3,7 +3,7 @@
 namespace mif {
     PressureSolverStructures::PressureSolverStructures(const Constants &constants):
         boundary_conditions{true, true, true},
-        c2d(C2Decomp(constants.Nx, constants.Ny, constants.Nz, constants.Pz, constants.Py, boundary_conditions)),
+        c2d(C2Decomp(constants.Nx, constants.Ny_domains_global+2*constants.Py-1, constants.Nz_domains_global+2*constants.Pz-1, constants.Py, constants.Pz, boundary_conditions)),
         buffer_x(static_cast<Real*>(fftw_malloc(sizeof(Real) * constants.Nx))),
         buffer_y(static_cast<Real*>(fftw_malloc(sizeof(Real) * constants.Ny))),
         buffer_z(static_cast<Real*>(fftw_malloc(sizeof(Real) * constants.Nz))),

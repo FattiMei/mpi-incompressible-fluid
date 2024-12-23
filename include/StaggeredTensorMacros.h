@@ -36,6 +36,41 @@
     }                                                                          \
   }
 
+// Execute "CODE" over all points for a staggered tensor, excluding points 
+// that belong to another processor, but including true borders.
+#define STAGGERED_TENSOR_ITERATE_OVER_ALL_OWNER_POINTS(tensor, CODE)                 \
+  {                                                                                  \
+    size_t lower_limit_y, upper_limit_y, lower_limit_z, upper_limit_z;               \
+    const std::array<size_t, 3> &sizes = tensor.sizes();                             \
+    if (tensor.constants.prev_proc_y != -1) {                                        \
+      lower_limit_y = 1;                                                             \
+    } else {                                                                         \
+      lower_limit_y = 0;                                                             \
+    };                                                                               \
+    if (tensor.constants.next_proc_y != -1) {                                        \
+      upper_limit_y = sizes[1] - 1;                                                  \
+    } else {                                                                         \
+      upper_limit_y = sizes[1];                                                      \
+    };                                                                               \
+    if (tensor.constants.prev_proc_z != -1) {                                        \
+      lower_limit_z = 1;                                                             \
+    } else {                                                                         \
+      lower_limit_z = 0;                                                             \
+    };                                                                               \
+    if (tensor.constants.next_proc_z != -1) {                                        \
+      upper_limit_z = sizes[2] - 1;                                                  \
+    } else {                                                                         \
+      upper_limit_z = sizes[2];                                                      \
+    };                                                                               \
+    for (size_t k = lower_limit_z; k < upper_limit_z; k++) {                         \
+      for (size_t j = lower_limit_y; j < upper_limit_y; j++) {                       \
+        for (size_t i = 0; i < sizes[0]; i++) {                                      \
+          CODE                                                                       \
+        }                                                                            \
+      }                                                                              \
+    }                                                                                \
+  }
+
 // Set the values of a staggered tensor calculating a function over
 // all of its points, or all internal points if include_border is false.
 #define STAGGERED_TENSOR_FUNCTION_ON_ALL_POINTS(tensor, function,              \

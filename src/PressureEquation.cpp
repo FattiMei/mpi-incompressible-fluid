@@ -55,7 +55,7 @@ void apply_non_homogeneous_neumann(StaggeredTensor &rhs, const VectorFunction &e
 
 // Compute the rhs for homogeneous Neumann boundary conditions.
 void compute_rhs_homogeneous_neumann(StaggeredTensor &rhs, const VelocityTensor &velocity, Real dt) {
-    STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(rhs, true, rhs(i,j,k) = calculate_velocity_divergence(velocity,i,j,k) / dt;)
+    STAGGERED_TENSOR_ITERATE_OVER_ALL_OWNER_POINTS(rhs, rhs(i,j,k) = calculate_velocity_divergence(velocity,i,j,k) / dt;)
 }
     
 inline Real compute_eigenvalue_neumann(size_t index, Real delta, size_t N_domains) {
