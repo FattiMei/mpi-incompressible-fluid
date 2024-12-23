@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
               << " Py: " << Py << "\n\n";
   assert(Pz * Py == totRank);
   assert(Pz > 0 && Py > 0);
-  const mif::Constants constants(nx, ny, nz, 1.0, 1.0, 1.0, 1.0, 1.0, 1, Py, Pz,
+  const mif::Constants constants(nx, ny, nz, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1, Py, Pz,
                                  mpiRank);
   mif::StaggeredTensor local_tensor({constants.Nx, constants.Ny, constants.Nz},
                                     constants);
