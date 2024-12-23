@@ -39,6 +39,11 @@ void VelocityTensor::apply_all_dirichlet_bc(const VectorFunction &exact_velocity
     const std::array<size_t, 3> sizes = tensor->sizes();
     const std::function<Real(Real, Real, Real)> &func =
         (component == 0) ? exact_velocity.f_u : (component == 1 ? exact_velocity.f_v : exact_velocity.f_w);
+    
+    // Notice the extra condition for MPI communication when the direction is not x. 
+    // If the neighbouring processor is valid, we receive data from it, instead of
+    // applying the usual Dirichlet boundary conditions. This effectively
+    // treats the neighbouring processor as a Dirichlet boundary.
 
     // Face 1: z=z_min
     if (constants.prev_proc_z != -1) {
@@ -46,6 +51,22 @@ void VelocityTensor::apply_all_dirichlet_bc(const VectorFunction &exact_velocity
       int return_code = MPI_Recv(tensor->min_addr_recv_z, 1, tensor->Slice_type_constant_z, constants.prev_proc_z, component*4 + 1, MPI_COMM_WORLD, &status);
       assert(return_code == 0);
       (void) return_code;
+
+      // Fix 1D borders (data from the other processor does not have updated 1D borders).
+      if (component != 2) {
+        for (size_t j = 0; j < sizes[1]; j++) {
+          (*tensor)(0, j, 0) =
+              tensor->evaluate_function_at_index(0, j, 0, func);
+          (*tensor)(sizes[0]-1, j, 0) =
+              tensor->evaluate_function_at_index(sizes[0]-1, j, 0, func);
+        }
+        for (size_t i = 0; i < sizes[0]; i++) {
+          (*tensor)(i, 0, 0) =
+              tensor->evaluate_function_at_index(i, 0, 0, func);
+          (*tensor)(i, sizes[1]-1, 0) =
+              tensor->evaluate_function_at_index(i, sizes[1]-1, 0, func);
+        }
+      }
     } else if (component == 2) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t i = 1; i < constants.Nx - 1; i++) {
@@ -76,6 +97,22 @@ void VelocityTensor::apply_all_dirichlet_bc(const VectorFunction &exact_velocity
       int return_code = MPI_Recv(tensor->max_addr_recv_z, 1, tensor->Slice_type_constant_z, constants.next_proc_z, component*4, MPI_COMM_WORLD, &status);
       assert(return_code == 0);
       (void) return_code;
+
+      // Fix 1D borders.
+      if (component != 2) {
+        for (size_t j = 0; j < sizes[1]; j++) {
+          (*tensor)(0, j, constants.Nz-1) =
+              tensor->evaluate_function_at_index(0, j, constants.Nz-1, func);
+          (*tensor)(sizes[0]-1, j, constants.Nz-1) =
+              tensor->evaluate_function_at_index(sizes[0]-1, j, constants.Nz-1, func);
+        }
+        for (size_t i = 0; i < sizes[0]; i++) {
+          (*tensor)(i, 0, constants.Nz-1) =
+              tensor->evaluate_function_at_index(i, 0, constants.Nz-1, func);
+          (*tensor)(i, sizes[1]-1, constants.Nz-1) =
+              tensor->evaluate_function_at_index(i, sizes[1]-1, constants.Nz-1, func);
+        }
+      }
     } else if (component == 2) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t i = 1; i < constants.Nx - 1; i++) {
@@ -104,11 +141,6 @@ void VelocityTensor::apply_all_dirichlet_bc(const VectorFunction &exact_velocity
       }
     }
 
-    // From now on, notice the extra condition for MPI communication. If the
-    // neighbouring processor is valid, we receive data from it, instead of
-    // applying the usual Dirichlet boundary conditions. This effectively
-    // treats the neighbouring processor as a Dirichlet boundary.
-
     // Face 3: y=y_min
     if (constants.prev_proc_y != -1) {
       // Receive the data.
@@ -118,9 +150,25 @@ void VelocityTensor::apply_all_dirichlet_bc(const VectorFunction &exact_velocity
       (void) return_code;
 
       // Copy it into the tensor.
-      for (size_t i = 0; i < sizes[0]; i++) {
-        for (size_t k = 0; k < sizes[2]; k++) {
+      for (size_t i = 1; i < sizes[0]-1; i++) {
+        for (size_t k = 1; k < sizes[2]-1; k++) {
           tensor->operator()(i, 0, k) = tensor->prev_y_slice_recv(i,k);
+        }
+      }
+
+      // Fix 1D borders.
+      if (component != 1) {
+        for (size_t k = 0; k < sizes[2]; k++) {
+          (*tensor)(0, 0, k) =
+              tensor->evaluate_function_at_index(0, 0, k, func);
+          (*tensor)(sizes[0]-1, 0, k) =
+              tensor->evaluate_function_at_index(sizes[0]-1, 0, k, func);
+        }
+        for (size_t i = 0; i < sizes[0]; i++) {
+          (*tensor)(i, 0, 0) =
+              tensor->evaluate_function_at_index(i, 0, 0, func);
+          (*tensor)(i, 0, sizes[2]-1) =
+              tensor->evaluate_function_at_index(i, 0, sizes[2]-1, func);
         }
       }
     } else if (component == 1) {
@@ -156,9 +204,25 @@ void VelocityTensor::apply_all_dirichlet_bc(const VectorFunction &exact_velocity
       (void) return_code;
 
       // Copy it into the tensor.
-      for (size_t i = 0; i < sizes[0]; i++) {
-        for (size_t k = 0; k < sizes[2]; k++) {
+      for (size_t i = 1; i < sizes[0]-1; i++) {
+        for (size_t k = 1; k < sizes[2]-1; k++) {
           tensor->operator()(i, sizes[1] - 1, k) = tensor->next_y_slice_recv(i,k);
+        }
+      }
+
+      // Fix 1D borders.
+      if (component != 1) {
+        for (size_t k = 0; k < sizes[2]; k++) {
+          (*tensor)(0, constants.Ny-1, k) =
+              tensor->evaluate_function_at_index(0, constants.Ny-1, k, func);
+          (*tensor)(sizes[0]-1, 0, k) =
+              tensor->evaluate_function_at_index(sizes[0]-1, constants.Ny-1, k, func);
+        }
+        for (size_t i = 0; i < sizes[0]; i++) {
+          (*tensor)(i, constants.Ny-1, 0) =
+              tensor->evaluate_function_at_index(i, constants.Ny-1, 0, func);
+          (*tensor)(i, constants.Ny-1, sizes[2]-1) =
+              tensor->evaluate_function_at_index(i, constants.Ny-1, sizes[2]-1, func);
         }
       }
     } else if (component == 1) {
