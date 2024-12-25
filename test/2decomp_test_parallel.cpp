@@ -44,6 +44,37 @@ template <typename T> void print_t(T &arr, int n1, int n2, int n3) {
   std::cout << "]\n";
 }
 
+template <typename T> void print_pointer(T *arr, int n1, int n2, int n3) {
+  std::cout << "To visualize: https://array-3d-viz.vercel.app/\n";
+  std::cout << "[\n";
+  for (int kp = 0; kp < n1; kp++) {
+    std::cout << "[";
+    for (int jp = 0; jp < n2; jp++) {
+      std::cout << "[";
+      for (int ip = 0; ip < n3; ip++) {
+        const int index = kp * (n2 * n3) + jp * n3 + ip;
+        if (ip == n3 - 1) {
+          std::cout << arr[index];
+        } else {
+          std::cout << arr[index] << ',';
+        }
+      }
+      if (jp == n2 - 1) {
+        std::cout << "]";
+
+      } else {
+        std::cout << "],";
+      }
+    }
+    if (kp == n1 - 1) {
+      std::cout << "]\n";
+    } else {
+      std::cout << "],\n";
+    }
+  }
+  std::cout << "]\n";
+}
+
 int main(int argc, char *argv[]) {
   int ierr, totRank, mpiRank;
 
@@ -62,12 +93,6 @@ int main(int argc, char *argv[]) {
     cout << " C2Decomp Testing " << endl;
     cout << "-------------------" << endl;
     cout << endl;
-  }
-
-  // Helper for recognizable values
-  std::map<unsigned, double> val_strides;
-  for (unsigned i = 0; i < totRank; ++i) {
-    val_strides[i] = static_cast<double>(i);
   }
 
   // We demonstrate the transposition with a pressure tensor. Our example domain
@@ -128,7 +153,7 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
   for (int r = 0; r < totRank; ++r) {
     if (mpiRank == r) {
-      std::cout << "rank: " << mpiRank << " tensor:\n";
+      std::cout << "rank " << mpiRank << " tensor (StaggeredTensor):\n";
       std::cout << local_tensor << "\n";
       print_t(local_tensor, n1, n2, n3);
     }
@@ -145,25 +170,15 @@ int main(int argc, char *argv[]) {
   const int start_y = constants.y_rank * (ny + 1);
   const int end_y = constants.y_rank * (ny + 1) + constants.Ny - 1;
 
-  for (int r = 0; r < totRank; ++r) {
-    if (mpiRank == r) {
-      std::cout << "rank: " << mpiRank << " global sizes:\n";
-      std::cout << "X: " << start_x << '-' << end_x << " / Y: " << start_y
-                << '-' << end_y << " / Z: " << start_z << '-' << end_z << '\n';
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-  }
-  MPI_Barrier(MPI_COMM_WORLD);
-
   if (!mpiRank) {
-    cout << "Initializing 2decomp with sizes: " << tot_Nx << " x " << tot_Ny
+    cout << "\n######################################## Initializing 2decomp with sizes: " << tot_Nx << " x " << tot_Ny
          << " x " << tot_Nz << '\n';
   }
   C2Decomp *c2d;
   bool periodicBC[3] = {true, true, true};
   c2d = new C2Decomp(tot_Nx, tot_Ny, tot_Nz, Py, Pz, periodicBC);
   if (!mpiRank)
-    cout << "Done initializing\n";
+    cout << "######################################## Done initializing\n";
 
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -279,20 +294,28 @@ int main(int argc, char *argv[]) {
 
   double *u1, *u2, *u3;
   double t1, t2, t3;
-  auto const u1_size = c2d->allocX(u1);
+  // auto const u1_size = c2d->allocX(u1);
   auto const u2_size = c2d->allocY(u2);
   auto const u3_size = c2d->allocZ(u3);
 
   // Copy from global data
-  for (int kp = 0; kp < xSize[2]; kp++) {
-    for (int jp = 0; jp < xSize[1]; jp++) {
-      for (int ip = 0; ip < xSize[0]; ip++) {
-        int ii = kp * xSize[1] * xSize[0] + jp * xSize[0] + ip;
-        // Copy data from local tensor, no overhead
-        // TODO: consider using directly local_tensor.raw_data();
-        u1[ii] = local_tensor(ip, jp, kp);
-      }
-    }
+  //for (int kp = 0; kp < xSize[2]; kp++) {
+  //  for (int jp = 0; jp < xSize[1]; jp++) {
+  //    for (int ip = 0; ip < xSize[0]; ip++) {
+  //      int ii = kp * xSize[1] * xSize[0] + jp * xSize[0] + ip;
+  //      // Copy data from local tensor
+  //      u1[ii] = local_tensor(ip, jp, kp);
+  //    }
+  //  }
+  //}
+  //MPI_Barrier(MPI_COMM_WORLD);
+  // This works but I don't know how safe it is...
+  u1 = static_cast<double*>(local_tensor.raw_data());
+
+  // Show copied tensor on master rank
+  if (mpiRank == 0) {
+    std::cout << "rank " << mpiRank << " u1 tensor (2Decomp):\n";
+    print_pointer(u1, xSize[2], xSize[1], xSize[0]);
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -320,6 +343,13 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // Show transposed tensor on master rank
+  if (mpiRank == 0) {
+    std::cout << "rank " << mpiRank << " u2 tensor (2Decomp):\n";
+    print_pointer(u2, ySize[2], ySize[1], ySize[0]);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+
   t1 = MPI_Wtime();
   c2d->transposeY2Z_MajorIndex(u2, u3);
   t2 = MPI_Wtime();
@@ -339,6 +369,13 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+
+  // Show transposed tensor on master rank
+  if (mpiRank == 0) {
+    std::cout << "rank " << mpiRank << " u3 tensor (2Decomp):\n";
+    print_pointer(u3, zSize[2], zSize[1], zSize[0]);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
 
   t1 = MPI_Wtime();
   c2d->transposeZ2Y_MajorIndex(u3, u2);
@@ -360,6 +397,13 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // Show transposed tensor on master rank
+  if (mpiRank == 0) {
+    std::cout << "rank " << mpiRank << " u2 tensor (2Decomp):\n";
+    print_pointer(u2, ySize[2], ySize[1], ySize[0]);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+
   t1 = MPI_Wtime();
   c2d->transposeY2X_MajorIndex(u2, u1);
   t2 = MPI_Wtime();
@@ -379,6 +423,13 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+
+  // Show transposed tensor on master rank
+  if (mpiRank == 0) {
+    std::cout << "rank " << mpiRank << " u1 tensor (2Decomp):\n";
+    print_pointer(u1, xSize[2], xSize[1], xSize[0]);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
 
   // allocate new buffers for non-blocking comms
   double *sbuf = new double[c2d->decompBufSize];
@@ -478,7 +529,7 @@ int main(int argc, char *argv[]) {
 
   delete[] sbuf;
   delete[] rbuf;
-  c2d->deallocXYZ(u1);
+  // c2d->deallocXYZ(u1);
   c2d->deallocXYZ(u2);
   c2d->deallocXYZ(u3);
 
