@@ -235,8 +235,9 @@ void C2Decomp::getDist() {
   delete[] en2;
 }
 
-/// Distribute the domain accross the processors. The @ref Distribution::MIF strategy will assign larger domain to
-/// processors with lower IDs and smaller domains to processors with larger IDs.
+/// Distribute the domain accross the processors. The @ref Distribution::MIF
+/// strategy will assign larger domain to processors with lower IDs and smaller
+/// domains to processors with larger IDs.
 void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
   // Original version
   const auto def = [&]() {
@@ -267,10 +268,11 @@ void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
     en[proc - 1] = data1;
     sz[proc - 1] = data1 - st[proc - 1] + 1;
   };
-  
+
   // Custom version
   const auto mif = [&]() {
-    unsigned big_size = 0, small_size = 0, n_big_size = 0, n_small_size = 0, div = 0, mod = 0;
+    unsigned big_size = 0, small_size = 0, n_big_size = 0, n_small_size = 0,
+             div = 0, mod = 0;
     if (data1 % proc == 0) {
       big_size = data1 / proc;
       n_big_size = proc;
@@ -280,9 +282,9 @@ void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
       n_small_size = proc - mod;
       n_big_size = mod;
       small_size = div;
-      big_size = div+1;
+      big_size = div + 1;
     }
-    
+
     // TODO: make these only under debug mode
     if (n_big_size + n_small_size != proc) {
       int errorcode = 1;
@@ -319,7 +321,7 @@ void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
       en[i] = st[i] + small_size - 1;
     }
   };
-  
+
   if (distributionType == Distribution::DEFAULT) {
     def();
   } else {

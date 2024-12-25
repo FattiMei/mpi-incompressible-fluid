@@ -15,10 +15,7 @@ using namespace ::std;
 class C2Decomp {
 
 public:
-  enum Distribution {
-    DEFAULT = 0,
-    MIF = 1
-  };
+  enum Distribution { DEFAULT = 0, MIF = 1 };
 
   // Just assume that we're using double precision all of the time
   typedef double myType;
@@ -82,7 +79,7 @@ private:
 
 public:
   void decomp2DInit(int pRow, int pCol);
-  
+
   template <Distribution disType = Distribution::MIF>
   C2Decomp(int nx, int ny, int nz, int pRow, int pCol, bool periodicBC[3]) {
 
@@ -100,7 +97,7 @@ public:
 
     realType = MPI_DOUBLE_PRECISION;
 
-    distributionType = disType; 
+    distributionType = disType;
 
     decomp2DInit(pRow, pCol);
   }
