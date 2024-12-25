@@ -221,9 +221,11 @@ int main(int argc, char *argv[]) {
   // - zSize will contain the 3 axes sizes when the tensor is transposed in the
   // Z direction
   //
-  // The global indices of start and end can be found in c2d->xStart, c2d->xEnd
-  // for the X transposition The global indices of start and end can be found in
-  // c2d->yStart, c2d->yEnd for the Y transposition The global indices of start
+  // - The global indices of start and end can be found in c2d->xStart, c2d->xEnd
+  // for the X transposition
+  // - The global indices of start and end can be found in
+  // c2d->yStart, c2d->yEnd for the Y transposition
+  // - The global indices of start
   // and end can be found in c2d->zStart, c2d->zEnd for the Z transposition
   double xSize[3], ySize[3], zSize[3];
   xSize[0] = c2d->xSize[0];
