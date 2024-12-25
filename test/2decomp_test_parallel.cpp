@@ -81,8 +81,8 @@ int main(int argc, char *argv[]) {
               << " Py: " << Py << "\n\n";
   assert(Pz * Py == totRank);
   assert(Pz > 0 && Py > 0);
-  const mif::Constants constants(nx, ny, nz, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1, Py, Pz,
-                                 mpiRank);
+  const mif::Constants constants(nx, ny, nz, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0,
+                                 1.0, 1, Py, Pz, mpiRank);
   mif::StaggeredTensor local_tensor({constants.Nx, constants.Ny, constants.Nz},
                                     constants);
 
@@ -211,15 +211,22 @@ int main(int argc, char *argv[]) {
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  
-  // These represent the local staggered tensor after being transposed in the ? axe:
-  // - xSize will contain the 3 axes sizes when the tensor is transposed in the X direction
-  // - ySize will contain the 3 axes sizes when the tensor is transposed in the Y direction
-  // - zSize will contain the 3 axes sizes when the tensor is transposed in the Z direction
+
+  // These represent the local staggered tensor after being transposed in the ?
+  // axe:
+  // - xSize will contain the 3 axes sizes when the tensor is transposed in the
+  // X direction
+  // - ySize will contain the 3 axes sizes when the tensor is transposed in the
+  // Y direction
+  // - zSize will contain the 3 axes sizes when the tensor is transposed in the
+  // Z direction
   //
-  // The global indices of start and end can be found in c2d->xStart, c2d->xEnd for the X transposition
-  // The global indices of start and end can be found in c2d->yStart, c2d->yEnd for the Y transposition
-  // The global indices of start and end can be found in c2d->zStart, c2d->zEnd for the Z transposition
+  // - The global indices of start and end can be found in c2d->xStart, c2d->xEnd
+  // for the X transposition
+  // - The global indices of start and end can be found in
+  // c2d->yStart, c2d->yEnd for the Y transposition
+  // - The global indices of start
+  // and end can be found in c2d->zStart, c2d->zEnd for the Z transposition
   double xSize[3], ySize[3], zSize[3];
   xSize[0] = c2d->xSize[0];
   xSize[1] = c2d->xSize[1];
@@ -393,7 +400,7 @@ int main(int argc, char *argv[]) {
         int ii = ip * ySize[1] * ySize[2] + kp * ySize[1] + jp;
         double temp = u2[ii];
         double temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
-                            [c2d->yStart[0] + ip];
+                                  [c2d->yStart[0] + ip];
         transp_error += abs(temp - temp1);
       }
     }
@@ -416,7 +423,7 @@ int main(int argc, char *argv[]) {
         int ii = jp * zSize[2] * zSize[0] + ip * zSize[2] + kp;
         double temp = u3[ii];
         double temp1 = global_data[c2d->zStart[2] + kp][c2d->zStart[1] + jp]
-                            [c2d->zStart[0] + ip];
+                                  [c2d->zStart[0] + ip];
         transp_error += abs(temp - temp1);
       }
     }
@@ -439,7 +446,7 @@ int main(int argc, char *argv[]) {
         int ii = ip * ySize[1] * ySize[2] + kp * ySize[1] + jp;
         double temp = u2[ii];
         double temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
-                            [c2d->yStart[0] + ip];
+                                  [c2d->yStart[0] + ip];
         transp_error += abs(temp - temp1);
       }
     }
@@ -463,7 +470,7 @@ int main(int argc, char *argv[]) {
         int ii = kp * xSize[1] * xSize[0] + jp * xSize[0] + ip;
         double temp = u1[ii];
         double temp1 = global_data[c2d->xStart[2] + kp][c2d->xStart[1] + jp]
-                            [c2d->xStart[0] + ip];
+                                  [c2d->xStart[0] + ip];
         transp_error += abs(temp - temp1);
       }
     }
