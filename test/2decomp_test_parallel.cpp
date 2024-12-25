@@ -71,8 +71,8 @@ int main(int argc, char *argv[]) {
   }
 
   // We demonstrate the transposition with a pressure tensor. Our example domain
-  // is a x b x c leading to a global size of (a+1) x (b+2) x (c+2) after
-  // including the ghost points.
+  // is a x b x c leading to a larger global size after
+  // including the ghost points (for example a 2x2x2 global domain will result in a 3x5x5 domain. Refer to Constants for more infos).
   int nx = stoi(argv[2]), ny = stoi(argv[3]), nz = stoi(argv[4]);
   const int Pz = stoi(argv[1]);
   const int Py = totRank / Pz;
