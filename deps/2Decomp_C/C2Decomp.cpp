@@ -265,7 +265,7 @@ void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
     sz[proc - 1] = data1 - st[proc - 1] + 1;
   };
   
-  // Custom versiont
+  // Custom version
   const auto d2 = [&]() {
     int big_size = 0, small_size = 0, n_big_size = 0, n_small_size = 0;
     if (data1 % proc == 0) {

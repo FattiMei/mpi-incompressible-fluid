@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // Show velocity_x tensor on all the processes
+  // Show the tensor on all the processes
   MPI_Barrier(MPI_COMM_WORLD);
   for (int r = 0; r < totRank; ++r) {
     if (mpiRank == r) {
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  // Compute the global indices for the local indices. These will have to match
+  // Compute the global indices from the local indices. These will have to match
   // the X split of 2decomp
   const int start_x = 0;
   const int end_x = n3 - 1;
