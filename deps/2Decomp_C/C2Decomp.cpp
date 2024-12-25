@@ -278,9 +278,18 @@ void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
       big_size = small_size + 1;
       n_big_size = proc - 1;
     }
-
-    assert(n_big_size + n_small_size == proc);
-    assert(n_big_size * big_size + n_small_size * small_size == data1);
+    
+    // TODO: make these only under debug mode
+    if (n_big_size + n_small_size != proc) {
+      int errorcode = 1;
+      std::string errorstring = "n_big_size + n_small_size != proc\n";
+      decomp2DAbort(errorcode, errorstring);
+    }
+    if (n_big_size * big_size + n_small_size * small_size != data1) {
+      int errorcode = 1;
+      std::string errorstring = "n_big_size * big_size + n_small_size * small_size != data1";
+      decomp2DAbort(errorcode, errorstring);
+    }
 
     st[0] = 1;
     sz[0] = big_size;
