@@ -15,6 +15,11 @@ using namespace ::std;
 class C2Decomp {
 
 public:
+  enum Distribution {
+    DEFAULT = 0,
+    MIF = 1
+  };
+
   // Just assume that we're using double precision all of the time
   typedef double myType;
   MPI_Datatype realType;
@@ -40,6 +45,8 @@ private:
   int neighbor[3][6];
   // Flags for periodic condition in 3D
   bool periodicX, periodicY, periodicZ;
+  // Distribution type
+  enum Distribution distributionType;
 
 public:
   // Struct used to store decomposition info for a given global data size
@@ -75,7 +82,8 @@ private:
 
 public:
   void decomp2DInit(int pRow, int pCol);
-
+  
+  template <Distribution disType = Distribution::MIF>
   C2Decomp(int nx, int ny, int nz, int pRow, int pCol, bool periodicBC[3]) {
 
     nxGlobal = nx;
@@ -91,6 +99,8 @@ public:
     work2_r = NULL;
 
     realType = MPI_DOUBLE_PRECISION;
+
+    distributionType = disType; 
 
     decomp2DInit(pRow, pCol);
   }

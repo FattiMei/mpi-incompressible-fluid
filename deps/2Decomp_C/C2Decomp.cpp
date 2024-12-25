@@ -1,6 +1,7 @@
 #include "C2Decomp.hpp"
 #include <cassert>
 #include <cstring>
+#include <string>
 
 // template <class T> const T& max (const T& a, const T& b) {
 //  return (a<b)?b:a;     // or: return comp(a,b)?b:a; for version (2)
@@ -234,9 +235,11 @@ void C2Decomp::getDist() {
   delete[] en2;
 }
 
+/// Distribute the domain accross the processors. The @ref Distribution::MIF strategy will assign larger domain to
+/// processors with lower IDs and smaller domains to processors with larger IDs.
 void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
   // Original version
-  const auto d1 = [&]() {
+  const auto def = [&]() {
     int size1, nl, nu;
 
     size1 = data1 / proc;
@@ -265,29 +268,40 @@ void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
     sz[proc - 1] = data1 - st[proc - 1] + 1;
   };
   
-  // Custom versiont
-  const auto d2 = [&]() {
-    int big_size = 0, small_size = 0, n_big_size = 0, n_small_size = 0;
+  // Custom version
+  const auto mif = [&]() {
+    unsigned big_size = 0, small_size = 0, n_big_size = 0, n_small_size = 0, div = 0, mod = 0;
     if (data1 % proc == 0) {
       big_size = data1 / proc;
       n_big_size = proc;
     } else {
-      assert((data1 + 1) % proc == 0);
-      small_size = data1 / proc;
-      n_small_size = 1;
-      big_size = small_size + 1;
-      n_big_size = proc - 1;
+      div = data1 / proc;
+      mod = data1 % proc;
+      n_small_size = proc - mod;
+      n_big_size = mod;
+      small_size = div;
+      big_size = div+1;
     }
     
     // TODO: make these only under debug mode
     if (n_big_size + n_small_size != proc) {
       int errorcode = 1;
-      std::string errorstring = "n_big_size + n_small_size != proc\n";
+      std::string errorstring =
+          "n_big_size + n_small_size != proc. Received tot_size=" +
+          std::to_string(data1) + " n_big_size=" + std::to_string(n_big_size) +
+          " n_small_size=" + std::to_string(n_small_size) +
+          " proc=" + std::to_string(proc) + " div=" + std::to_string(div) +
+          " mod=" + std::to_string(mod) + "\n";
       decomp2DAbort(errorcode, errorstring);
     }
     if (n_big_size * big_size + n_small_size * small_size != data1) {
       int errorcode = 1;
-      std::string errorstring = "n_big_size * big_size + n_small_size * small_size != data1";
+      std::string errorstring =
+          "n_big_size * big_size + n_small_size * small_size != data1" +
+          std::to_string(data1) + " n_big_size=" + std::to_string(n_big_size) +
+          " n_small_size=" + std::to_string(n_small_size) +
+          " proc=" + std::to_string(proc) + " div=" + std::to_string(div) +
+          " mod=" + std::to_string(mod) + "\n";
       decomp2DAbort(errorcode, errorstring);
     }
 
@@ -305,8 +319,12 @@ void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
       en[i] = st[i] + small_size - 1;
     }
   };
-
-  d2();
+  
+  if (distributionType == Distribution::DEFAULT) {
+    def();
+  } else {
+    mif();
+  }
 };
 
 void C2Decomp::partition(int nx, int ny, int nz, int *pdim, int *lstart,
