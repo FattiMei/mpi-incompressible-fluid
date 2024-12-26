@@ -23,9 +23,9 @@ int main(int argc, char* argv[]) {
     constexpr Real x_size = 2 * M_PI;
     constexpr Real y_size = x_size;
     constexpr Real z_size = x_size;
-    const size_t Nx_domains_global = std::atol(argv[1]);
-    const size_t Ny_domains_global = Nx_domains_global * 3;
-    const size_t Nz_domains_global = Nx_domains_global * 5;
+    const size_t Nx_global = std::atol(argv[1]);
+    const size_t Ny_global = Nx_global * 3;
+    const size_t Nz_global = Nx_global * 5;
     constexpr Real time = 1.0;
 
     const int Pz = std::atol(argv[2]);
@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
     // Note: it is necessary that delta t equals one, as manufsol_pressure.py creates 
     // a velocity field with gradient equal to the divergence of the velocity, without dividing
     // by delta t, as time dependency is not relevant for this test.
-    const Constants constants(Nx_domains_global, Ny_domains_global, Nz_domains_global, 
+    const Constants constants(Nx_global, Ny_global, Nz_global, 
                               x_size, y_size, z_size, 
                               min_x_global, min_y_global, min_z_global,
                               1.0, 1.0, 1, Py, Pz, rank);
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
     const Real error_lInf_global = accumulate_error_mpi_linf(error_lInf_local, constants);
 
     if (rank == 0) {
-        std::cout << "Time: " << execution_time << "s " << execution_time/Nx_domains_global/Ny_domains_global/Nz_domains_global << std::endl;
+        std::cout << "Time: " << execution_time << "s " << execution_time/Nx_global/Ny_global/Nz_global << std::endl;
         std::cout << "Errors: " << error_l1_global << " " << error_l2_global << " " << error_lInf_global << std::endl;
     }
 

@@ -10,9 +10,9 @@ namespace mif {
 class Constants {
 public:
   // Core constants.
-  const size_t Nx_domains;
-  const size_t Ny_domains_global;
-  const size_t Nz_domains_global;
+  const size_t Nx;
+  const size_t Ny_global;
+  const size_t Nz_global;
   const Real x_size;
   const Real y_size_global;
   const Real z_size_global;
@@ -32,6 +32,9 @@ public:
 
   // Derived constants (computed here once for efficiency).
   const Real dt;
+  const size_t Nx_domains;
+  const size_t Ny_domains_global;
+  const size_t Nz_domains_global;
   const Real dx;
   const Real dy;
   const Real dz;
@@ -58,7 +61,6 @@ public:
   const size_t Nx_staggered;
   const size_t Ny_staggered;
   const size_t Nz_staggered;
-  const size_t Nx;
   const size_t Ny;
   const size_t Nz;
 
@@ -79,7 +81,7 @@ public:
   const int next_proc_z;
 
   // Constructor.
-  Constants(size_t Nx_domains, size_t Ny_domains_global, size_t Nz_domains_global, 
+  Constants(size_t Nx, size_t Ny_global, size_t Nz_global, 
             Real x_size, Real y_size_global, Real z_size_global, 
             Real min_x_global, Real min_y_global, Real min_z_global, 
             Real Re, Real final_time, unsigned int num_time_steps,

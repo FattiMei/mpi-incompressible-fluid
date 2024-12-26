@@ -55,36 +55,42 @@ namespace mif {
  * @param Py Number of processors in the y direction.
  * @param rank Rank of the current processor.
  */
-Constants::Constants(size_t Nx_domains, size_t Ny_domains_global, size_t Nz_domains_global, 
+Constants::Constants(size_t Nx, size_t Ny_global, size_t Nz_global, 
                      Real x_size, Real y_size_global, Real z_size_global, 
                      Real min_x_global, Real min_y_global, Real min_z_global,
                      Real Re, Real final_time, unsigned int num_time_steps,
                      int Py, int Pz, int rank)
-    : Nx_domains(Nx_domains), Ny_domains_global(Ny_domains_global), Nz_domains_global(Nz_domains_global),
+    : Nx(Nx), Ny_global(Ny_global), Nz_global(Nz_global),
       x_size(x_size), y_size_global(y_size_global), z_size_global(z_size_global), 
       min_x_global(min_x_global), min_y_global(min_y_global), min_z_global(min_z_global),
       Re(Re), final_time(final_time), num_time_steps(num_time_steps),
       Py(Py), Pz(Pz), rank(rank), y_rank(rank / Pz), z_rank(rank % Pz),
-      dt(final_time / num_time_steps), dx(x_size / Nx_domains), 
-      dy(y_size_global / Ny_domains_global), dz(z_size_global / Nz_domains_global),
+      dt(final_time / num_time_steps),
+      Nx_domains(Nx-1), Ny_domains_global(Ny_global-1), Nz_domains_global(Nz_global-1),
+      dx(x_size / Nx_domains), dy(y_size_global / Ny_domains_global), dz(z_size_global / Nz_domains_global),
       one_over_2_dx(1 / (2 * dx)), one_over_2_dy(1 / (2 * dy)), one_over_2_dz(1 / (2 * dz)), 
       one_over_8_dx(1 / (8 * dx)), one_over_8_dy(1 / (8 * dy)), 
       one_over_8_dz(1 / (8 * dz)), one_over_dx2_Re(1 / (Re * dx * dx)), 
       one_over_dy2_Re(1 / (Re * dy * dy)), one_over_dz2_Re(1 / (Re * dz * dz)), 
       dx_over_2(dx / 2), dy_over_2(dy / 2), dz_over_2(dz / 2), one_over_dx(1 / dx), 
-      one_over_dy(1 / dy), one_over_dz(1 / dz),
-      P(Py * Pz), Ny_domains_local(Ny_domains_global / Py), Nz_domains_local(Nz_domains_global / Pz), 
-      Nx_staggered(Nx_domains + 2UL), Ny_staggered(Ny_domains_local + 2UL), Nz_staggered(Nz_domains_local + 2UL), 
-      Nx(Nx_staggered - 1UL), Ny((y_rank == (Py - 1)) ? Ny_staggered - 1UL : Ny_staggered), Nz((z_rank == (Pz - 1)) ? Nz_staggered - 1UL : Nz_staggered),
+      one_over_dy(1 / dy), one_over_dz(1 / dz), P(Py * Pz), 
+      Ny_domains_local(Ny_domains_global / Py + ((static_cast<size_t>(y_rank) < (Ny_domains_global % Py)) ? 1 : 0)), 
+      Nz_domains_local(Nz_domains_global / Pz + ((static_cast<size_t>(z_rank) < (Nz_domains_global % Pz)) ? 1 : 0)), 
+      Nx_staggered(Nx_domains + 2), Ny_staggered(Ny_domains_local + 2), Nz_staggered(Nz_domains_local + 2), 
+      Ny((y_rank == (Py - 1)) ? Ny_staggered - 1 : Ny_staggered), Nz((z_rank == (Pz - 1)) ? Nz_staggered - 1 : Nz_staggered),
       
       // Calculate the size of the domain for the current processor.
       y_size_local(y_size_global / Py), z_size_local(z_size_global / Pz), 
       
       // Calculate the minimum and maximum values of y and z for the current
       // processor. Each processor will have a different subset of the domain.
+      // If the domain cannot be split evenly, bonus point go to the first processors
+      // in each direction.
       min_x(min_x_global), max_x(min_x_global+x_size),
-      min_y(min_y_global + y_size_local * y_rank), max_y(min_y + y_size_local + ((y_rank == Py - 1) ? 0.0 : dy)),
-      min_z(min_z_global + z_size_local * z_rank), max_z(min_z + z_size_local + ((z_rank == Pz - 1) ? 0.0 : dz)),
+      min_y(min_y_global + (Ny_domains_global / Py * y_rank + std::min(static_cast<size_t>(y_rank), Ny_domains_global % Py)) * dy), 
+      max_y(min_y + y_size_local + ((y_rank == Py - 1) ? 0.0 : dy)),
+      min_z(min_z_global + (Nz_domains_global / Pz * z_rank + std::min(static_cast<size_t>(z_rank), Nz_domains_global % Pz)) * dz), 
+      max_z(min_z + z_size_local + ((z_rank == Pz - 1) ? 0.0 : dz)),
       
       // Calculate the neighbouring processors in the y and z directions based
       // on the rank.
@@ -99,10 +105,6 @@ Constants::Constants(size_t Nx_domains, size_t Ny_domains_global, size_t Nz_doma
 
   // Ensure that the number of processors in each direction is positive.
   assert(Py > 0 && Pz > 0);
-  
-  // Ensure that the local domains multiplied by the number of processors equals the global domains.
-  assert(Ny_domains_local * Py == Ny_domains_global);
-  assert(Nz_domains_local * Pz == Nz_domains_global);
 
   // Ensure that the rank is within the valid range.
   assert(y_rank >= 0 && y_rank < Py);

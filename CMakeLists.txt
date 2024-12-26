@@ -29,8 +29,8 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 
 # Set custom flags for Debug build.
-# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
-#      -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
+     -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
 
 # Set custom flags for Release build.
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG} -DNDEBUG")
@@ -89,6 +89,7 @@ add_library(
 	${SOURCE_DIR}/Norms.cpp
 	${SOURCE_DIR}/PressureEquation.cpp
 	${SOURCE_DIR}/PressureSolverStructures.cpp
+	${SOURCE_DIR}/PressureTensor.cpp
 	${SOURCE_DIR}/StaggeredTensor.cpp
 	${SOURCE_DIR}/Timestep.cpp
 	${SOURCE_DIR}/TimestepVelocity.cpp

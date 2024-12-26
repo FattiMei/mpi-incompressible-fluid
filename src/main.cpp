@@ -38,9 +38,9 @@ int main(int argc, char *argv[]) {
   constexpr Real x_size = 2.0;
   constexpr Real y_size = 2.0;
   constexpr Real z_size = 2.0;
-  const size_t Nx_domains_global = std::atol(argv[1]);
-  const size_t Ny_domains_global = Nx_domains_global;
-  const size_t Nz_domains_global = Nx_domains_global;
+  const size_t Nx_global = std::atol(argv[1]);
+  const size_t Ny_global = Nx_global;
+  const size_t Nz_global = Nx_global;
   constexpr Real Re = 1e4;
   constexpr Real final_time = 1e-4;
   const unsigned int num_time_steps = std::atoi(argv[2]);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
   // Note that the constants object is only constant within the scope of this
   // particular processor. All processors will have their own subdomain
   // on which they will compute the solution.
-  const Constants constants(Nx_domains_global, Ny_domains_global, Nz_domains_global, 
+  const Constants constants(Nx_global, Ny_global, Nz_global, 
                             x_size, y_size, z_size, 
                             min_x_global, min_y_global, min_z_global,
                             Re, final_time, num_time_steps, 
