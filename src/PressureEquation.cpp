@@ -125,19 +125,22 @@ void solve_pressure_equation_neumann(PressureTensor &pressure,
 
 
     // Divide by eigenvalues.
-    for (size_t j = 0; j < constants.Ny; j++) {
-        const Real lambda_2 = compute_eigenvalue_neumann(j, constants.dy, constants.Ny_domains_global);
-        const Real base_index_1 = j*constants.Nx*constants.Nz;
-        for (size_t i = 0; i < constants.Nx; i++) {
-            const Real base_index_2 = base_index_1 + i*constants.Nz;
-            const Real lambda_1 = compute_eigenvalue_neumann(i, constants.dx, constants.Nx_domains);
-            for (size_t k = 0; k < constants.Nz; k++) {
+    assert(c2d.zStart[2] == 0);
+    for (int j = 0; j < c2d.zSize[1]; j++) {
+        const Real lambda_2 = compute_eigenvalue_neumann(j+c2d.zStart[1], constants.dy, constants.Ny_domains_global);
+        const Real base_index_1 = j*c2d.zSize[0]*c2d.zSize[2];
+        for (int i = 0; i < c2d.zSize[0]; i++) {
+            const Real base_index_2 = base_index_1 + i*c2d.zSize[2];
+            const Real lambda_1 = compute_eigenvalue_neumann(i+c2d.zStart[0], constants.dx, constants.Nx_domains);
+            for (int k = 0; k < c2d.zSize[2]; k++) {
                 const Real lambda_3 = compute_eigenvalue_neumann(k, constants.dz, constants.Nz_domains_global);
                 pressure(base_index_2 + k) /= (lambda_1 + lambda_2 + lambda_3);
             }
         }
     }
-    pressure(0) = 0;
+    if (constants.y_rank == 0 && constants.z_rank == 0) {
+        pressure(0) = 0;
+    }
 
 
     // Execute type 1 IDCT along direction z, transpose from (y,x,z) to (x,z,y).
@@ -223,9 +226,25 @@ void solve_pressure_equation_non_homogeneous_neumann(StaggeredTensor &pressure,
 
 void adjust_pressure(StaggeredTensor &pressure,
                      const std::function<Real(Real, Real, Real)> &exact_pressure) {
-    // Compute the constant difference.
     const Constants &constants = pressure.constants;
-    const Real difference = exact_pressure(constants.min_x_global, constants.min_y_global, constants.min_z_global) - pressure(0,0,0);
+
+    // Compute the constant difference on the first processor and send it to all other processors.
+    Real difference;
+    if (constants.P > 1) {
+        if (constants.rank == 0) {
+            difference = exact_pressure(constants.min_x_global, constants.min_y_global, constants.min_z_global) - pressure(0,0,0);
+            for (int rank = 1; rank < constants.P; ++rank) {
+                int outcome = MPI_Send(&difference, 1, MPI_MIF_REAL, rank, 0, MPI_COMM_WORLD);
+                assert(outcome == MPI_SUCCESS);
+                (void) outcome;
+            }
+        } else {
+            MPI_Status status;
+            int outcome = MPI_Recv(&difference, 1, MPI_MIF_REAL, 0, 0, MPI_COMM_WORLD, &status);
+            assert(outcome == MPI_SUCCESS);
+            (void) outcome;
+        }
+    }
 
     // Remove the difference from all points.
     for (size_t k = 0; k < constants.Nz; k++) {

@@ -15,6 +15,7 @@ the three different reorderings.
 class PressureTensor: public Tensor<Real, 1U, int> {
 public:
     PressureSolverStructures &structures;
+    const int max_size;
 
     PressureTensor(PressureSolverStructures &structures);
 
@@ -24,6 +25,9 @@ public:
     // Copy data from this tensor to other.
     // MPI communications will use tags in [base_tag, base_tag+3].
     void copy_to_staggered(StaggeredTensor &other, int base_tag) const;
+
+    // Print the tensor.
+    void print_inline();
 };
 
 } // mif

@@ -56,17 +56,15 @@ public:
 
   // Derived constants for the staggered grid.
   const int P;
-  const size_t Ny_domains_local;
-  const size_t Nz_domains_local;
+  const size_t Ny_owner;
+  const size_t Nz_owner;
+  const size_t Ny;
+  const size_t Nz;
   const size_t Nx_staggered;
   const size_t Ny_staggered;
   const size_t Nz_staggered;
-  const size_t Ny;
-  const size_t Nz;
 
   // Derived constants for the local domain.
-  const Real y_size_local;
-  const Real z_size_local;
   const Real min_x;
   const Real max_x;
   const Real min_y;

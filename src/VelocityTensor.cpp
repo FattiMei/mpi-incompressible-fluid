@@ -79,7 +79,7 @@ void VelocityTensor::apply_all_dirichlet_bc(const VectorFunction &exact_velocity
     } else if (component == 2) {
       for (size_t j = 1; j < constants.Ny - 1; j++) {
         for (size_t i = 1; i < constants.Nx - 1; i++) {
-          const Real w_at_boundary = tensor->evaluate_function_at_index_unstaggered(i, j, constants.Nz_domains_local, func);
+          const Real w_at_boundary = tensor->evaluate_function_at_index_unstaggered(i, j, constants.Nz - 1, func);
           const Real du_dx = (u.evaluate_function_at_index(
                                   i + 1, j, constants.Nz - 1, exact_velocity.f_u) -
                               u.evaluate_function_at_index(
@@ -135,7 +135,7 @@ void VelocityTensor::apply_all_dirichlet_bc(const VectorFunction &exact_velocity
     } else if (component == 1) {
       for (size_t k = 1; k < constants.Nz - 1; k++) {
         for (size_t i = 1; i < constants.Nx - 1; i++) {
-          const Real v_at_boundary = tensor->evaluate_function_at_index_unstaggered(i, constants.Ny_domains_local, k, func);
+          const Real v_at_boundary = tensor->evaluate_function_at_index_unstaggered(i, constants.Ny - 1, k, func);
           const Real du_dx = (u.evaluate_function_at_index(
                                   i + 1, constants.Ny - 1, k, exact_velocity.f_u) -
                               u.evaluate_function_at_index(

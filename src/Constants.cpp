@@ -74,31 +74,30 @@ Constants::Constants(size_t Nx, size_t Ny_global, size_t Nz_global,
       one_over_dy2_Re(1 / (Re * dy * dy)), one_over_dz2_Re(1 / (Re * dz * dz)), 
       dx_over_2(dx / 2), dy_over_2(dy / 2), dz_over_2(dz / 2), one_over_dx(1 / dx), 
       one_over_dy(1 / dy), one_over_dz(1 / dz), P(Py * Pz), 
-      Ny_domains_local(Ny_domains_global / Py + ((static_cast<size_t>(y_rank) < (Ny_domains_global % Py)) ? 1 : 0)), 
-      Nz_domains_local(Nz_domains_global / Pz + ((static_cast<size_t>(z_rank) < (Nz_domains_global % Pz)) ? 1 : 0)), 
-      Nx_staggered(Nx_domains + 2), Ny_staggered(Ny_domains_local + 2), Nz_staggered(Nz_domains_local + 2), 
-      Ny((y_rank == (Py - 1)) ? Ny_staggered - 1 : Ny_staggered), Nz((z_rank == (Pz - 1)) ? Nz_staggered - 1 : Nz_staggered),
+      Ny_owner(Ny_global / Py + ((static_cast<size_t>(y_rank) < Ny_global % Py) ? 1 : 0)),
+      Nz_owner(Nz_global / Pz + ((static_cast<size_t>(z_rank) < Nz_global % Pz) ? 1 : 0)),
+      Ny((Py == 1) ? Ny_owner : ((y_rank == 0 || y_rank == (Py-1)) ? Ny_owner+1 : Ny_owner+2)),
+      Nz((Pz == 1) ? Nz_owner : ((z_rank == 0 || z_rank == (Pz-1)) ? Nz_owner+1 : Nz_owner+2)),
+      Nx_staggered(Nx + 1), Ny_staggered(Ny + 1), Nz_staggered(Nz + 1),
       
-      // Calculate the size of the domain for the current processor.
-      y_size_local(y_size_global / Py), z_size_local(z_size_global / Pz), 
       
       // Calculate the minimum and maximum values of y and z for the current
       // processor. Each processor will have a different subset of the domain.
       // If the domain cannot be split evenly, bonus point go to the first processors
       // in each direction.
       min_x(min_x_global), max_x(min_x_global+x_size),
-      min_y(min_y_global + (Ny_domains_global / Py * y_rank + std::min(static_cast<size_t>(y_rank), Ny_domains_global % Py)) * dy), 
-      max_y(min_y + y_size_local + ((y_rank == Py - 1) ? 0.0 : dy)),
-      min_z(min_z_global + (Nz_domains_global / Pz * z_rank + std::min(static_cast<size_t>(z_rank), Nz_domains_global % Pz)) * dz), 
-      max_z(min_z + z_size_local + ((z_rank == Pz - 1) ? 0.0 : dz)),
+      min_y(min_y_global + (Ny_global / Py * y_rank + std::min(static_cast<size_t>(y_rank), Ny_global % Py) - (y_rank > 0 ? 1: 0)) * dy), 
+      max_y(min_y + (Ny-1) * dy),
+      min_z(min_z_global + (Nz_global / Pz * z_rank + std::min(static_cast<size_t>(z_rank), Nz_global % Pz) - (z_rank > 0 ? 1: 0)) * dz), 
+      max_z(min_z + (Nz-1) * dz),
       
       // Calculate the neighbouring processors in the y and z directions based
       // on the rank.
       prev_proc_y((y_rank == 0)? -1: rank-Pz), next_proc_y((y_rank == Py - 1)? -1: rank+Pz),
       prev_proc_z((z_rank == 0)? -1: rank-1), next_proc_z((z_rank == Pz - 1)? -1: rank+1) {
 
-  // Ensure that the number of domains in each direction is positive.
-  assert(Nx > 0 && Ny > 0 && Nz > 0);
+  // Ensure that the number of domains in each direction is at least 2.
+  assert(Nx >= 2 && Ny >= 2 && Nz >= 2);
 
   // Ensure that the number of time steps and final time are positive.
   assert(num_time_steps > 0 && final_time > 0);

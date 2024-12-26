@@ -179,7 +179,8 @@ void StaggeredTensor::print(const std::function<bool(Real)> &filter) const {
 }
 
 void StaggeredTensor::print_inline() const {
-  for (size_t i = 0; i < constants.Nx * constants.Ny * constants.Nz; i++) {
+  const std::array<size_t, 3> &sizes = this->sizes();
+  for (size_t i = 0; i < sizes[0]*sizes[1]*sizes[2]; i++) {
     std::cout << this->operator()(i) << " ";
   }
   std::cout << std::endl;
