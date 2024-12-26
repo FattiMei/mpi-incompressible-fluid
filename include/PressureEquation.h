@@ -1,19 +1,23 @@
 #ifndef PRESSURE_EQUATION_H
 #define PRESSURE_EQUATION_H
 
-#include "PressureSolverStructures.h"
+#include "PressureTensor.h"
 #include "VelocityTensor.h"
 
 namespace mif {
+    // Solve the pressure equation with homogeneous Neumann BC. The function will use
+    // tags [100, 103] for MPI communication.
     void solve_pressure_equation_homogeneous_neumann(StaggeredTensor &pressure, 
+                                                     PressureTensor &pressure_buffer,
                                                      const VelocityTensor &velocity,
-                                                     PressureSolverStructures &structures,
                                                      Real dt);
     
+    // Solve the pressure equation with non-homogeneous Neumann BC. The function will use
+    // tags [100, 103] for MPI communication.
     void solve_pressure_equation_non_homogeneous_neumann(StaggeredTensor &pressure, 
+                                                         PressureTensor &pressure_buffer,
                                                          const VelocityTensor &velocity,
                                                          const VectorFunction &exact_pressure_gradient,
-                                                         PressureSolverStructures &structures,
                                                          Real dt);
 
     // Remove a constant from the pressure to obtain the exact solution.

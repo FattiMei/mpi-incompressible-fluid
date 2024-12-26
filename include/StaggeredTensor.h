@@ -31,6 +31,10 @@ public:
   // This will use the tags in [base_tag, base_tag+3].
   void send_mpi_data(int base_tag);
 
+  // Receive data from neighbouring processors using MPI.
+  // This will use the tags in [base_tag, base_tag+3].
+  void receive_mpi_data(int base_tag);
+
   // Swapping data with another tensor by flipping the buffer pointers is not
   // enough, as the MPI addressing will be messed up. This function should be
   // used to recompute the MPI addressing after a swap. Particularly, it

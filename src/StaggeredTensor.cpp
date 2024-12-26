@@ -99,6 +99,55 @@ void StaggeredTensor::send_mpi_data(int base_tag) {
   } 
 }
 
+void StaggeredTensor::receive_mpi_data(int base_tag) {
+  // After checking if the neighbouring processors are valid, we receive the data
+  // to them using MPI_Recv, which is a blocking receive operation.
+  // This is where we practically use previously computed MPI addressing. 
+  const std::array<size_t, 3> &sizes = this->sizes();                                                                                                                                                                         
+  if (constants.next_proc_z != -1) {
+    // Receive data from the "right" neighbour.                                                                                                                                 
+    MPI_Status status;
+    int return_code = MPI_Recv(max_addr_recv_z, 1, Slice_type_constant_z, constants.next_proc_z, base_tag, MPI_COMM_WORLD, &status);
+    assert(return_code == 0);
+    (void) return_code;
+  } 
+  if (constants.prev_proc_z != -1) {                                                                                                                                 
+    // Receive data from the "left" neighbour.
+    MPI_Status status;
+    int return_code = MPI_Recv(min_addr_recv_z, 1, Slice_type_constant_z, constants.prev_proc_z, base_tag + 1, MPI_COMM_WORLD, &status);
+    assert(return_code == 0);
+    (void) return_code;
+  } 
+  if (constants.next_proc_y != -1) {
+      // Receive data from the "bottom" neighbour.  
+      MPI_Status status;
+      int return_code = MPI_Recv(max_addr_recv_y, 1, Slice_type_constant_y, constants.next_proc_y, base_tag + 2, MPI_COMM_WORLD, &status);
+      assert(return_code == 0);
+      (void) return_code;
+
+      // Copy it into the tensor.
+      for (size_t i = 1; i < sizes[0]-1; i++) {
+        for (size_t k = 1; k < sizes[2]-1; k++) {
+          this->operator()(i, sizes[1] - 1, k) = next_y_slice_recv(i,k);
+        }
+      }
+  }   
+  if (constants.prev_proc_y != -1) {
+      // Receive data from the "top" neighbour.  
+      MPI_Status status;
+      int return_code = MPI_Recv(min_addr_recv_y, 1, Slice_type_constant_y, constants.prev_proc_y, base_tag + 3, MPI_COMM_WORLD, &status);
+      assert(return_code == 0);
+      (void) return_code;
+
+      // Copy it into the tensor.
+      for (size_t i = 1; i < sizes[0]-1; i++) {
+        for (size_t k = 1; k < sizes[2]-1; k++) {
+          this->operator()(i, 0, k) = prev_y_slice_recv(i,k);
+        }
+      }
+  }                                                                                                                                                                          
+}
+
 void StaggeredTensor::print() const {
   const std::array<size_t, 3> &sizes = this->sizes();
   for (size_t k = 0; k < sizes[2]; k++) {

@@ -64,61 +64,62 @@ inline Real compute_eigenvalue_neumann(size_t index, Real delta, size_t N_domain
 
 // Solve the pressure equation with Neumann boundary conditions.
 // "pressure" contains the rhs, and will be replaced with the pressure.
-void solve_pressure_equation_neumann(StaggeredTensor &pressure,
-                                     const VelocityTensor &velocity,
-                                     PressureSolverStructures &structures) {
+void solve_pressure_equation_neumann(PressureTensor &pressure,
+                                     const VelocityTensor &velocity) {
     const Constants &constants = velocity.constants;
+    PressureSolverStructures &structures = pressure.structures;
+    C2Decomp &c2d = structures.c2d;
 
     // Execute type 1 DCT along direction x and transpose from (z,y,x) to (x,z,y).
     // Note: major refers to the last index of the triple, the triple is in the iterating order.
-    for (size_t k = 0; k < constants.Nz; k++) {
-        for (size_t j = 0; j < constants.Ny; j++) {
-            const size_t base_index = constants.Nx*constants.Ny * k + constants.Nx * j;
+    for (int k = 0; k < c2d.xSize[2]; k++) {
+        for (int j = 0; j < c2d.xSize[1]; j++) {
+            const int base_index = c2d.xSize[0]*c2d.xSize[1] * k + c2d.xSize[0] * j;
 
             // Copy the original data.
-            memcpy(structures.buffer_x, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*constants.Nx);
+            memcpy(structures.buffer_x, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.xSize[0]);
 
             // Execute the fft.
             fftw_execute(structures.fft_plan_x);
 
             // Copy the transformed data.
-            memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_x, sizeof(Real)*constants.Nx);
+            memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_x, sizeof(Real)*c2d.xSize[0]);
         }
     }
     structures.c2d.transposeX2Y_MajorIndex(static_cast<Real *>(pressure.raw_data()), static_cast<Real *>(pressure.raw_data()));
 
 
     // Execute type 1 DCT along direction y and transpose from (x,z,y) to (y,x,z).
-    for (size_t i = 0; i < constants.Nx; i++) {
-        for (size_t k = 0; k < constants.Nz; k++) {
-            const size_t base_index = constants.Nz*constants.Ny * i + constants.Ny * k;
+    for (int i = 0; i < c2d.ySize[0]; i++) {
+        for (int k = 0; k < c2d.ySize[2]; k++) {
+            const int base_index = c2d.ySize[2]*c2d.ySize[1] * i + c2d.ySize[1] * k;
 
             // Copy the original data.
-            memcpy(structures.buffer_y, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*constants.Ny);
+            memcpy(structures.buffer_y, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.ySize[1]);
 
             // Execute the fft.
             fftw_execute(structures.fft_plan_y);
 
             // Copy the transformed data.
-            memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_y, sizeof(Real)*constants.Ny);
+            memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_y, sizeof(Real)*c2d.ySize[1]);
         }
     }
     structures.c2d.transposeY2Z_MajorIndex(static_cast<Real *>(pressure.raw_data()), static_cast<Real *>(pressure.raw_data()));
 
 
     // Execute type 1 DCT along direction z while in indexing (y,x,z), do not transpose.
-    for (size_t j = 0; j < constants.Ny; j++) {
-        for (size_t i = 0; i < constants.Nx; i++) {
-            const size_t base_index = constants.Nz*constants.Nx * j + constants.Nz * i;
+    for (int j = 0; j < c2d.zSize[1]; j++) {
+        for (int i = 0; i < c2d.zSize[0]; i++) {
+            const int base_index = c2d.zSize[2]*c2d.zSize[0] * j + c2d.zSize[2] * i;
 
             // Copy the original data.
-            memcpy(structures.buffer_z, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*constants.Nz);
+            memcpy(structures.buffer_z, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.zSize[2]);
 
             // Execute the fft.
             fftw_execute(structures.fft_plan_z);
 
             // Copy the transformed data.
-            memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_z, sizeof(Real)*constants.Nz);
+            memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_z, sizeof(Real)*c2d.zSize[2]);
         }
     }
 
@@ -136,22 +137,22 @@ void solve_pressure_equation_neumann(StaggeredTensor &pressure,
             }
         }
     }
-    pressure(0,0,0) = 0;
+    pressure(0) = 0;
 
 
     // Execute type 1 IDCT along direction z, transpose from (y,x,z) to (x,z,y).
-    for (size_t j = 0; j < constants.Ny; j++) {
-        for (size_t i = 0; i < constants.Nx; i++) {
-            const size_t base_index = constants.Nz*constants.Nx * j + constants.Nz * i;
+    for (int j = 0; j < c2d.zSize[1]; j++) {
+        for (int i = 0; i < c2d.zSize[0]; i++) {
+            const int base_index = c2d.zSize[2]*c2d.zSize[0] * j + c2d.zSize[2] * i;
 
             // Copy the original data.
-            memcpy(structures.buffer_z, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*constants.Nz);
+            memcpy(structures.buffer_z, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.zSize[2]);
 
             // Execute the fft.
             fftw_execute(structures.fft_plan_z);
 
             // Copy the transformed data.
-            for (size_t k = 0; k < constants.Nz; k++) {
+            for (int k = 0; k < c2d.zSize[2]; k++) {
                 pressure(base_index+k) = structures.buffer_z[k] / (2.0*constants.Nz_domains_global);
             }
         }
@@ -160,18 +161,18 @@ void solve_pressure_equation_neumann(StaggeredTensor &pressure,
 
 
     // Execute type 1 IDCT along direction y and transpose from (x,z,y) to (z,y,x).
-    for (size_t i = 0; i < constants.Nx; i++) {
-        for (size_t k = 0; k < constants.Nz; k++) {
-            const size_t base_index = constants.Nz*constants.Ny * i + constants.Ny * k;
+    for (int i = 0; i < c2d.ySize[0]; i++) {
+        for (int k = 0; k < c2d.ySize[2]; k++) {
+            const int base_index = c2d.ySize[2]*c2d.ySize[1] * i + c2d.ySize[1] * k;
 
             // Copy the original data.
-            memcpy(structures.buffer_y, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*constants.Ny);
+            memcpy(structures.buffer_y, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.ySize[1]);
 
             // Execute the fft.
             fftw_execute(structures.fft_plan_y);
 
             // Copy the transformed data.
-            for (size_t j = 0; j < constants.Ny; j++){
+            for (int j = 0; j < c2d.ySize[1]; j++){
                 pressure(base_index+j) = structures.buffer_y[j] / (2.0*constants.Ny_domains_global);
             }
         }
@@ -180,40 +181,44 @@ void solve_pressure_equation_neumann(StaggeredTensor &pressure,
 
 
     // Execute type 1 IDCT along direction x while in indexing (z,y,x), do not transpose.
-    for (size_t k = 0; k < constants.Nz; k++) {
-        for (size_t j = 0; j < constants.Ny; j++) {
-            const size_t base_index = constants.Nx*constants.Ny * k + constants.Nx * j;
+    for (int k = 0; k < c2d.xSize[2]; k++) {
+        for (int j = 0; j < c2d.xSize[1]; j++) {
+            const int base_index = c2d.xSize[0]*c2d.xSize[1] * k + c2d.xSize[0] * j;
 
             // Copy the original data.
-            memcpy(structures.buffer_x, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*constants.Nx);
+            memcpy(structures.buffer_x, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.xSize[0]);
 
             // Execute the fft.
             fftw_execute(structures.fft_plan_x);
 
             // Copy the transformed data.
-            for (size_t i = 0; i < constants.Nx; i++) {
+            for (int i = 0; i < c2d.xSize[0]; i++) {
                 pressure(base_index+i) = structures.buffer_x[i] / (2.0*constants.Nx_domains);
             }
         }
     }
 }
 
-void solve_pressure_equation_homogeneous_neumann(StaggeredTensor &pressure,
+void solve_pressure_equation_homogeneous_neumann(StaggeredTensor &pressure, 
+                                                 PressureTensor &pressure_buffer,
                                                  const VelocityTensor &velocity,
-                                                 PressureSolverStructures &structures,
                                                  Real dt) {
     compute_rhs_homogeneous_neumann(pressure, velocity, dt);
-    solve_pressure_equation_neumann(pressure, velocity, structures);
+    pressure_buffer.copy_from_staggered(pressure);
+    solve_pressure_equation_neumann(pressure_buffer, velocity);
+    pressure_buffer.copy_to_staggered(pressure, 100);
 }
 
 void solve_pressure_equation_non_homogeneous_neumann(StaggeredTensor &pressure, 
+                                                     PressureTensor &pressure_buffer,
                                                      const VelocityTensor &velocity,
                                                      const VectorFunction &exact_pressure_gradient,
-                                                     PressureSolverStructures &structures,
                                                      Real dt) {
     compute_rhs_homogeneous_neumann(pressure, velocity, dt);
     apply_non_homogeneous_neumann(pressure, exact_pressure_gradient);
-    solve_pressure_equation_neumann(pressure, velocity, structures);
+    pressure_buffer.copy_from_staggered(pressure);
+    solve_pressure_equation_neumann(pressure_buffer, velocity);
+    pressure_buffer.copy_to_staggered(pressure, 100);
 }
 
 void adjust_pressure(StaggeredTensor &pressure,

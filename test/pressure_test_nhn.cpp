@@ -41,11 +41,11 @@ int main(int argc, char* argv[]) {
                               x_size, y_size, z_size, 
                               min_x_global, min_y_global, min_z_global,
                               1.0, 1.0, 1, Py, Pz, rank);
+    PressureSolverStructures structures(constants);
     
     VelocityTensor velocity(constants);
+    PressureTensor pressure_solver_buffer(structures);
     StaggeredTensor pressure({constants.Nx, constants.Ny, constants.Nz}, constants);
-
-    PressureSolverStructures structures(constants);
 
     // Set the right-hand side.
     TimeVectorFunction exact_velocity(u_exact_p_test, v_exact_p_test, w_exact_p_test);
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
 
     // Solve.
     const auto before = chrono::high_resolution_clock::now();
-    solve_pressure_equation_non_homogeneous_neumann(pressure, velocity, exact_pressure_gradient, structures, constants.dt);
+    solve_pressure_equation_non_homogeneous_neumann(pressure, pressure_solver_buffer, velocity, exact_pressure_gradient, constants.dt);
     const auto after = chrono::high_resolution_clock::now();
     const Real execution_time = (after-before).count() / 1e9;
 

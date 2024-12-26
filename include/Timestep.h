@@ -5,7 +5,7 @@
 #ifndef TIMESTEP_VELOCITY_H
 #define TIMESTEP_VELOCITY_H
 
-#include "PressureSolverStructures.h"
+#include "PressureTensor.h"
 #include "VelocityTensor.h"
 
 namespace mif {
@@ -17,7 +17,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
               VelocityTensor &rhs_buffer, const TimeVectorFunction &exact_velocity,
               const TimeVectorFunction &exact_pressure_gradient, Real t_n,
               StaggeredTensor &pressure, StaggeredTensor &pressure_buffer, 
-              PressureSolverStructures &structures);
+              PressureTensor &pressure_solver_buffer);
 
 } // namespace mif
 

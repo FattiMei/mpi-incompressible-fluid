@@ -61,6 +61,7 @@ int main(int argc, char *argv[]) {
                             min_x_global, min_y_global, min_z_global,
                             Re, final_time, num_time_steps, 
                             Py, Pz, rank);
+  PressureSolverStructures structures(constants);
 
   Reynolds = Re;
 
@@ -70,7 +71,7 @@ int main(int argc, char *argv[]) {
   VelocityTensor rhs_buffer(constants);
   StaggeredTensor pressure({constants.Nx, constants.Ny, constants.Nz}, constants);
   StaggeredTensor pressure_buffer({constants.Nx, constants.Ny, constants.Nz}, constants);
-  PressureSolverStructures structures(constants);
+  PressureTensor pressure_solver_buffer(structures);
 
   // Set the initial conditions.
   TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
@@ -108,7 +109,7 @@ int main(int argc, char *argv[]) {
     const Real current_time = time_step * constants.dt;
 
     // Update the solution inside the mesh.
-    timestep(velocity, velocity_buffer, rhs_buffer, exact_velocity, exact_pressure_gradient, current_time, pressure, pressure_buffer, structures);
+    timestep(velocity, velocity_buffer, rhs_buffer, exact_velocity, exact_pressure_gradient, current_time, pressure, pressure_buffer, pressure_solver_buffer);
   }
 
   // Remove a constant from the pressure.

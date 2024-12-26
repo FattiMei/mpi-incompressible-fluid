@@ -80,7 +80,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
               VelocityTensor &rhs_buffer, const TimeVectorFunction &exact_velocity,
               const TimeVectorFunction &exact_pressure_gradient, Real t_n,
               StaggeredTensor &pressure, StaggeredTensor &pressure_buffer, 
-              PressureSolverStructures &structures) {
+              PressureTensor &pressure_solver_buffer) {
   const Constants &constants = velocity.constants;
   const Real dt_1 = d1 * constants.dt;
   const Real time_1 = t_n + dt_1;
@@ -95,7 +95,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Apply Dirichlet boundary conditions to the velocity.
   velocity_buffer.apply_all_dirichlet_bc(exact_velocity.set_time(time_1));
   // Solve the pressure equation.
-  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, velocity_buffer, exact_pressure_gradient.get_difference_over_time(time_1, t_n), structures, dt_1);
+  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, pressure_solver_buffer, velocity_buffer, exact_pressure_gradient.get_difference_over_time(time_1, t_n), dt_1);
   // Update the pressure.
   UPDATE_PRESSURE()
   // Update the velocity.
@@ -107,7 +107,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Apply Dirichlet boundary conditions  to the velocity.
   velocity.apply_all_dirichlet_bc(exact_velocity.set_time(time_2));
   // Solve the pressure equation.
-  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, velocity, exact_pressure_gradient.get_difference_over_time(time_2, time_1), structures, dt_2);
+  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, pressure_solver_buffer, velocity, exact_pressure_gradient.get_difference_over_time(time_2, time_1), dt_2);
   // Update the pressure.
   UPDATE_PRESSURE()
   // Update the velocity.
@@ -119,7 +119,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Apply Dirichlet boundary conditions  to the velocity.
   velocity_buffer.apply_all_dirichlet_bc(exact_velocity.set_time(final_time));
   // Solve the pressure equation.
-  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, velocity_buffer, exact_pressure_gradient.get_difference_over_time(final_time, time_2), structures, dt_3);
+  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, pressure_solver_buffer, velocity, exact_pressure_gradient.get_difference_over_time(final_time, time_2), dt_3);
   // Update the pressure.
   UPDATE_PRESSURE()
   // Update the velocity.
