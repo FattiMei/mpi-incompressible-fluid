@@ -230,20 +230,20 @@ void adjust_pressure(StaggeredTensor &pressure,
 
     // Compute the constant difference on the first processor and send it to all other processors.
     Real difference;
-    if (constants.P > 1) {
-        if (constants.rank == 0) {
-            difference = exact_pressure(constants.min_x_global, constants.min_y_global, constants.min_z_global) - pressure(0,0,0);
+    if (constants.rank == 0) {
+        difference = exact_pressure(constants.min_x_global, constants.min_y_global, constants.min_z_global) - pressure(0,0,0);
+        if (constants.P > 1) {
             for (int rank = 1; rank < constants.P; ++rank) {
                 int outcome = MPI_Send(&difference, 1, MPI_MIF_REAL, rank, 0, MPI_COMM_WORLD);
                 assert(outcome == MPI_SUCCESS);
                 (void) outcome;
             }
-        } else {
-            MPI_Status status;
-            int outcome = MPI_Recv(&difference, 1, MPI_MIF_REAL, 0, 0, MPI_COMM_WORLD, &status);
-            assert(outcome == MPI_SUCCESS);
-            (void) outcome;
         }
+    } else {
+        MPI_Status status;
+        int outcome = MPI_Recv(&difference, 1, MPI_MIF_REAL, 0, 0, MPI_COMM_WORLD, &status);
+        assert(outcome == MPI_SUCCESS);
+        (void) outcome;
     }
 
     // Remove the difference from all points.

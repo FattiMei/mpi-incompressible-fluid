@@ -83,16 +83,39 @@ Real ErrorLInfNorm(const VelocityTensor &velocity, const TimeVectorFunction &exa
   return compute_error(velocity, exact_velocity, time, reduction_operation);
 }
 
-// Same function for a scalar tensor. No need to skip borders since it is unstaggered.
+// Same function for a scalar tensor. Processor boundaries are skipped, while real boundaries are not.
 Real compute_error(
     const StaggeredTensor &pressure, const std::function<Real(Real, Real, Real, Real)> &exact_pressure, 
     Real time, const std::function<Real(Real, Real)> &reduction_operation) {
   Real integral = 0.0;
   const Constants &constants = pressure.constants;
 
-  for (size_t k = 0; k < constants.Nz; k++) {
+  size_t lower_limit_y, upper_limit_y, lower_limit_z, upper_limit_z;
+  const std::array<size_t, 3> &sizes = pressure.sizes();              
+  if (pressure.constants.prev_proc_y != -1) {                         
+    lower_limit_y = 1;                                              
+  } else {                                                          
+    lower_limit_y = 0;                                              
+  };                                                                
+  if (pressure.constants.next_proc_y != -1) {                         
+    upper_limit_y = sizes[1] - 1;                                   
+  } else {                                                          
+    upper_limit_y = sizes[1];                                       
+  };                                                                
+  if (pressure.constants.prev_proc_z != -1) {                         
+    lower_limit_z = 1;                                              
+  } else {                                                          
+    lower_limit_z = 0;                                              
+  };                                                                
+  if (pressure.constants.next_proc_z != -1) {                         
+    upper_limit_z = sizes[2] - 1;                                   
+  } else {                                                          
+    upper_limit_z = sizes[2];                                       
+  }; 
+
+  for (size_t k = lower_limit_z; k < upper_limit_z; k++) {
     const Real z = constants.min_z + k * constants.dz;
-    for (size_t j = 0; j < constants.Ny; j++) {
+    for (size_t j = lower_limit_y; j < upper_limit_y; j++) {
       const Real y = constants.min_y + j * constants.dy;
       for (size_t i = 0; i < constants.Nx; i++) {
         const Real x = constants.min_x + i * constants.dx;

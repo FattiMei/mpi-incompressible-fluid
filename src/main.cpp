@@ -99,8 +99,10 @@ int main(int argc, char *argv[]) {
     }
   }
   const Real space_step = std::min({constants.dx, constants.dy, constants.dz});
-  std::cout << "CFL: " << constants.dt / space_step * highest_velocity << std::endl;
-  std::cout << "Reynolds condition: " << constants.dt / (Re*space_step*space_step) << std::endl;
+  if (rank == 0) {
+    std::cout << "CFL: " << constants.dt / space_step * highest_velocity << std::endl;
+    std::cout << "Reynolds condition: " << constants.dt / (Re*space_step*space_step) << std::endl;
+  }
 
   // Compute the solution.
   for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
