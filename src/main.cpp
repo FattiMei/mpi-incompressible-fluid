@@ -81,6 +81,7 @@ int main(int argc, char *argv[]) {
   TimeVectorFunction exact_pressure_gradient(dp_dx_exact_p_test, dp_dy_exact_p_test, dp_dz_exact_p_test);
 
   // Compute and print convergence conditions.
+  /*
   // Note: assuming the highest velocity value is obtained at time 0.
   Real highest_velocity = 0.0;
   for (size_t k = 0; k < constants.Nz; k++) {
@@ -103,6 +104,7 @@ int main(int argc, char *argv[]) {
     std::cout << "CFL: " << constants.dt / space_step * highest_velocity << std::endl;
     std::cout << "Reynolds condition: " << constants.dt / (Re*space_step*space_step) << std::endl;
   }
+  */
 
   // Compute the solution.
   for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
