@@ -15,15 +15,17 @@ public:
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.min_x + constants.dx * i - constants.dx_over_2, constants.min_y + constants.dy * j,
-             constants.min_z + constants.dz * k);
+    return f(constants.min_x_global + constants.dx * i - constants.dx_over_2, 
+             constants.min_y_global + constants.dy * (constants.base_j+j),
+             constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.min_x + constants.dx * i - constants.dx_over_2, constants.min_y + constants.dy * j,
-             constants.min_z + constants.dz * k);
+    return f(time, constants.min_x_global + constants.dx * i - constants.dx_over_2, 
+             constants.min_y_global + constants.dy * (constants.base_j+j),
+             constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 };
 
@@ -36,15 +38,17 @@ public:
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.min_x + constants.dx * i, constants.min_y + constants.dy * j - constants.dy_over_2,
-             constants.min_z + constants.dz * k);
+    return f(constants.min_x_global + constants.dx * i, 
+             constants.min_y_global + constants.dy * (constants.base_j+j) - constants.dy_over_2,
+             constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.min_x + constants.dx * i, constants.min_y + constants.dy * j - constants.dy_over_2,
-             constants.min_z + constants.dz * k);
+    return f(time, constants.min_x_global + constants.dx * i, 
+             constants.min_y_global + constants.dy * (constants.base_j+j) - constants.dy_over_2,
+             constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 };
 
@@ -57,15 +61,17 @@ public:
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.min_x + constants.dx * i, constants.min_y + constants.dy * j,
-             constants.min_z + constants.dz * k - constants.dz_over_2);
+    return f(constants.min_x_global + constants.dx * i, 
+             constants.min_y_global + constants.dy * (constants.base_j+j),
+             constants.min_z_global + constants.dz * (constants.base_k+k) - constants.dz_over_2); 
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.min_x + constants.dx * i, constants.min_y + constants.dy * j,
-             constants.min_z + constants.dz * k - constants.dz_over_2);
+    return f(time, constants.min_x_global + constants.dx * i, 
+             constants.min_y_global + constants.dy * (constants.base_j+j),
+             constants.min_z_global + constants.dz * (constants.base_k+k) - constants.dz_over_2); 
   }
 };
 

@@ -21,11 +21,11 @@ Real compute_error(
   // boundary conditions. This also implies that the integration weights are all
   // equal.
   for (size_t k = 1; k < constants.Nz - 1; k++) {
-    const Real z = constants.min_z + k * constants.dz;
+    const Real z = constants.min_z_global + (constants.base_k+k) * constants.dz;
     for (size_t j = 1; j < constants.Ny - 1; j++) {
-      const Real y = constants.min_y + j * constants.dy;
+      const Real y = constants.min_y_global + (constants.base_j+j) * constants.dy;
       for (size_t i = 1; i < constants.Nx - 1; i++) {
-        const Real x = constants.min_x + i * constants.dx;
+        const Real x = constants.min_x_global + i * constants.dx;
 
         const Real interpolated_u =
             (velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2.0;
@@ -114,11 +114,11 @@ Real compute_error(
   }; 
 
   for (size_t k = lower_limit_z; k < upper_limit_z; k++) {
-    const Real z = constants.min_z + k * constants.dz;
+    const Real z = constants.min_z_global + (constants.base_k+k) * constants.dz;
     for (size_t j = lower_limit_y; j < upper_limit_y; j++) {
-      const Real y = constants.min_y + j * constants.dy;
+      const Real y = constants.min_y_global + (constants.base_j+j) * constants.dy;
       for (size_t i = 0; i < constants.Nx; i++) {
-        const Real x = constants.min_x + i * constants.dx;
+        const Real x = constants.min_x_global + i * constants.dx;
 
         const Real error = exact_pressure(time, x, y, z) - pressure(i,j,k);
 

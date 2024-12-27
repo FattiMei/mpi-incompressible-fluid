@@ -17,7 +17,7 @@ constexpr Real b1 = (1.0 / 4.0);
 constexpr Real b3 = (3.0 / 4.0);
 
 // Compute a component of Y2 (first step of the method).
-#define COMPUTE_COMPONENT_Y2(component, tag) {                                              \
+#define COMPUTE_COMPONENT_Y2(component) {                                                   \
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                       \
     const Real dt = velocity.constants.dt;                                                  \
     const Real rhs =                                                                        \
@@ -25,11 +25,10 @@ constexpr Real b3 = (3.0 / 4.0);
     rhs_buffer.component(i,j,k) = rhs;                                                      \
     velocity_buffer.component(i, j, k) = velocity.component(i, j, k) + dt * a21 * rhs;      \
   )                                                                                         \
-  velocity_buffer.component.send_mpi_data(tag);                                             \
 }
 
 // Compute a component of Y3 (second step of the method).
-#define COMPUTE_COMPONENT_Y3(component, tag) {                                              \
+#define COMPUTE_COMPONENT_Y3(component) {                                                   \
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                       \
     const Real dt = velocity.constants.dt;                                                  \
     const Real rhs = rhs_buffer.component(i,j,k);                                           \
@@ -38,26 +37,24 @@ constexpr Real b3 = (3.0 / 4.0);
               dt * (a31 * rhs + a32 * calculate_momentum_rhs_with_forcing_##component(      \
                                             velocity_buffer, i, j, k, time_1));             \
   )                                                                                         \
-  velocity.component.send_mpi_data(tag);                                                    \
 }
 
 // Compute a component of U* (third and last step of the method).
-#define COMPUTE_COMPONENT_U_STAR(component, tag) {                                          \
+#define COMPUTE_COMPONENT_U_STAR(component) {                                               \
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                       \
     const Real dt = velocity.constants.dt;                                                  \
     const Real rhs = rhs_buffer.component(i,j,k);                                           \
     velocity_buffer.component(i, j, k) = rhs + dt * (b3 *                                   \
               calculate_momentum_rhs_with_forcing_##component(velocity, i, j, k, time_2));  \
   )                                                                                         \
-  velocity_buffer.component.send_mpi_data(tag);                                             \
 }
 
 // Compute all components of Y2/Y3/U*.
 // "step" should be Y2, Y3 or U_STAR.
-#define COMPUTE_STEP(step) {                                          \
-  COMPUTE_COMPONENT_##step(u, 0)                                      \
-  COMPUTE_COMPONENT_##step(v, 4)                                      \
-  COMPUTE_COMPONENT_##step(w, 8)                                      \
+#define COMPUTE_STEP(step) {                                       \
+  COMPUTE_COMPONENT_##step(u)                                      \
+  COMPUTE_COMPONENT_##step(v)                                      \
+  COMPUTE_COMPONENT_##step(w)                                      \
 }
 
 void timestep_velocity(VelocityTensor &velocity, VelocityTensor &velocity_buffer,

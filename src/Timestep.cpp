@@ -19,7 +19,7 @@ constexpr Real d2 = c3 - c2;
 constexpr Real d3 = 1 - c3;
 
 // Compute a component of Y2 (first step of the method).
-#define COMPUTE_COMPONENT_Y2(component, tag) {                                                \
+#define COMPUTE_COMPONENT_Y2(component) {                                                     \
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                         \
     const Real dt = velocity.constants.dt;                                                    \
     const Real rhs =                                                                          \
@@ -28,11 +28,10 @@ constexpr Real d3 = 1 - c3;
     velocity_buffer.component(i, j, k) = velocity.component(i, j, k) + dt * a21 * rhs -       \
         dt_1 * pressure_gradient_##component(pressure, i, j, k);                              \
   )                                                                                           \
-  velocity_buffer.component.send_mpi_data(tag);                                               \
 }
 
 // Compute a component of Y3 (second step of the method).
-#define COMPUTE_COMPONENT_Y3(component, tag) {                                                \
+#define COMPUTE_COMPONENT_Y3(component) {                                                     \
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                         \
     const Real dt = velocity.constants.dt;                                                    \
     const Real rhs = rhs_buffer.component(i,j,k);                                             \
@@ -42,11 +41,10 @@ constexpr Real d3 = 1 - c3;
         velocity_buffer, i, j, k)) - dt_2 *                                                   \
         pressure_gradient_##component(pressure, i, j, k);                                     \
   )                                                                                           \
-  velocity.component.send_mpi_data(tag);                                                      \
 }
 
 // Compute a component of U* (third and last step of the method).
-#define COMPUTE_COMPONENT_U_STAR(component, tag) {                                            \
+#define COMPUTE_COMPONENT_U_STAR(component) {                                                 \
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                         \
     const Real dt = velocity.constants.dt;                                                    \
     const Real rhs = rhs_buffer.component(i,j,k);                                             \
@@ -54,22 +52,28 @@ constexpr Real d3 = 1 - c3;
         calculate_momentum_rhs_##component(velocity, i, j, k)) -                              \
         dt_3 * pressure_gradient_##component(pressure, i, j, k);                              \
   )                                                                                           \
-  velocity_buffer.component.send_mpi_data(tag);                                               \
 }
 
 // Compute all components of Y2/Y3/U*.
 // "step" should be Y2, Y3 or U_STAR.
-#define COMPUTE_STEP(step) {                                          \
-  COMPUTE_COMPONENT_##step(u, 0)                                      \
-  COMPUTE_COMPONENT_##step(v, 4)                                      \
-  COMPUTE_COMPONENT_##step(w, 8)                                      \
+#define COMPUTE_STEP(step) {                                       \
+  COMPUTE_COMPONENT_##step(u)                                      \
+  COMPUTE_COMPONENT_##step(v)                                      \
+  COMPUTE_COMPONENT_##step(w)                                      \
 }
 
 // Add the pressure gradient adjustment to the velocity.
+// This requires MPI communication for the update to the ghost points.
 #define UPDATE_VELOCITY(velocity, delta_pressure, delta_time) {                                                                                \
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.u, false, velocity.u(i,j,k) -= pressure_gradient_u(delta_pressure, i, j, k) * delta_time;) \
+  velocity.u.send_mpi_data(0);                                                                                                                 \
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.v, false, velocity.v(i,j,k) -= pressure_gradient_v(delta_pressure, i, j, k) * delta_time;) \
+  velocity.v.send_mpi_data(4);                                                                                                                 \
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.w, false, velocity.w(i,j,k) -= pressure_gradient_w(delta_pressure, i, j, k) * delta_time;) \
+  velocity.w.send_mpi_data(8);                                                                                                                 \
+  velocity.u.receive_mpi_data(0);                                                                                                              \
+  velocity.v.receive_mpi_data(4);                                                                                                              \
+  velocity.w.receive_mpi_data(8);                                                                                                              \
 }
 
 #define UPDATE_PRESSURE() {                                                                            \

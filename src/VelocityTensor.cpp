@@ -45,9 +45,6 @@ void VelocityTensor::apply_all_dirichlet_bc(const VectorFunction &exact_velocity
     // applying the usual Dirichlet boundary conditions. This effectively
     // treats the neighbouring processor as a Dirichlet boundary.
 
-    // Receive MPI data.
-    tensor->receive_mpi_data(component*4);
-
     // Face 1: z=z_min
     if (constants.prev_proc_z != -1) {
     } else if (component == 2) {
@@ -213,6 +210,15 @@ void VelocityTensor::apply_all_dirichlet_bc(const VectorFunction &exact_velocity
         }
       }
     }
+
+    // Send MPI data.
+    tensor->send_mpi_data(component*4);
+  }
+
+  // Receive MPI data.
+  for (size_t component = 0; component < 3U; component++) {
+    StaggeredTensor *tensor = components[component];
+    tensor->receive_mpi_data(component*4);
   }
 }
 } // namespace mif

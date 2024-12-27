@@ -54,7 +54,7 @@ public:
   const Real one_over_dy;
   const Real one_over_dz;
 
-  // Derived constants for the staggered grid.
+  // Derived constants for MPI and the staggered grid.
   const int P;
   const size_t Ny_owner;
   const size_t Nz_owner;
@@ -63,14 +63,8 @@ public:
   const size_t Nx_staggered;
   const size_t Ny_staggered;
   const size_t Nz_staggered;
-
-  // Derived constants for the local domain.
-  const Real min_x;
-  const Real max_x;
-  const Real min_y;
-  const Real max_y;
-  const Real min_z;
-  const Real max_z;
+  const size_t base_j;
+  const size_t base_k;
 
   // Derived constants for the MPI communication.
   const int prev_proc_y;

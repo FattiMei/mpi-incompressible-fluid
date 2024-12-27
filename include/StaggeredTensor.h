@@ -84,16 +84,18 @@ public:
   inline Real evaluate_function_at_index_unstaggered(
     Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const {
-    return f(time, constants.min_x + constants.dx * i, constants.min_y + constants.dy * j,
-             constants.min_z + constants.dz * k);    
+    return f(time, constants.min_x_global + constants.dx * i, 
+             constants.min_y_global + constants.dy * (constants.base_j+j),
+             constants.min_z_global + constants.dz * (constants.base_k+k));    
   }
 
   // Do the same, but without the time dependency.
   inline Real evaluate_function_at_index_unstaggered(
     size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const {
-    return f(constants.min_x + constants.dx * i, constants.min_y + constants.dy * j,
-             constants.min_z + constants.dz * k);
+    return f(constants.min_x_global + constants.dx * i, 
+             constants.min_y_global + constants.dy * (constants.base_j+j),
+             constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 
   // Do the same considering staggering.
