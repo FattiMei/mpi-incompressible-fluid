@@ -56,10 +56,12 @@ for step in range(num_tests):
 
 # Plot the results.
 x = []
-y = []
+y1 = []
+y2 = []
 for i in range(num_tests):
     x.append(2**i)
-    y.append(1.0 / 2 ** (2 * i) * linf_errors_p[0])
+    y1.append(1.0 / 2 ** (i) * linf_errors_p[0])
+    y2.append(1.0 / 2 ** (2 * i) * linf_errors_v[0])
 
 # Plot the errors as a log-log plot.
 # Plot the l1_errors, l2_errors, and linf_errors.
@@ -73,9 +75,10 @@ plt.plot(x, l1_errors_p, label="Pressure error L1 Norm")
 plt.plot(x, l2_errors_p, label="Pressure error L2 Norm")
 plt.plot(x, linf_errors_p, label="Pressure error Linf Norm")
 
-# Plot the second order convergence line reference
-# as a dotted line.
-plt.plot(x, y, ":", label="Second order reference")
+# Plot the 1-2 order convergence line references
+# as dotted lines.
+plt.plot(x, y1, ":", label="First order reference")
+plt.plot(x, y2, ":", label="Second order reference")
 
 plt.scatter(x, l1_errors_v)
 plt.scatter(x, l2_errors_v)

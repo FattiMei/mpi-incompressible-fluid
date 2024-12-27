@@ -123,7 +123,7 @@ void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
   // Apply Dirichlet boundary conditions  to the velocity.
   velocity_buffer.apply_all_dirichlet_bc(exact_velocity.set_time(final_time));
   // Solve the pressure equation.
-  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, pressure_solver_buffer, velocity, exact_pressure_gradient.get_difference_over_time(final_time, time_2), dt_3);
+  solve_pressure_equation_non_homogeneous_neumann(pressure_buffer, pressure_solver_buffer, velocity_buffer, exact_pressure_gradient.get_difference_over_time(final_time, time_2), dt_3);
   // Update the pressure.
   UPDATE_PRESSURE()
   // Update the velocity.
