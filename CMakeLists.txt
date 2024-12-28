@@ -137,6 +137,8 @@ add_executable(test_fftw_1d_neumann_in_place test/fftw/test_fftw_1d_neumann_in_p
 add_executable(test_fftw_3d_neumann test/fftw/test_fftw_3d_neumann.cpp)
 target_link_libraries(test_fftw_3d_neumann PRIVATE decomp)
 
+add_executable(test_2decomp_reverse_engineer test/2decomp/test_2decomp_reverse_engineer.cpp)
+target_link_libraries(test_2decomp_reverse_engineer PRIVATE decomp)
 
 add_executable(pressure_test_hn test/pressure_test_hn.cpp)
 add_executable(pressure_test_nhn test/pressure_test_nhn.cpp)
