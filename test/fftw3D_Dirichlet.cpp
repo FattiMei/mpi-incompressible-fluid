@@ -3,8 +3,11 @@
 #include <vector>
 #include <cassert>
 #include <fftw3.h>
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wcast-function-type"
 #include <mpi.h>
 #include "../deps/2Decomp_C/C2Decomp.hpp"
+#pragma GCC diagnostic pop
 
 constexpr double PI = 3.141592653589793;
 

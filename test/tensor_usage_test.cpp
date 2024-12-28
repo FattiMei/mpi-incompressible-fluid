@@ -4,6 +4,7 @@
 
 int main(int argc, char *argv[]) {
   assert(argc == 1);
+  (void) argc; // Suppress warning
   (void) argv; // Suppress warning
 
   const std::size_t depth = 2;
