@@ -13,42 +13,42 @@ constexpr Real exact_solution_precision = 1e-12;
 // Nevertheless, they are defined everywhere, but should 
 // not be used aside from those cases.
 
-Real exact_u_t1(Real t, Real x, Real y, Real z) {
+inline Real exact_u_t1(Real t, Real x, Real y, Real z) {
     return 0.0;
 }
 
-Real exact_v_t1(Real t, Real x, Real y, Real z) {
+inline Real exact_v_t1(Real t, Real x, Real y, Real z) {
     if (x < 1.0+exact_solution_precision && x > 1.0-exact_solution_precision) {
         return 1.0;
     }
     return 0.0;
 }
 
-Real exact_w_t1(Real t, Real x, Real y, Real z) {
+inline Real exact_w_t1(Real t, Real x, Real y, Real z) {
     return 0.0;
 }
 
-Real exact_p_initial_t1(Real x, Real y, Real z) {
+inline Real exact_p_initial_t1(Real x, Real y, Real z) {
     return 0.0;
 }
 
 
-Real exact_u_t2(Real t, Real x, Real y, Real z) {
+inline Real exact_u_t2(Real t, Real x, Real y, Real z) {
     return 0.0;
 }
 
-Real exact_v_t2(Real t, Real x, Real y, Real z) {
+inline Real exact_v_t2(Real t, Real x, Real y, Real z) {
     if (x < -0.5+exact_solution_precision && x > -0.5-exact_solution_precision) {
         return 1.0;
     }
     return 0.0;
 }
 
-Real exact_w_t2(Real t, Real x, Real y, Real z) {
+inline Real exact_w_t2(Real t, Real x, Real y, Real z) {
     return 0.0;
 }
 
-Real exact_p_initial_t2(Real x, Real y, Real z) {
+inline Real exact_p_initial_t2(Real x, Real y, Real z) {
     return 0.0;
 }
 
