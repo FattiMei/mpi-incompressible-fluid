@@ -1,6 +1,6 @@
-#include "Manufactured.h"
+#include "ManufacturedVelocity.h"
 #include "Norms.h"
-#include "Timestep.h"
+#include "TimestepVelocity.h"
 #include <benchmark/benchmark.h>
 
 double Reynolds = 1e6;
@@ -28,13 +28,13 @@ static void timestepper(benchmark::State &state) {
   const size_t Ny = Nx;
   const size_t Nz = Nx;
 
-  const Constants constants(Nx, Ny, Nz, Lx, Ly, Lz, Reynolds, deltat, 1);
+  const Constants constants(Nx, Ny, Nz, Lx, Ly, Lz, 0.0, 0.0, 0.0, Reynolds, deltat, 1, 1, 1, 0, {false, false, false});
 
   VelocityTensor velocity(constants);
   VelocityTensor velocity_buffer(constants);
   VelocityTensor rhs_buffer(constants);
 
-  TimeVectorFunction exact_velocity(u_exact, v_exact, w_exact);
+  TimeVectorFunction exact_velocity(u_exact_v_test, v_exact_v_test, w_exact_v_test);
   velocity.set(exact_velocity.set_time(0.0), true);
 
   TimeVectorFunction forcing_term(forcing_x, forcing_y, forcing_z);
@@ -43,7 +43,7 @@ static void timestepper(benchmark::State &state) {
   for (auto _ : state) {
     const Real t = step * constants.dt;
 
-    timestep(velocity, velocity_buffer, rhs_buffer, t);
+    timestep_velocity(velocity, velocity_buffer, rhs_buffer, exact_velocity, t);
 
     ++step;
   }

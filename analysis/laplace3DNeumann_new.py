@@ -4,19 +4,14 @@ import sys
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-##########################
-#  Not working properly  #
-##########################
 
-N = 3  # Number of points in a side of the domain.
+N = 100  # Number of points in a side of the domain.
 
 # Discretize u = cos(x) * cos(y) * cos(z) in [0, 2pi]^3
 # and its Laplacian rhs = -3u.
 u = np.empty(shape=(N, N, N))
 rhs = np.empty(shape=(N, N, N))
 h = 2 * np.pi / (N - 1)
-
-
 
 # Create the manufactured solution
 for i in range(N):
@@ -46,8 +41,6 @@ for i in range(N):
     for j in range(N):
         # Corrected indexing from [i][j][:] to [i, j, :]
         btilda[i, j, :] = scipy.fftpack.dct(btilda[i, j, :], type=2, norm='ortho')  # Changed DCT type to 2
-        
-print(btilda)
 
 # Compute x_tilda (Solution in DCT space)
 xtilde = np.copy(btilda)
@@ -124,6 +117,4 @@ fig.colorbar(surf1, ax=ax1, shrink=0.5, aspect=5)
 # fig.colorbar(surf2, ax=ax2, shrink=0.5, aspect=5)
 
 plt.tight_layout()
-
 plt.show()
-

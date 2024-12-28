@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.20)
 project(mpi_incompressible_fluid)
 
 
@@ -10,17 +10,31 @@ pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
 include_directories(PkgConfig::FFTW)
 link_libraries(PkgConfig::FFTW)
 
+find_package(MPI REQUIRED)
+include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 if (benchmark_FOUND)
 	set(BENCH_OK TRUE)
 endif()
 
+# Set the compiler.
+set(CMAKE_C_COMPILER "mpicc")
+set(CMAKE_CXX_COMPILER "mpicxx")
+
+# Choose build type.
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
-	-funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
 
-set(CMAKE_CXX_COMPILER mpic++)
+# Set custom flags for Debug build.
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
+     -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
+
+# Set custom flags for Release build.
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG} -DNDEBUG")
+
 
 if(NOT DEFINED VERBOSE)
     set(VERBOSE "FALSE")
@@ -39,11 +53,31 @@ set(TEST_DIR    "${CMAKE_SOURCE_DIR}/test")
 
 set(DECOMP_DIR "${CMAKE_SOURCE_DIR}/deps/2Decomp_C")
 
-set(FORCING_TERM_GENERATOR ${CMAKE_SOURCE_DIR}/generator/manufsol.py)
-set(FORCING_TERM_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp)
+set(FORCING_TERM_GENERATOR ${CMAKE_SOURCE_DIR}/generators/manufsol_velocity.py)
+set(FORCING_TERM_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol_velocity.cpp)
+set(PRESSURE_GENERATOR ${CMAKE_SOURCE_DIR}/generators/manufsol_pressure.py)
+set(PRESSURE_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol_pressure.cpp)
+set(EXACT_SOLUTION_GENERATOR ${CMAKE_SOURCE_DIR}/generators/manufsol.py)
+set(EXACT_SOLUTION_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp)
 
 set(CONVERGENCE_REPORT_NAME "convergence_report.csv")
 
+include_directories(${DECOMP_DIR})
+add_library(
+	decomp
+	STATIC
+	${DECOMP_DIR}/Alloc.cpp
+	${DECOMP_DIR}/Best2DGrid.cpp
+	${DECOMP_DIR}/C2Decomp.cpp
+	${DECOMP_DIR}/Halo.cpp
+	${DECOMP_DIR}/IO.cpp
+	${DECOMP_DIR}/MemSplitMerge.cpp
+	${DECOMP_DIR}/TransposeX2Y.cpp
+	${DECOMP_DIR}/TransposeY2X.cpp
+	${DECOMP_DIR}/TransposeY2Z.cpp
+	${DECOMP_DIR}/TransposeZ2Y.cpp
+)
+target_compile_options(decomp PUBLIC -w) # Ignore all warnings from 2decomp.
 
 include_directories(${INCLUDE_DIR})
 add_library(
@@ -51,38 +85,29 @@ add_library(
 	STATIC
 	${SOURCE_DIR}/Constants.cpp
 	${SOURCE_DIR}/Norms.cpp
+	${SOURCE_DIR}/PressureEquation.cpp
+	${SOURCE_DIR}/PressureSolverStructures.cpp
+	${SOURCE_DIR}/PressureTensor.cpp
+	${SOURCE_DIR}/StaggeredTensor.cpp
 	${SOURCE_DIR}/Timestep.cpp
+	${SOURCE_DIR}/TimestepVelocity.cpp
 	${SOURCE_DIR}/VectorFunction.cpp
 	${SOURCE_DIR}/VelocityTensor.cpp
 	${FORCING_TERM_ARTIFACT}
+	${PRESSURE_ARTIFACT}
+	${EXACT_SOLUTION_ARTIFACT}
 )
 
-
-include_directories(${DECOMP_DIR})
-add_library(
-	decomp
-	STATIC
-	${DECOMP_DIR}/C2Decomp.cpp
-	${DECOMP_DIR}/Alloc.cpp
-	${DECOMP_DIR}/TransposeX2Y.cpp
-	${DECOMP_DIR}/TransposeY2Z.cpp
-	${DECOMP_DIR}/TransposeZ2Y.cpp
-	${DECOMP_DIR}/TransposeY2X.cpp
-	${DECOMP_DIR}/MemSplitMerge.cpp
-	${DECOMP_DIR}/IO.cpp
-	${DECOMP_DIR}/Best2DGrid.cpp
-	${DECOMP_DIR}/Halo.cpp
-)
-
+# Add all executables.
 add_executable(${EXE_NAME} "${SOURCE_DIR}/main.cpp")
-target_link_libraries(${EXE_NAME} PRIVATE miflib)
+target_link_libraries(${EXE_NAME} PRIVATE miflib decomp ${MPI_C_LIBRARIES})
 
 add_executable(${CONVERGENCE_TEST_EXE_NAME} "${TEST_DIR}/convergence.cpp")
-target_link_libraries(${CONVERGENCE_TEST_EXE_NAME} PRIVATE miflib)
+target_link_libraries(${CONVERGENCE_TEST_EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})
 
 if (${BENCH_OK})
 	add_executable(${BENCHMARK_EXE_NAME} "${TEST_DIR}/benchmark.cpp")
-	target_link_libraries(${BENCHMARK_EXE_NAME} PRIVATE miflib benchmark::benchmark)
+	target_link_libraries(${BENCHMARK_EXE_NAME} PRIVATE miflib benchmark::benchmark ${MPI_C_LIBRARIES})
 
 	add_custom_target(
 		bench
@@ -92,25 +117,58 @@ if (${BENCH_OK})
 endif()
 
 add_executable(tensor_usage_test test/tensor_usage_test.cpp)
+
+add_executable(velocity_test test/velocity_test.cpp)
+add_executable(mpi_test test/mpi_test.cpp)
+
 add_executable(fftw_Dirichlet3D test/fftw3D_Dirichlet.cpp)
 add_executable(fftw_Dirichlet1D test/fftw1D_Dirichlet.cpp)
 add_executable(fftw_Dirichlet1D_spectral test/fftw1D_Dirichlet_spectral.cpp)
 add_executable(fftw_Neumann3D test/fftw3D_Neumann.cpp)
 add_executable(fftw_Neumann1D test/fftw1D_Neumann.cpp)
-add_executable(testing_2decomp test/testing_2decomp.cpp)
+add_executable(2decomp_test test/2decomp_test.cpp)
+add_executable(2decomp_test_parallel test/2decomp_test_parallel.cpp)
 
-target_include_directories(decomp PUBLIC ${DECOMP_DIR})
-target_link_libraries(fftw_Neumann1D PRIVATE decomp)
-target_link_libraries(fftw_Dirichlet1D PRIVATE decomp)
-target_link_libraries(fftw_Neumann3D PRIVATE decomp)
+add_executable(pressure_test_hn test/pressure_test_hn.cpp)
+add_executable(pressure_test_nhn test/pressure_test_nhn.cpp)
+add_executable(pressure_test_mixed test/pressure_test_mixed.cpp)
+
+add_executable(full_test test/full_test.cpp)
+
+
+# Set link libraries.
+target_link_libraries(tensor_usage_test PRIVATE miflib)
+
+target_link_libraries(velocity_test PRIVATE miflib)
+
 target_link_libraries(fftw_Dirichlet3D PRIVATE decomp)
-target_link_libraries(testing_2decomp PRIVATE decomp)
+target_link_libraries(fftw_Dirichlet1D PRIVATE decomp)
 target_link_libraries(fftw_Dirichlet1D_spectral PRIVATE decomp)
+target_link_libraries(fftw_Neumann3D PRIVATE decomp)
+target_link_libraries(fftw_Neumann1D PRIVATE decomp)
+target_link_libraries(2decomp_test PRIVATE miflib decomp)
+target_link_libraries(2decomp_test_parallel PRIVATE miflib decomp)
+
+target_link_libraries(pressure_test_hn PRIVATE miflib decomp)
+target_link_libraries(pressure_test_nhn PRIVATE miflib decomp)
+target_link_libraries(pressure_test_mixed PRIVATE miflib decomp)
+
+target_link_libraries(full_test PRIVATE miflib decomp)
 
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}
 	DEPENDS ${FORCING_TERM_GENERATOR}
 	COMMAND ${Python3_EXECUTABLE} ${FORCING_TERM_GENERATOR} > ${FORCING_TERM_ARTIFACT}
+)
+add_custom_command(
+	OUTPUT ${EXACT_SOLUTION_ARTIFACT}
+	DEPENDS ${EXACT_SOLUTION_GENERATOR}
+	COMMAND ${Python3_EXECUTABLE} ${EXACT_SOLUTION_GENERATOR} > ${EXACT_SOLUTION_ARTIFACT}
+)
+add_custom_command(
+	OUTPUT ${PRESSURE_ARTIFACT}
+	DEPENDS ${PRESSURE_GENERATOR}
+	COMMAND ${Python3_EXECUTABLE} ${PRESSURE_GENERATOR} > ${PRESSURE_ARTIFACT}
 )
 
 add_custom_command(
