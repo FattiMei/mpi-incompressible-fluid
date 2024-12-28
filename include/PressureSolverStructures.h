@@ -12,7 +12,7 @@
 namespace mif {
     class PressureSolverStructures {
     public:
-        bool boundary_conditions[3];
+        bool periodic_bc[3];
         C2Decomp c2d;
         Real *buffer_x; // Buffer to perform fft along the x direction.
         Real *buffer_y; // Buffer to perform fft along the y direction.

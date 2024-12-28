@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     const size_t Nx = 4;
     const size_t Ny = 3;
     const size_t Nz = 2;
-    const Constants constants(Nx, Ny, Nz, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1, 1, 1, 0);
+    const Constants constants(Nx, Ny, Nz, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1, 1, 1, 0, {false, false, false});
     StaggeredTensor tensor({Nx, Ny, Nz}, constants);
 
     // Initialize the tensor with easily recognizable values.
@@ -45,8 +45,8 @@ int main(int argc, char *argv[]) {
     std::cout << "Strides: x=1, y=Nx, z=Nx*Ny" << std::endl;
 
     // Create 2decomp objects.
-    bool neumannBC[3] = {true, true, true};
-    C2Decomp c2d = C2Decomp(Nx, Ny, Nz, 1, 1, neumannBC);
+    bool periodicBC[3] = {false, false, false};
+    C2Decomp c2d = C2Decomp(Nx, Ny, Nz, 1, 1, periodicBC);
 
     // Transpose.
     c2d.transposeX2Y_MajorIndex(static_cast<Real*>(tensor.raw_data()), static_cast<Real*>(tensor.raw_data()));

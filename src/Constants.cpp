@@ -59,11 +59,12 @@ Constants::Constants(size_t Nx, size_t Ny_global, size_t Nz_global,
                      Real x_size, Real y_size_global, Real z_size_global, 
                      Real min_x_global, Real min_y_global, Real min_z_global,
                      Real Re, Real final_time, unsigned int num_time_steps,
-                     int Py, int Pz, int rank)
+                     int Py, int Pz, int rank, const std::array<bool, 3> &periodic_bc)
     : Nx(Nx), Ny_global(Ny_global), Nz_global(Nz_global),
       x_size(x_size), y_size_global(y_size_global), z_size_global(z_size_global), 
       min_x_global(min_x_global), min_y_global(min_y_global), min_z_global(min_z_global),
       Re(Re), final_time(final_time), num_time_steps(num_time_steps),
+      periodic_bc(periodic_bc), 
       Py(Py), Pz(Pz), rank(rank), y_rank(rank / Pz), z_rank(rank % Pz),
       dt(final_time / num_time_steps),
       Nx_domains(Nx-1), Ny_domains_global(Ny_global-1), Nz_domains_global(Nz_global-1),

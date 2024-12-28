@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
   constexpr Real y_size = 1.0;
   const Real z_size = test_case_2 ? 1.0 : 2.0;
   constexpr Real Re = 1e3;
+  const std::array<bool, 3> periodic_bc{false, false, test_case_2};
   
   // Note that the constants object is only constant within the scope of this
   // particular processor. All processors will have their own subdomain
@@ -56,7 +57,7 @@ int main(int argc, char *argv[]) {
                             x_size, y_size, z_size, 
                             min_x_global, min_y_global, min_z_global,
                             Re, dt*num_time_steps, num_time_steps, 
-                            Py, Pz, rank);
+                            Py, Pz, rank, periodic_bc);
   PressureSolverStructures structures(constants);
 
   Reynolds = Re;

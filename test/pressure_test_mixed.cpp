@@ -4,7 +4,8 @@
 #include "Norms.h"
 #include "PressureEquation.h"
 
-// Pressure equation test for homogeneous Neumann boundary conditions.
+// Pressure equation test for homogeneous Neumann boundary conditions
+// on x,y faces and periodic conditions on the z faces.
 int main(int argc, char* argv[]) {
     using namespace mif;
 
@@ -27,7 +28,7 @@ int main(int argc, char* argv[]) {
     const size_t Ny_global = Nx_global * 3;
     const size_t Nz_global = Nx_global * 5;
     constexpr Real time = 1.0;
-    const std::array<bool, 3> periodic_bc{false, false, false};
+    const std::array<bool, 3> periodic_bc{false, false, true};
 
     const int Pz = std::atol(argv[2]);
     const int Py = size / Pz;

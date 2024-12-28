@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 # L1NORM L2NORM LINFNORM\n
 
 # Parameters.
-initial_N = 32
+initial_N = 24
 initial_time_steps = 1
-num_tests = 4
+num_tests = 5
 
 # Remove previous results.
 try:

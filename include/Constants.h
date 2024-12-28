@@ -2,6 +2,7 @@
 #define CONSTANTS_H
 
 #include "Real.h"
+#include <array>
 #include <cstddef>
 
 namespace mif {
@@ -22,6 +23,7 @@ public:
   const Real Re;
   const Real final_time;
   const unsigned int num_time_steps;
+  const std::array<bool, 3> periodic_bc;
 
   // MPI constants.
   const int Py; 
@@ -77,7 +79,7 @@ public:
             Real x_size, Real y_size_global, Real z_size_global, 
             Real min_x_global, Real min_y_global, Real min_z_global, 
             Real Re, Real final_time, unsigned int num_time_steps,
-            int Py, int Pz, int rank);
+            int Py, int Pz, int rank, const std::array<bool, 3> &periodic_bc);
 };
 
 } // namespace mif

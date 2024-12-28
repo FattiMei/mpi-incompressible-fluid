@@ -130,6 +130,7 @@ add_executable(2decomp_test test/2decomp_test.cpp)
 add_executable(2decomp_test_parallel test/2decomp_test_parallel.cpp)
 add_executable(pressure_test_hn test/pressure_test_hn.cpp)
 add_executable(pressure_test_nhn test/pressure_test_nhn.cpp)
+add_executable(pressure_test_mixed test/pressure_test_mixed.cpp)
 add_executable(full_test test/full_test.cpp)
 
 target_link_libraries(fftw_Neumann PRIVATE decomp)
@@ -138,6 +139,7 @@ target_link_libraries(2decomp_test PRIVATE miflib decomp)
 target_link_libraries(2decomp_test_parallel PRIVATE miflib decomp)
 target_link_libraries(pressure_test_hn PRIVATE miflib decomp)
 target_link_libraries(pressure_test_nhn PRIVATE miflib decomp)
+target_link_libraries(pressure_test_mixed PRIVATE miflib decomp)
 target_link_libraries(full_test PRIVATE miflib decomp)
 
 add_custom_command(
