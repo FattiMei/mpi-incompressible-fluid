@@ -129,6 +129,10 @@ add_executable(fftw_Neumann1D test/fftw1D_Neumann.cpp)
 add_executable(2decomp_test test/2decomp_test.cpp)
 add_executable(2decomp_test_parallel test/2decomp_test_parallel.cpp)
 
+# temporary: here are the tests that have been properly validated
+add_executable(test_fftw_1d_periodic test/fftw/test_fftw_1d_periodic.cpp)
+
+
 add_executable(pressure_test_hn test/pressure_test_hn.cpp)
 add_executable(pressure_test_nhn test/pressure_test_nhn.cpp)
 add_executable(pressure_test_mixed test/pressure_test_mixed.cpp)
