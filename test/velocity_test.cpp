@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   constexpr Real final_time = 1e-4;
   const unsigned int num_time_steps = std::atoi(argv[2]);
 
-  // Given the number of processors in the x direction, compute the number of
+  // Given the number of processors in the z direction, compute the number of
   // processors in the y direction and verify that the total number of
   // processors is correct.
   const int Pz = std::atol(argv[3]);

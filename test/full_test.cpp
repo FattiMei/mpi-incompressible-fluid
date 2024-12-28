@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   constexpr Real final_time = 1e-4;
   const unsigned int num_time_steps = std::atoi(argv[2]);
 
-  // Given the number of processors in the x direction, compute the number of
+  // Given the number of processors in the z direction, compute the number of
   // processors in the y direction and verify that the total number of
   // processors is correct.
   const int Pz = std::atol(argv[3]);
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
     const Real current_time = time_step * constants.dt;
 
     // Update the solution inside the mesh.
-    timestep(velocity, velocity_buffer, rhs_buffer, exact_velocity, exact_pressure_gradient, current_time, pressure, pressure_buffer, pressure_solver_buffer);
+    timestep_nhn(velocity, velocity_buffer, rhs_buffer, exact_velocity, exact_pressure_gradient, current_time, pressure, pressure_buffer, pressure_solver_buffer);
   }
 
   // Remove a constant from the pressure.

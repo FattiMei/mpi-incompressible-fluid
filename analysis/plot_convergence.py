@@ -24,7 +24,7 @@ for step in range(num_tests):
     time_steps = initial_time_steps * 2 ** (step)
 
     os.system(
-        "mpirun -n 6 ../build/mif "
+        "mpirun -n 6 ../build/full_test "
         + str(N)
         + " "
         + str(time_steps)
