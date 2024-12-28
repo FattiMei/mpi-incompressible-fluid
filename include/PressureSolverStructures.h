@@ -1,8 +1,9 @@
 #ifndef PRESSURE_SOLVER_STRUCTURES_H
 #define PRESSURE_SOLVER_STRUCTURES_H
 
-#include "Constants.h"
 #include <fftw3.h>
+#include "Constants.h"
+#include "Tensor.h"
 #pragma GCC diagnostic push 
 #pragma GCC diagnostic ignored "-Wcast-function-type"
 #include "../deps/2Decomp_C/C2Decomp.hpp"
@@ -19,6 +20,12 @@ namespace mif {
         fftw_plan fft_plan_x;
         fftw_plan fft_plan_y;
         fftw_plan fft_plan_z;
+
+        // The following tensor contains precomputed eigenvalues,
+        // with position (j,i,k) containing 1 over the sum of the
+        // respective eigenvalues, in Z storage.
+        Tensor<Real, 3, int> eigenvalues; 
+
         PressureSolverStructures(const Constants &constants);
         ~PressureSolverStructures();
     };

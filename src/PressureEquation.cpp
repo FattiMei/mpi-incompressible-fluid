@@ -58,10 +58,6 @@ void compute_rhs_homogeneous_neumann(StaggeredTensor &rhs, const VelocityTensor 
     STAGGERED_TENSOR_ITERATE_OVER_ALL_OWNER_POINTS(rhs, rhs(i,j,k) = calculate_velocity_divergence(velocity,i,j,k) / dt;)
 }
     
-inline Real compute_eigenvalue_neumann(size_t index, Real delta, size_t N_domains) {
-    return 2.0 * (std::cos(M_PI * index / N_domains) - 1.0) / (delta*delta);
-}
-
 // Solve the pressure equation with Neumann boundary conditions.
 // "pressure" contains the rhs, and will be replaced with the pressure.
 void solve_pressure_equation_neumann(PressureTensor &pressure,
@@ -125,18 +121,8 @@ void solve_pressure_equation_neumann(PressureTensor &pressure,
 
 
     // Divide by eigenvalues.
-    assert(c2d.zStart[2] == 0);
-    for (int j = 0; j < c2d.zSize[1]; j++) {
-        const Real lambda_2 = compute_eigenvalue_neumann(j+c2d.zStart[1], constants.dy, constants.Ny_domains_global);
-        const Real base_index_1 = j*c2d.zSize[0]*c2d.zSize[2];
-        for (int i = 0; i < c2d.zSize[0]; i++) {
-            const Real base_index_2 = base_index_1 + i*c2d.zSize[2];
-            const Real lambda_1 = compute_eigenvalue_neumann(i+c2d.zStart[0], constants.dx, constants.Nx_domains);
-            for (int k = 0; k < c2d.zSize[2]; k++) {
-                const Real lambda_3 = compute_eigenvalue_neumann(k, constants.dz, constants.Nz_domains_global);
-                pressure(base_index_2 + k) /= (lambda_1 + lambda_2 + lambda_3);
-            }
-        }
+    for (int i = 0; i < c2d.zSize[0]*c2d.zSize[1]*c2d.zSize[2]; i++) {
+        pressure(i) *= structures.eigenvalues(i);
     }
     if (constants.y_rank == 0 && constants.z_rank == 0) {
         pressure(0) = 0;
