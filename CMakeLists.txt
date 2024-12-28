@@ -46,8 +46,6 @@ endif ()
 set(EXE_NAME "mif")
 set(CONVERGENCE_TEST_EXE_NAME "convergence_test")
 set(BENCHMARK_EXE_NAME "benchmark")
-set(MPI_TEST_EXE_NAME "mpi_test")
-set(VELOCITY_TEST_EXE_NAME "velocity_test")
 
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(SOURCE_DIR  "${CMAKE_SOURCE_DIR}/src")
@@ -100,17 +98,12 @@ add_library(
 	${EXACT_SOLUTION_ARTIFACT}
 )
 
+# Add all executables.
 add_executable(${EXE_NAME} "${SOURCE_DIR}/main.cpp")
 target_link_libraries(${EXE_NAME} PRIVATE miflib decomp ${MPI_C_LIBRARIES})
 
 add_executable(${CONVERGENCE_TEST_EXE_NAME} "${TEST_DIR}/convergence.cpp")
 target_link_libraries(${CONVERGENCE_TEST_EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})
-
-add_executable(${MPI_TEST_EXE_NAME} "${TEST_DIR}/mpi_test.cpp")
-target_link_libraries(${MPI_TEST_EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})
-
-add_executable(${VELOCITY_TEST_EXE_NAME} "${TEST_DIR}/velocity_test.cpp")
-target_link_libraries(${VELOCITY_TEST_EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})
 
 if (${BENCH_OK})
 	add_executable(${BENCHMARK_EXE_NAME} "${TEST_DIR}/benchmark.cpp")
@@ -124,37 +117,43 @@ if (${BENCH_OK})
 endif()
 
 add_executable(tensor_usage_test test/tensor_usage_test.cpp)
-add_executable(fftw_Dirichlet test/fftw.cpp)
-add_executable(fftw_Neumann test/fftw3D_Neumann.cpp)
-add_executable(2decomp_test test/2decomp_test.cpp)
-add_executable(2decomp_test_parallel test/2decomp_test_parallel.cpp)
-add_executable(pressure_test_hn test/pressure_test_hn.cpp)
-add_executable(pressure_test_nhn test/pressure_test_nhn.cpp)
-add_executable(pressure_test_mixed test/pressure_test_mixed.cpp)
-add_executable(full_test test/full_test.cpp)
 
-target_link_libraries(fftw_Neumann PRIVATE decomp)
-target_link_libraries(fftw_Dirichlet PRIVATE decomp)
-target_link_libraries(2decomp_test PRIVATE miflib decomp)
-target_link_libraries(2decomp_test_parallel PRIVATE miflib decomp)
-target_link_libraries(pressure_test_hn PRIVATE miflib decomp)
-target_link_libraries(pressure_test_nhn PRIVATE miflib decomp)
-target_link_libraries(pressure_test_mixed PRIVATE miflib decomp)
-target_link_libraries(full_test PRIVATE miflib decomp)
+add_executable(velocity_test test/velocity_test.cpp)
+add_executable(mpi_test test/mpi_test.cpp)
+
 add_executable(fftw_Dirichlet3D test/fftw3D_Dirichlet.cpp)
 add_executable(fftw_Dirichlet1D test/fftw1D_Dirichlet.cpp)
 add_executable(fftw_Dirichlet1D_spectral test/fftw1D_Dirichlet_spectral.cpp)
 add_executable(fftw_Neumann3D test/fftw3D_Neumann.cpp)
 add_executable(fftw_Neumann1D test/fftw1D_Neumann.cpp)
-add_executable(testing_2decomp test/testing_2decomp.cpp)
+add_executable(2decomp_test test/2decomp_test.cpp)
+add_executable(2decomp_test_parallel test/2decomp_test_parallel.cpp)
 
-target_include_directories(decomp PUBLIC ${DECOMP_DIR})
-target_link_libraries(fftw_Neumann1D PRIVATE decomp)
-target_link_libraries(fftw_Dirichlet1D PRIVATE decomp)
-target_link_libraries(fftw_Neumann3D PRIVATE decomp)
+add_executable(pressure_test_hn test/pressure_test_hn.cpp)
+add_executable(pressure_test_nhn test/pressure_test_nhn.cpp)
+add_executable(pressure_test_mixed test/pressure_test_mixed.cpp)
+
+add_executable(full_test test/full_test.cpp)
+
+
+# Set link libraries.
+target_link_libraries(tensor_usage_test PRIVATE miflib)
+
+target_link_libraries(velocity_test PRIVATE miflib)
+
 target_link_libraries(fftw_Dirichlet3D PRIVATE decomp)
-target_link_libraries(testing_2decomp PRIVATE decomp)
+target_link_libraries(fftw_Dirichlet1D PRIVATE decomp)
 target_link_libraries(fftw_Dirichlet1D_spectral PRIVATE decomp)
+target_link_libraries(fftw_Neumann3D PRIVATE decomp)
+target_link_libraries(fftw_Neumann1D PRIVATE decomp)
+target_link_libraries(2decomp_test PRIVATE miflib decomp)
+target_link_libraries(2decomp_test_parallel PRIVATE miflib decomp)
+
+target_link_libraries(pressure_test_hn PRIVATE miflib decomp)
+target_link_libraries(pressure_test_nhn PRIVATE miflib decomp)
+target_link_libraries(pressure_test_mixed PRIVATE miflib decomp)
+
+target_link_libraries(full_test PRIVATE miflib decomp)
 
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}
