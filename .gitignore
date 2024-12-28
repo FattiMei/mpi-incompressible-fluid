@@ -9,3 +9,4 @@ artifacts/*
 # Analysis script output.
 analysis/results.txt
 analysis/*.png
+*.o

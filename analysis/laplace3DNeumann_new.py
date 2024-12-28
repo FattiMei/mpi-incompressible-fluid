@@ -4,6 +4,7 @@ import sys
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+
 N = 100  # Number of points in a side of the domain.
 
 # Discretize u = cos(x) * cos(y) * cos(z) in [0, 2pi]^3
@@ -116,5 +117,4 @@ fig.colorbar(surf1, ax=ax1, shrink=0.5, aspect=5)
 # fig.colorbar(surf2, ax=ax2, shrink=0.5, aspect=5)
 
 plt.tight_layout()
-
 plt.show()

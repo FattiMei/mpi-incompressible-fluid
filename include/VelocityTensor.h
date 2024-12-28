@@ -1,74 +1,31 @@
 #ifndef VELOCITY_TENSOR_H
 #define VELOCITY_TENSOR_H
 
-#include "Constants.h"
-#include "Tensor.h"
+#include "StaggeredTensor.h"
 #include "VectorFunction.h"
 
 namespace mif {
-
-/*!
- * @class StaggeredTensor
- * @brief A tensor with staggered components.
- *
- * This class represents a tensor with staggered components, i.e., components
- * that are offset by half a grid cell in one of the directions. We further
- * inherit from this class to create tensors staggered in the x, y, and z
- * directions, see UTensor, VTensor, and WTensor.
- *
- * @param constants An object containing information on the domain.
- * @param in_dimensions The dimensions of the tensor.
- */
-class StaggeredTensor : public Tensor<Real, 3U, size_t> {
-public:
-  StaggeredTensor(const Constants &constants,
-                  const std::array<size_t, 3U> &in_dimensions)
-      : Tensor(in_dimensions), constants(constants) {}
-
-  const Constants &constants;
-
-  /*!
-   * Evaluate the function f, depending on x,y,z, on an index of this
-   * tensor.
-   *
-   * @param i The index for the x direction.
-   * @param j The index for the y direction.
-   * @param k The index for the z direction.
-   * @param f The function to evaluate.
-   * @param constants An object containing information on the domain.
-   */
-  virtual inline Real evaluate_function_at_index(
-      size_t i, size_t j, size_t k,
-      const std::function<Real(Real, Real, Real)> &f) const = 0;
-
-  virtual inline Real evaluate_function_at_index(
-      Real time, size_t i, size_t j, size_t k,
-      const std::function<Real(Real, Real, Real, Real)> &f) const = 0;
-
-  // A debug function to print the tensor.
-  void print() const;
-  void print(const std::function<bool(Real)> &filter) const;
-};
 
 // Tensor staggered in the x direction.
 class UTensor : public StaggeredTensor {
 public:
   UTensor(const Constants &constants)
-      : StaggeredTensor(constants,
-                        {constants.Nx - 1, constants.Ny, constants.Nz}) {}
+      : StaggeredTensor({constants.Nx_staggered, constants.Ny, constants.Nz}, constants) {}
 
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.dx * i + constants.dx_over_2, constants.dy * j,
-             constants.dz * k);
+    return f(constants.min_x_global + constants.dx * i - constants.dx_over_2, 
+             constants.min_y_global + constants.dy * (constants.base_j+j),
+             constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.dx * i + constants.dx_over_2, constants.dy * j,
-             constants.dz * k);
+    return f(time, constants.min_x_global + constants.dx * i - constants.dx_over_2, 
+             constants.min_y_global + constants.dy * (constants.base_j+j),
+             constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 };
 
@@ -76,21 +33,22 @@ public:
 class VTensor : public StaggeredTensor {
 public:
   VTensor(const Constants &constants)
-      : StaggeredTensor(constants,
-                        {constants.Nx, constants.Ny - 1, constants.Nz}) {}
+      : StaggeredTensor({constants.Nx, constants.Ny_staggered, constants.Nz}, constants) {}
 
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.dx * i, constants.dy * j + constants.dy_over_2,
-             constants.dz * k);
+    return f(constants.min_x_global + constants.dx * i, 
+             constants.min_y_global + constants.dy * (constants.base_j+j) - constants.dy_over_2,
+             constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.dx * i, constants.dy * j + constants.dy_over_2,
-             constants.dz * k);
+    return f(time, constants.min_x_global + constants.dx * i, 
+             constants.min_y_global + constants.dy * (constants.base_j+j) - constants.dy_over_2,
+             constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 };
 
@@ -98,21 +56,22 @@ public:
 class WTensor : public StaggeredTensor {
 public:
   WTensor(const Constants &constants)
-      : StaggeredTensor(constants,
-                        {constants.Nx, constants.Ny, constants.Nz - 1}) {}
+      : StaggeredTensor({constants.Nx, constants.Ny, constants.Nz_staggered}, constants) {}
 
   inline Real evaluate_function_at_index(
       size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.dx * i, constants.dy * j,
-             constants.dz * k + constants.dz_over_2);
+    return f(constants.min_x_global + constants.dx * i, 
+             constants.min_y_global + constants.dy * (constants.base_j+j),
+             constants.min_z_global + constants.dz * (constants.base_k+k) - constants.dz_over_2); 
   }
 
   inline Real evaluate_function_at_index(
       Real time, size_t i, size_t j, size_t k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.dx * i, constants.dy * j,
-             constants.dz * k + constants.dz_over_2);
+    return f(time, constants.min_x_global + constants.dx * i, 
+             constants.min_y_global + constants.dy * (constants.base_j+j),
+             constants.min_z_global + constants.dz * (constants.base_k+k) - constants.dz_over_2); 
   }
 };
 
@@ -144,7 +103,7 @@ public:
   // Apply Dirichlet boundary conditions to all components of the velocity
   // on all boundaries. The function assumes the velocity field is
   // divergence free.
-  void apply_all_dirichlet_bc(Real time);
+  void apply_all_dirichlet_bc(const VectorFunction &exact_velocity);
 };
 
 } // namespace mif
