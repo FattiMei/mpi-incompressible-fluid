@@ -11,6 +11,8 @@ namespace mif {
 class Constants {
 public:
   // Core constants.
+  // In the case of periodic BC, Nx, Ny_global and Nz_global
+  // include the copy of the first point at the end of the domain.
   const size_t Nx;
   const size_t Ny_global;
   const size_t Nz_global;
@@ -57,6 +59,7 @@ public:
   const Real one_over_dz;
 
   // Derived constants for MPI and the staggered grid.
+  // "owner" values ignore periodic BC.
   const int P;
   const size_t Ny_owner;
   const size_t Nz_owner;
@@ -69,6 +72,7 @@ public:
   const size_t base_k;
 
   // Derived constants for the MPI communication.
+  // The neighbors include those related to periodic boundaries.
   const int prev_proc_y;
   const int next_proc_y;
   const int prev_proc_z;

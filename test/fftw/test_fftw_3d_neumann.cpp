@@ -136,6 +136,7 @@ int main(int argc, char *argv[]) {
 
     xtilde = btilde;
 
+    double h = 1.0;
     for (int i = 0; i < N; i++) {
         double t1= compute_eigenvalue_neumann(i, N);
         for (int j = 0; j < N; j++){

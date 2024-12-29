@@ -108,7 +108,7 @@ constexpr Real d3 = 1 - c3;
   /* Compute the velocity solution inside the domain. */                                                                  \
   COMPUTE_STEP(Y2)                                                                                                        \
   /* Apply Dirichlet boundary conditions to the velocity. */                                                              \
-  velocity_buffer.apply_all_dirichlet_bc(exact_velocity.set_time(time_1));                                                \
+  velocity_buffer.apply_bc(exact_velocity.set_time(time_1));                                                \
   /* Solve the pressure equation. */                                                                                      \
   PRESSURE_EQUATION_##nhn(velocity_buffer, dt_1, time_1, t_n)                                                             \
   /* Update the pressure. */                                                                                              \
@@ -120,7 +120,7 @@ constexpr Real d3 = 1 - c3;
   /* Compute the velocity solution inside the domain. */                                                                  \
   COMPUTE_STEP(Y3)                                                                                                        \
   /* Apply Dirichlet boundary conditions to the velocity. */                                                              \
-  velocity.apply_all_dirichlet_bc(exact_velocity.set_time(time_2));                                                       \
+  velocity.apply_bc(exact_velocity.set_time(time_2));                                                       \
   /* Solve the pressure equation. */                                                                                      \
   PRESSURE_EQUATION_##nhn(velocity, dt_2, time_2, time_1)                                                                 \
   /* Update the pressure. */                                                                                              \
@@ -132,7 +132,7 @@ constexpr Real d3 = 1 - c3;
   /* Compute the velocity solution inside the domain. */                                                                  \
   COMPUTE_STEP(U_STAR)                                                                                                    \
   /* Apply Dirichlet boundary conditions to the velocity. */                                                              \
-  velocity_buffer.apply_all_dirichlet_bc(exact_velocity.set_time(final_time));                                            \
+  velocity_buffer.apply_bc(exact_velocity.set_time(final_time));                                            \
   /* Solve the pressure equation. */                                                                                      \
   PRESSURE_EQUATION_##nhn(velocity_buffer, dt_3, final_time, time_2)                                                      \
   /* Update the pressure. */                                                                                              \

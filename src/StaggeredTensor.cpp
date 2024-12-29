@@ -2,25 +2,30 @@
 #include <iostream>
 
 namespace mif {
-    StaggeredTensor::StaggeredTensor(const std::array<size_t, 3> &in_dimensions, const Constants &constants)
-      : Tensor(in_dimensions), constants(constants), prev_y_slice_recv({}), next_y_slice_recv({}),
+    StaggeredTensor::StaggeredTensor(const Constants &constants, const StaggeringDirection &staggering)
+      : Tensor(staggering == StaggeringDirection::x ? std::array<size_t,3>({constants.Nx_staggered, constants.Ny, constants.Nz}) : 
+               (staggering == StaggeringDirection::y ? std::array<size_t,3>({constants.Nx, constants.Ny_staggered, constants.Nz}) :
+               (staggering == StaggeringDirection::z ? std::array<size_t,3>({constants.Nx, constants.Ny, constants.Nz_staggered}) :
+               std::array<size_t,3>({constants.Nx, constants.Ny, constants.Nz})))), 
+      constants(constants), staggering(staggering), prev_y_slice_recv({}), next_y_slice_recv({}),
       prev_y_slice_send({}), next_y_slice_send({}) {
   if (constants.Py > 1 || constants.Pz > 1) {
+    const std::array<size_t, 3> &sizes = this->sizes();
     // We treat non-zero processors by creating MPI datatypes for slices of the
     // tensor. MPI addressing is computed, and the relative information about
     // neighbouring processors, min and max addresses, etc., is stored.
-    MPI_Type_contiguous(in_dimensions[0]*in_dimensions[2], MPI_MIF_REAL, &Slice_type_constant_y);
+    MPI_Type_contiguous(sizes[0]*sizes[2], MPI_MIF_REAL, &Slice_type_constant_y);
     MPI_Type_commit(&Slice_type_constant_y);
-    MPI_Type_contiguous(in_dimensions[0]*in_dimensions[1], MPI_MIF_REAL, &Slice_type_constant_z);
+    MPI_Type_contiguous(sizes[0]*sizes[1], MPI_MIF_REAL, &Slice_type_constant_z);
     MPI_Type_commit(&Slice_type_constant_z);
 
     if (constants.prev_proc_y != -1) {
-      prev_y_slice_recv = Tensor<Real, 2U, size_t>({in_dimensions[0], in_dimensions[2]});
-      prev_y_slice_send = Tensor<Real, 2U, size_t>({in_dimensions[0], in_dimensions[2]});
+      prev_y_slice_recv = Tensor<Real, 2U, size_t>({sizes[0], sizes[2]});
+      prev_y_slice_send = Tensor<Real, 2U, size_t>({sizes[0], sizes[2]});
     }
      if (constants.next_proc_y != -1) {
-      next_y_slice_send = Tensor<Real, 2U, size_t>({in_dimensions[0], in_dimensions[2]});
-      next_y_slice_recv = Tensor<Real, 2U, size_t>({in_dimensions[0], in_dimensions[2]});
+      next_y_slice_send = Tensor<Real, 2U, size_t>({sizes[0], sizes[2]});
+      next_y_slice_recv = Tensor<Real, 2U, size_t>({sizes[0], sizes[2]});
     }
 
     recompute_mpi_addressing();
@@ -51,7 +56,7 @@ void StaggeredTensor::recompute_mpi_addressing() {
 
 void StaggeredTensor::send_mpi_data(int base_tag) {
   const std::array<size_t, 3> &sizes = this->sizes();
-  
+
   // After checking if the neighbouring processors are valid, we send the data
   // to them using MPI_Isend, which is a non-blocking send operation.
   // This is where we practically use previously computed MPI addressing.
@@ -197,6 +202,71 @@ void StaggeredTensor::set(const std::function<Real(Real, Real, Real)> &f, bool i
     for (size_t j = lower_limit; j < upper_limit_j; j++) {
       for (size_t k = lower_limit; k < upper_limit_k; k++) {
         this->operator()(i, j, k) = evaluate_function_at_index(i, j, k, f);
+      }
+    }
+  }
+}
+
+void StaggeredTensor::apply_periodic_bc() {
+  const std::array<size_t, 3> &sizes = this->sizes();
+
+  // x faces.
+  if (constants.periodic_bc[0]) {
+    if (staggering == StaggeringDirection::x) {
+      // Staggered case: copy the second to last x slice into the first,
+      // and the second x slice into the last.
+      for (size_t k = 0; k < sizes[2]; k++) {
+        for (size_t j = 0; j < sizes[1]; j++) {
+          this->operator()(0,j,k) = this->operator()(sizes[0]-2,j,k);
+          this->operator()(sizes[0]-1,j,k) = this->operator()(1,j,k);
+        }
+      }
+    } else {
+      // Unstaggered case: copy the first x slice into the last.
+      for (size_t k = 0; k < sizes[2]; k++) {
+        for (size_t j = 0; j < sizes[1]; j++) {
+          this->operator()(sizes[0]-1,j,k) = this->operator()(0,j,k);
+        }
+      }
+    }
+  }
+
+  if (constants.periodic_bc[1] && constants.Py == 1) {
+    if (staggering == StaggeringDirection::y) {
+      // Staggered case: copy the second to last y slice into the first,
+      // and the second y slice into the last.
+      for (size_t k = 0; k < sizes[2]; k++) {
+        for (size_t i = 0; i < sizes[0]; i++) {
+          this->operator()(i,0,k) = this->operator()(i,sizes[1]-2,k);
+          this->operator()(i,sizes[1]-1,k) = this->operator()(i,1,k);
+        }
+      }
+    } else {
+      // Unstaggered case: copy the first x slice into the last.
+      for (size_t k = 0; k < sizes[2]; k++) {
+        for (size_t i = 0; i < sizes[0]; i++) {
+          this->operator()(i,sizes[1]-1,k) = this->operator()(i,0,k);
+        }
+      }
+    }
+  }
+
+  if (constants.periodic_bc[2] && constants.Pz == 1) {
+    if (staggering == StaggeringDirection::z) {
+      // Staggered case: copy the second to last z slice into the first,
+      // and the second z slice into the last.
+      for (size_t j = 0; j < sizes[1]; j++) {
+        for (size_t i = 0; i < sizes[0]; i++) {
+          this->operator()(i,j,0) = this->operator()(i,j,sizes[2]-2);
+          this->operator()(i,j,sizes[2]-1) = this->operator()(i,j,1);
+        }
+      }
+    } else {
+      // Unstaggered case: copy the first x slice into the last.
+      for (size_t j = 0; j < sizes[1]; j++) {
+        for (size_t i = 0; i < sizes[0]; i++) {
+          this->operator()(i,j,sizes[2]-1) = this->operator()(i,j,0);
+        }
       }
     }
   }

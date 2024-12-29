@@ -97,8 +97,8 @@ int main(int argc, char *argv[]) {
             for (int j = 0; j < N; j++){
                 extract_array(b, N, i*N*N + j*N, temp1);
                 fftw_execute(b_to_btilde_plan);
-                for (int k = 0; k < N; k++)
-                    btilde[index3D(i, j, k,)] = temp2[k];
+                for (int k = 0; k < N; k++) {
+                    btilde[index3D(i, j, k, N)] = temp2[k];
                 }
             }
         }

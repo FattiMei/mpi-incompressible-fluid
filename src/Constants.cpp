@@ -77,10 +77,11 @@ Constants::Constants(size_t Nx, size_t Ny_global, size_t Nz_global,
       one_over_dy(1 / dy), one_over_dz(1 / dz), P(Py * Pz), 
       Ny_owner(Ny_global / Py + ((static_cast<size_t>(y_rank) < Ny_global % Py) ? 1 : 0)),
       Nz_owner(Nz_global / Pz + ((static_cast<size_t>(z_rank) < Nz_global % Pz) ? 1 : 0)),
-      Ny((Py == 1) ? Ny_owner : ((y_rank == 0 || y_rank == (Py-1)) ? Ny_owner+1 : Ny_owner+2)),
-      Nz((Pz == 1) ? Nz_owner : ((z_rank == 0 || z_rank == (Pz-1)) ? Nz_owner+1 : Nz_owner+2)),
+      Ny((Py == 1) ? Ny_owner : ((y_rank == 0 || (y_rank == (Py-1) && !periodic_bc[1])) ? Ny_owner+1 : Ny_owner+2)),
+      Nz((Pz == 1) ? Nz_owner : ((z_rank == 0 || (z_rank == (Pz-1) && !periodic_bc[2])) ? Nz_owner+1 : Nz_owner+2)),
       Nx_staggered(Nx + 1), 
-      Ny_staggered((y_rank == Py-1) ? Ny + 1 : Ny), Nz_staggered((z_rank == Pz-1) ? Nz + 1 : Nz),
+      Ny_staggered((y_rank == Py-1 && !periodic_bc[1]) ? Ny + 1 : Ny), 
+      Nz_staggered((z_rank == Pz-1 && !periodic_bc[2]) ? Nz + 1 : Nz),
       
       // Calculate the minimum and maximum values of y and z for the current
       // processor. Each processor will have a different subset of the domain.
@@ -91,8 +92,10 @@ Constants::Constants(size_t Nx, size_t Ny_global, size_t Nz_global,
       
       // Calculate the neighbouring processors in the y and z directions based
       // on the rank.
-      prev_proc_y((y_rank == 0)? -1: rank-Pz), next_proc_y((y_rank == Py - 1)? -1: rank+Pz),
-      prev_proc_z((z_rank == 0)? -1: rank-1), next_proc_z((z_rank == Pz - 1)? -1: rank+1) {
+      prev_proc_y((y_rank == 0)? ((Py > 1 && periodic_bc[1]) ? rank+(Py-1)*Pz: -1): rank-Pz), 
+      next_proc_y((y_rank == Py - 1)? ((Py > 1 && periodic_bc[1]) ? rank-(Py-1)*Pz: -1): rank+Pz),
+      prev_proc_z((z_rank == 0)? ((Pz > 1 && periodic_bc[2]) ? rank+Pz-1: -1): rank-1), 
+      next_proc_z((z_rank == Pz - 1)? ((Pz > 1 && periodic_bc[2]) ? rank-(Pz-1): -1): rank+1) {
 
   // Ensure that the number of domains in each direction is at least 2.
   assert(Nx >= 2 && Ny >= 2 && Nz >= 2);
@@ -109,8 +112,8 @@ Constants::Constants(size_t Nx, size_t Ny_global, size_t Nz_global,
   assert(rank >= 0 && rank < P);
 
   // Ensure that the previous and next processors in y direction are valid.
-  assert(prev_proc_y >= -1 && prev_proc_y < rank && (next_proc_y == -1 || next_proc_y > rank) && next_proc_y < P);
-  assert(prev_proc_z >= -1 && prev_proc_z < rank && (next_proc_z == -1 || next_proc_z > rank) && next_proc_z < P);
+  assert(prev_proc_y >= -1 && prev_proc_y < rank && next_proc_y >= -1 && next_proc_y < P);
+  assert(prev_proc_z >= -1 && prev_proc_z < rank && next_proc_z >= -1 && next_proc_z < P);
 }
 
 } // namespace mif

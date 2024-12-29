@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     const size_t Ny = 3;
     const size_t Nz = 2;
     const Constants constants(Nx, Ny, Nz, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1, 1, 1, 0, {false, false, false});
-    StaggeredTensor tensor({Nx, Ny, Nz}, constants);
+    StaggeredTensor tensor(constants, StaggeringDirection::none);
 
     // Initialize the tensor with easily recognizable values.
     for (size_t k = 0; k < Nz; k++) {

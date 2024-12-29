@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   constexpr Real Re = 1e4;
   constexpr Real final_time = 1e-4;
   const unsigned int num_time_steps = std::atoi(argv[2]);
-  const std::array<bool, 3> periodic_bc{false, false, true};
+  const std::array<bool, 3> periodic_bc{false, false, false};
 
   // Given the number of processors in the z direction, compute the number of
   // processors in the y direction and verify that the total number of

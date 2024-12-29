@@ -66,8 +66,8 @@ int main(int argc, char *argv[]) {
   VelocityTensor velocity(constants);
   VelocityTensor velocity_buffer(constants);
   VelocityTensor rhs_buffer(constants);
-  StaggeredTensor pressure({constants.Nx, constants.Ny, constants.Nz}, constants);
-  StaggeredTensor pressure_buffer({constants.Nx, constants.Ny, constants.Nz}, constants);
+  StaggeredTensor pressure(constants, StaggeringDirection::none);
+  StaggeredTensor pressure_buffer(constants, StaggeringDirection::none);
   PressureTensor pressure_solver_buffer(structures);
 
   // Set the initial conditions.

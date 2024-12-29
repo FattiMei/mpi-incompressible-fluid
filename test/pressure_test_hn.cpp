@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
     
     VelocityTensor velocity(constants);
     PressureTensor pressure_solver_buffer(structures);
-    StaggeredTensor pressure({constants.Nx, constants.Ny, constants.Nz}, constants);
+    StaggeredTensor pressure(constants, StaggeringDirection::none);
 
     // Set the right-hand side.
     TimeVectorFunction exact_velocity(u_exact_p_test, v_exact_p_test, w_exact_p_test);
