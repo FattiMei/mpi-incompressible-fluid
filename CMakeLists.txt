@@ -119,6 +119,7 @@ endif()
 add_executable(tensor_usage_test test/tensor_usage_test.cpp)
 
 add_executable(velocity_test test/velocity_test.cpp)
+add_executable(velocity_test_mixed test/velocity_test_mixed.cpp)
 add_executable(mpi_test test/mpi_test.cpp)
 
 add_executable(fftw_Dirichlet3D test/fftw3D_Dirichlet.cpp)
@@ -151,6 +152,7 @@ add_executable(full_test test/full_test.cpp)
 target_link_libraries(tensor_usage_test PRIVATE miflib)
 
 target_link_libraries(velocity_test PRIVATE miflib)
+target_link_libraries(velocity_test_mixed PRIVATE miflib)
 
 target_link_libraries(fftw_Dirichlet3D PRIVATE decomp)
 target_link_libraries(fftw_Dirichlet1D PRIVATE decomp)
