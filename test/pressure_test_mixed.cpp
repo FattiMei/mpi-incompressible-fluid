@@ -25,10 +25,10 @@ int main(int argc, char* argv[]) {
     constexpr Real y_size = x_size;
     constexpr Real z_size = x_size;
     const size_t Nx_global = std::atol(argv[1]);
-    const size_t Ny_global = Nx_global * 3;
-    const size_t Nz_global = Nx_global * 5;
+    const size_t Ny_global = Nx_global;
+    const size_t Nz_global = Nx_global;
     constexpr Real time = 1.0;
-    const std::array<bool, 3> periodic_bc{false, false, true};
+    const std::array<bool, 3> periodic_bc{true, true, true};
 
     const int Pz = std::atol(argv[2]);
     const int Py = size / Pz;
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
 
     // Solve.
     const auto before = chrono::high_resolution_clock::now();
-    solve_pressure_equation_homogeneous_neumann(pressure, pressure_solver_buffer, velocity, constants.dt);
+    solve_pressure_equation_homogeneous_periodic(pressure, pressure_solver_buffer, velocity, constants.dt);
     const auto after = chrono::high_resolution_clock::now();
     const Real execution_time = (after-before).count() / 1e9;
 

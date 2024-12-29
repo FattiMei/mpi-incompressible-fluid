@@ -27,7 +27,7 @@ public:
     void copy_to_staggered(StaggeredTensor &other, int base_tag) const;
 
     // Print the tensor.
-    void print_inline();
+    void print_inline() const;
 };
 
 } // mif

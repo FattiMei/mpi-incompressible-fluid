@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 
     // Solve.
     const auto before = chrono::high_resolution_clock::now();
-    solve_pressure_equation_homogeneous_neumann(pressure, pressure_solver_buffer, velocity, constants.dt);
+    solve_pressure_equation_homogeneous_periodic(pressure, pressure_solver_buffer, velocity, constants.dt);
     const auto after = chrono::high_resolution_clock::now();
     const Real execution_time = (after-before).count() / 1e9;
 

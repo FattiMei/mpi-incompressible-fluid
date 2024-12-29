@@ -64,26 +64,26 @@ constexpr Real d3 = 1 - c3;
 
 // Add the pressure gradient adjustment to the velocity.
 // This requires MPI communication for the update to the ghost points.
-#define UPDATE_VELOCITY(velocity, delta_time) {                                                                                                 \
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.u, false, velocity.u(i,j,k) -= pressure_gradient_u(pressure_buffer, i, j, k) * delta_time;) \
-  velocity.u.send_mpi_data(0);                                                                                                                  \
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.v, false, velocity.v(i,j,k) -= pressure_gradient_v(pressure_buffer, i, j, k) * delta_time;) \
-  velocity.v.send_mpi_data(4);                                                                                                                  \
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.w, false, velocity.w(i,j,k) -= pressure_gradient_w(pressure_buffer, i, j, k) * delta_time;) \
-  velocity.w.send_mpi_data(8);                                                                                                                  \
-  velocity.u.receive_mpi_data(0);                                                                                                               \
-  velocity.v.receive_mpi_data(4);                                                                                                               \
-  velocity.w.receive_mpi_data(8);                                                                                                               \
+void update_velocity_pressure_gradient(VelocityTensor &velocity, const StaggeredTensor &pressure, Real delta_time) {
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.u, false, velocity.u(i,j,k) -= pressure_gradient_u(pressure, i, j, k) * delta_time;)
+  velocity.u.send_mpi_data(0);                                                                                                                 
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.v, false, velocity.v(i,j,k) -= pressure_gradient_v(pressure, i, j, k) * delta_time;)
+  velocity.v.send_mpi_data(4);                                                                                                                 
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.w, false, velocity.w(i,j,k) -= pressure_gradient_w(pressure, i, j, k) * delta_time;)
+  velocity.w.send_mpi_data(8);                                                                                                                 
+  velocity.u.receive_mpi_data(0);                                                                                                              
+  velocity.v.receive_mpi_data(4);                                                                                                              
+  velocity.w.receive_mpi_data(8);   
 }
 
 // Add the pressure difference to the pressure.
-#define UPDATE_PRESSURE() {                                                                            \
-  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, pressure(i,j,k) += pressure_buffer(i,j,k);) \
+void update_pressure(StaggeredTensor &pressure, const StaggeredTensor &pressure_difference) {
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(pressure, true, pressure(i,j,k) += pressure_difference(i,j,k);)
 }
 
 // Solve the pressure equation (different function call based on boundary conditions).
 #define PRESSURE_EQUATION_false(velocity, dt, new_time, prev_time) {                    \
-  solve_pressure_equation_homogeneous_neumann(pressure_buffer, pressure_solver_buffer,  \
+  solve_pressure_equation_homogeneous_periodic(pressure_buffer, pressure_solver_buffer,  \
                                               velocity, dt);                            \
 }
 
@@ -108,37 +108,37 @@ constexpr Real d3 = 1 - c3;
   /* Compute the velocity solution inside the domain. */                                                                  \
   COMPUTE_STEP(Y2)                                                                                                        \
   /* Apply Dirichlet boundary conditions to the velocity. */                                                              \
-  velocity_buffer.apply_bc(exact_velocity.set_time(time_1));                                                \
+  velocity_buffer.apply_bc(exact_velocity.set_time(time_1));                                                              \
   /* Solve the pressure equation. */                                                                                      \
   PRESSURE_EQUATION_##nhn(velocity_buffer, dt_1, time_1, t_n)                                                             \
   /* Update the pressure. */                                                                                              \
-  UPDATE_PRESSURE()                                                                                                       \
+  update_pressure(pressure, pressure_buffer);                                                                             \
   /* Update the velocity. */                                                                                              \
-  UPDATE_VELOCITY(velocity_buffer, dt_1)                                                                                  \
+  update_velocity_pressure_gradient(velocity_buffer, pressure_buffer, dt_1);                                              \
                                                                                                                           \
   /* Stage 2. */                                                                                                          \
   /* Compute the velocity solution inside the domain. */                                                                  \
   COMPUTE_STEP(Y3)                                                                                                        \
   /* Apply Dirichlet boundary conditions to the velocity. */                                                              \
-  velocity.apply_bc(exact_velocity.set_time(time_2));                                                       \
+  velocity.apply_bc(exact_velocity.set_time(time_2));                                                                     \
   /* Solve the pressure equation. */                                                                                      \
   PRESSURE_EQUATION_##nhn(velocity, dt_2, time_2, time_1)                                                                 \
   /* Update the pressure. */                                                                                              \
-  UPDATE_PRESSURE()                                                                                                       \
+  update_pressure(pressure, pressure_buffer);                                                                             \
   /* Update the velocity. */                                                                                              \
-  UPDATE_VELOCITY(velocity, dt_2)                                                                                         \
+  update_velocity_pressure_gradient(velocity, pressure_buffer, dt_2);                                                     \
                                                                                                                           \
   /* Stage 3. */                                                                                                          \
   /* Compute the velocity solution inside the domain. */                                                                  \
   COMPUTE_STEP(U_STAR)                                                                                                    \
   /* Apply Dirichlet boundary conditions to the velocity. */                                                              \
-  velocity_buffer.apply_bc(exact_velocity.set_time(final_time));                                            \
+  velocity_buffer.apply_bc(exact_velocity.set_time(final_time));                                                          \
   /* Solve the pressure equation. */                                                                                      \
   PRESSURE_EQUATION_##nhn(velocity_buffer, dt_3, final_time, time_2)                                                      \
   /* Update the pressure. */                                                                                              \
-  UPDATE_PRESSURE()                                                                                                       \
+  update_pressure(pressure, pressure_buffer);                                                                             \
   /* Update the velocity. */                                                                                              \
-  UPDATE_VELOCITY(velocity_buffer, dt_3)                                                                                  \
+  update_velocity_pressure_gradient(velocity_buffer, pressure_buffer, dt_3);                                              \
                                                                                                                           \
   /* Put the velocity solution in the original tensors. */                                                                \
   velocity.swap_data(velocity_buffer);                                                                                    \

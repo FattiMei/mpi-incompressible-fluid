@@ -340,7 +340,8 @@ int main(int argc, char *argv[]) {
 
     // BLOCK ALL PROCS AT THIS POINT
     int MPI_Barrier( MPI_Comm comm );
-    double difference, diffGlob;
+    double difference = 0;
+    double diffGlob;
     if (mpiRank==0) {
         // Of course only rank 0 has x(0) and Uex(0) GLOBALS
         difference = x[0] - Uex[0];

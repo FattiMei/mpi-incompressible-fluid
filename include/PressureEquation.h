@@ -5,12 +5,12 @@
 #include "VelocityTensor.h"
 
 namespace mif {
-    // Solve the pressure equation with homogeneous Neumann BC. The function will use
+    // Solve the pressure equation with homogeneous Neumann or periodic BC. The function will use
     // tags [100, 103] for MPI communication.
-    void solve_pressure_equation_homogeneous_neumann(StaggeredTensor &pressure, 
-                                                     PressureTensor &pressure_buffer,
-                                                     const VelocityTensor &velocity,
-                                                     Real dt);
+    void solve_pressure_equation_homogeneous_periodic(StaggeredTensor &pressure, 
+                                                      PressureTensor &pressure_buffer,
+                                                      const VelocityTensor &velocity,
+                                                      Real dt);
     
     // Solve the pressure equation with non-homogeneous Neumann BC. The function will use
     // tags [100, 103] for MPI communication.
