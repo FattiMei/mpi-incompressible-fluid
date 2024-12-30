@@ -95,32 +95,32 @@ public:
    * @param constants An object containing information on the domain.
    */
   inline Real evaluate_function_at_index_unstaggered(
-    Real time, size_t i, size_t j, size_t k,
+    Real time, int i, int j, int k,
       const std::function<Real(Real, Real, Real, Real)> &f) const {
-    return f(time, constants.min_x_global + constants.dx * i, 
+    return f(time, constants.min_x_global + constants.dx * (constants.base_i+i), 
              constants.min_y_global + constants.dy * (constants.base_j+j),
              constants.min_z_global + constants.dz * (constants.base_k+k));    
   }
 
   // Do the same, but without the time dependency.
   inline Real evaluate_function_at_index_unstaggered(
-    size_t i, size_t j, size_t k,
+    int i, int j, int k,
       const std::function<Real(Real, Real, Real)> &f) const {
-    return f(constants.min_x_global + constants.dx * i, 
+    return f(constants.min_x_global + constants.dx * (constants.base_i+i), 
              constants.min_y_global + constants.dy * (constants.base_j+j),
              constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 
   // Do the same considering staggering.
   virtual inline Real evaluate_function_at_index(
-    Real time, size_t i, size_t j, size_t k,
+    Real time, int i, int j, int k,
     const std::function<Real(Real, Real, Real, Real)> &f) const {
       return evaluate_function_at_index_unstaggered(time, i, j, k, f);
   }
 
   // Do the same considering staggering.
   virtual inline Real evaluate_function_at_index(
-      size_t i, size_t j, size_t k,
+      int i, int j, int k,
       const std::function<Real(Real, Real, Real)> &f) const {
       return evaluate_function_at_index_unstaggered(i, j, k, f);
   }

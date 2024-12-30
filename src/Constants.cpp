@@ -75,21 +75,23 @@ Constants::Constants(size_t Nx_global, size_t Ny_global, size_t Nz_global,
       one_over_dy2_Re(1 / (Re * dy * dy)), one_over_dz2_Re(1 / (Re * dz * dz)), 
       dx_over_2(dx / 2), dy_over_2(dy / 2), dz_over_2(dz / 2), one_over_dx(1 / dx), 
       one_over_dy(1 / dy), one_over_dz(1 / dz), P(Py * Pz), 
-      Ny_owner(Ny_global / Py + ((static_cast<size_t>(y_rank) < Ny_global % Py) ? 1 : 0)),
-      Nz_owner(Nz_global / Pz + ((static_cast<size_t>(z_rank) < Nz_global % Pz) ? 1 : 0)),
+      Ny_owner((Ny_global - periodic_bc[1]) / Py + ((static_cast<size_t>(y_rank) < ((Ny_global - periodic_bc[1]) % Py)) ? 1 : 0)),
+      Nz_owner((Nz_global - periodic_bc[2]) / Pz + ((static_cast<size_t>(z_rank) < ((Nz_global - periodic_bc[2]) % Pz)) ? 1 : 0)),
       Nx((periodic_bc[0] ? Nx_global+1 : Nx_global)),
-      Ny((Py == 1) ? (periodic_bc[1] ? Ny_owner+1 : Ny_owner) : ((y_rank == 0 || (y_rank == (Py-1) && !periodic_bc[1])) ? Ny_owner+1 : Ny_owner+2)),
-      Nz((Pz == 1) ? (periodic_bc[2] ? Nz_owner+1 : Nz_owner) : ((z_rank == 0 || (z_rank == (Pz-1) && !periodic_bc[2])) ? Nz_owner+1 : Nz_owner+2)),
+      Ny((Py == 1) ? (periodic_bc[1] ? Ny_global+1 : Ny_global) : (((y_rank == (Py-1) && !periodic_bc[1]) || (y_rank == 0 && !periodic_bc[1])) ? Ny_owner+1 : Ny_owner+2)),
+      Nz((Pz == 1) ? (periodic_bc[2] ? Nz_global+1 : Nz_global) : (((z_rank == (Pz-1) && !periodic_bc[2]) || (z_rank == 0 && !periodic_bc[2])) ? Nz_owner+1 : Nz_owner+2)),
       Nx_staggered(periodic_bc[0] ? Nx : Nx + 1), 
-      Ny_staggered((y_rank == Py-1 && !periodic_bc[1]) ? Ny + 1 : Ny), 
-      Nz_staggered((z_rank == Pz-1 && !periodic_bc[2]) ? Nz + 1 : Nz),
-      
-      // Calculate the minimum and maximum values of y and z for the current
-      // processor. Each processor will have a different subset of the domain.
-      // If the domain cannot be split evenly, bonus point go to the first processors
+      Ny_staggered((y_rank == (Py-1) && !periodic_bc[1]) ? Ny + 1 : Ny), 
+      Nz_staggered((z_rank == (Pz-1) && !periodic_bc[2]) ? Nz + 1 : Nz),
+
+      // Each processor will have a different subset of the domain.
+      // If the domain cannot be split evenly, bonus points go to the first processors
       // in each direction.
-      base_j(Ny_global / Py * y_rank + std::min(static_cast<size_t>(y_rank), Ny_global % Py) - (y_rank > 0 ? 1: 0)),
-      base_k(Nz_global / Pz * z_rank + std::min(static_cast<size_t>(z_rank), Nz_global % Pz) - (z_rank > 0 ? 1: 0)),
+      // Due to periodic BC, there may be a bonus point before and after the end of 
+      // the domain.
+      base_i(periodic_bc[0] ? -1 : 0),
+      base_j((Ny_global - periodic_bc[1]) / Py * y_rank + std::min(static_cast<size_t>(y_rank), (Ny_global - periodic_bc[1]) % Py) - ((y_rank > 0 || periodic_bc[1]) ? 1: 0)),
+      base_k((Nz_global - periodic_bc[2]) / Pz * z_rank + std::min(static_cast<size_t>(z_rank), (Nz_global - periodic_bc[2]) % Pz) - ((z_rank > 0 || periodic_bc[2]) ? 1: 0)),
       
       // Calculate the neighbouring processors in the y and z directions based
       // on the rank.

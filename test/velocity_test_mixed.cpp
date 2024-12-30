@@ -84,6 +84,10 @@ int main(int argc, char *argv[]) {
     timestep_velocity(velocity, velocity_buffer, rhs_buffer, exact_velocity, current_time);
   }
 
+  //if (rank == 0) velocity.u.print();
+  //MPI_Barrier(MPI_COMM_WORLD);
+  //if (rank == 1) velocity.u.print();
+
   // Compute the norms of the error.
   const Real error_l1_local = ErrorL1Norm(velocity, exact_velocity, final_time);
   const Real error_l2_local = ErrorL2Norm(velocity, exact_velocity, final_time);

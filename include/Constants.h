@@ -61,6 +61,7 @@ public:
 
   // Derived constants for MPI and the staggered grid.
   // "owner" values ignore periodic BC.
+  // Note: base_i, j and k may be negative due to periodic BC.
   const int P;
   const size_t Ny_owner;
   const size_t Nz_owner;
@@ -70,8 +71,9 @@ public:
   const size_t Nx_staggered;
   const size_t Ny_staggered;
   const size_t Nz_staggered;
-  const size_t base_j;
-  const size_t base_k;
+  const int base_i;
+  const int base_j;
+  const int base_k;
 
   // Derived constants for the MPI communication.
   // The neighbors include those related to periodic boundaries.
