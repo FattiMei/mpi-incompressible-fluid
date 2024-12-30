@@ -11,7 +11,7 @@ namespace mif {
 
     PressureSolverStructures::PressureSolverStructures(const Constants &constants):
         periodic_bc{constants.periodic_bc[0], constants.periodic_bc[1], constants.periodic_bc[2]},
-        Nx_points(constants.Nx - (periodic_bc[0] ? 1 : 0)), 
+        Nx_points(constants.Nx_global - (periodic_bc[0] ? 1 : 0)), 
         Ny_points(constants.Ny_global - (periodic_bc[1] ? 1 : 0)), 
         Nz_points(constants.Nz_global - (periodic_bc[2] ? 1 : 0)), 
         c2d(C2Decomp(Nx_points, Ny_points, Nz_points, constants.Py, constants.Pz, periodic_bc)),

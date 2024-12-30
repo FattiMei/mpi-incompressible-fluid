@@ -11,9 +11,10 @@ namespace mif {
 class Constants {
 public:
   // Core constants.
-  // In the case of periodic BC, Nx, Ny_global and Nz_global
-  // include the copy of the first point at the end of the domain.
-  const size_t Nx;
+  // In the case of periodic BC, Nx_global, Ny_global and Nz_global
+  // include the copy of the first point at the end of the domain,
+  // but not the copy of the second point after the end.
+  const size_t Nx_global;
   const size_t Ny_global;
   const size_t Nz_global;
   const Real x_size;
@@ -63,6 +64,7 @@ public:
   const int P;
   const size_t Ny_owner;
   const size_t Nz_owner;
+  const size_t Nx;
   const size_t Ny;
   const size_t Nz;
   const size_t Nx_staggered;
@@ -79,7 +81,7 @@ public:
   const int next_proc_z;
 
   // Constructor.
-  Constants(size_t Nx, size_t Ny_global, size_t Nz_global, 
+  Constants(size_t Nx_global, size_t Ny_global, size_t Nz_global, 
             Real x_size, Real y_size_global, Real z_size_global, 
             Real min_x_global, Real min_y_global, Real min_z_global, 
             Real Re, Real final_time, unsigned int num_time_steps,

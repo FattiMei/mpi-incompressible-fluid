@@ -25,10 +25,10 @@ int main(int argc, char* argv[]) {
     constexpr Real y_size = x_size;
     constexpr Real z_size = x_size;
     const size_t Nx_global = std::atol(argv[1]);
-    const size_t Ny_global = Nx_global;
+    const size_t Ny_global = Nx_global; // TODO: change the number of points.
     const size_t Nz_global = Nx_global;
     constexpr Real time = 1.0;
-    const std::array<bool, 3> periodic_bc{true, true, true};
+    const std::array<bool, 3> periodic_bc{true, true, true}; // TODO: change the BC.
 
     const int Pz = std::atol(argv[2]);
     const int Py = size / Pz;

@@ -46,8 +46,8 @@ void VelocityTensor::apply_bc(const VectorFunction &exact_velocity) {
     // Face 1: z=z_min
     if (constants.prev_proc_z == -1 && !constants.periodic_bc[2]) {
       if (component == 2) {
-        for (size_t j = 1; j < constants.Ny - 1; j++) {
-          for (size_t i = 1; i < constants.Nx - 1; i++) {
+        for (size_t j = 0; j < sizes[1]; j++) { 
+          for (size_t i = 0; i < sizes[0]; i++) {
             const Real w_at_boundary = tensor->evaluate_function_at_index_unstaggered(i, j, 0, func);
             const Real du_dx =
                 (u.evaluate_function_at_index(i + 1, j, 0, exact_velocity.f_u) -
@@ -73,8 +73,8 @@ void VelocityTensor::apply_bc(const VectorFunction &exact_velocity) {
     // Face 2: z=z_max
     if (constants.next_proc_z == -1 && !constants.periodic_bc[2]) {
       if (component == 2) {
-        for (size_t j = 1; j < constants.Ny - 1; j++) {
-          for (size_t i = 1; i < constants.Nx - 1; i++) {
+        for (size_t j = 0; j < sizes[1]; j++) { 
+          for (size_t i = 0; i < sizes[0]; i++) {
             const Real w_at_boundary = tensor->evaluate_function_at_index_unstaggered(i, j, constants.Nz - 1, func);
             const Real du_dx = (u.evaluate_function_at_index(
                                     i + 1, j, constants.Nz - 1, exact_velocity.f_u) -
@@ -104,8 +104,8 @@ void VelocityTensor::apply_bc(const VectorFunction &exact_velocity) {
     // Face 3: y=y_min
     if (constants.prev_proc_y == -1 && !constants.periodic_bc[1]) {
       if (component == 1) {
-        for (size_t k = 1; k < constants.Nz - 1; k++) { 
-          for (size_t i = 1; i < constants.Nx - 1; i++) {
+        for (size_t k = 0; k < sizes[2]; k++) {
+          for (size_t i = 0; i < sizes[0]; i++) {
             const Real v_at_boundary = tensor->evaluate_function_at_index_unstaggered(i, 0, k, func);
             const Real du_dx =
                 (u.evaluate_function_at_index(i + 1, 0, k, exact_velocity.f_u) -
@@ -131,8 +131,8 @@ void VelocityTensor::apply_bc(const VectorFunction &exact_velocity) {
     // Face 4: y=y_max
     if (constants.next_proc_y == -1 && !constants.periodic_bc[1]) {
       if (component == 1) {
-        for (size_t k = 1; k < constants.Nz - 1; k++) {
-          for (size_t i = 1; i < constants.Nx - 1; i++) {
+        for (size_t k = 0; k < sizes[2]; k++) {
+          for (size_t i = 0; i < sizes[0]; i++) {
             const Real v_at_boundary = tensor->evaluate_function_at_index_unstaggered(i, constants.Ny - 1, k, func);
             const Real du_dx = (u.evaluate_function_at_index(
                                     i + 1, constants.Ny - 1, k, exact_velocity.f_u) -
@@ -162,8 +162,8 @@ void VelocityTensor::apply_bc(const VectorFunction &exact_velocity) {
     // Face 5: x=x_min
     if (!constants.periodic_bc[0]) {
       if (component == 0) {
-        for (size_t k = 1; k < constants.Nz - 1; k++) {
-          for (size_t j = 1; j < constants.Ny - 1; j++) {
+        for (size_t k = 0; k < sizes[2]; k++) {
+          for (size_t j = 0; j < sizes[1]; j++) {
             const Real u_at_boundary = tensor->evaluate_function_at_index_unstaggered(0, j, k, func);
             const Real dv_dy =
                 (v.evaluate_function_at_index(0, j + 1, k, exact_velocity.f_v) -
@@ -189,8 +189,8 @@ void VelocityTensor::apply_bc(const VectorFunction &exact_velocity) {
     // Face 6: x=x_max
     if (!constants.periodic_bc[0]) {
       if (component == 0) {
-        for (size_t k = 1; k < constants.Nz - 1; k++) {
-          for (size_t j = 1; j < constants.Ny - 1; j++) {
+        for (size_t k = 0; k < sizes[2]; k++) {
+          for (size_t j = 0; j < sizes[1]; j++) {
             const Real u_at_boundary = tensor->evaluate_function_at_index_unstaggered(constants.Nx_domains, j, k, func);
             const Real dv_dy = (v.evaluate_function_at_index(
                                     constants.Nx - 1, j + 1, k, exact_velocity.f_v) -

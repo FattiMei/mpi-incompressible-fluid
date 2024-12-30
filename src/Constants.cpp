@@ -55,19 +55,19 @@ namespace mif {
  * @param Py Number of processors in the y direction.
  * @param rank Rank of the current processor.
  */
-Constants::Constants(size_t Nx, size_t Ny_global, size_t Nz_global, 
+Constants::Constants(size_t Nx_global, size_t Ny_global, size_t Nz_global, 
                      Real x_size, Real y_size_global, Real z_size_global, 
                      Real min_x_global, Real min_y_global, Real min_z_global,
                      Real Re, Real final_time, unsigned int num_time_steps,
                      int Py, int Pz, int rank, const std::array<bool, 3> &periodic_bc)
-    : Nx(Nx), Ny_global(Ny_global), Nz_global(Nz_global),
+    : Nx_global(Nx_global), Ny_global(Ny_global), Nz_global(Nz_global),
       x_size(x_size), y_size_global(y_size_global), z_size_global(z_size_global), 
       min_x_global(min_x_global), min_y_global(min_y_global), min_z_global(min_z_global),
       Re(Re), final_time(final_time), num_time_steps(num_time_steps),
       periodic_bc(periodic_bc), 
       Py(Py), Pz(Pz), rank(rank), y_rank(rank / Pz), z_rank(rank % Pz),
       dt(final_time / num_time_steps),
-      Nx_domains(Nx-1), Ny_domains_global(Ny_global-1), Nz_domains_global(Nz_global-1),
+      Nx_domains(Nx_global-1), Ny_domains_global(Ny_global-1), Nz_domains_global(Nz_global-1),
       dx(x_size / Nx_domains), dy(y_size_global / Ny_domains_global), dz(z_size_global / Nz_domains_global),
       one_over_2_dx(1 / (2 * dx)), one_over_2_dy(1 / (2 * dy)), one_over_2_dz(1 / (2 * dz)), 
       one_over_8_dx(1 / (8 * dx)), one_over_8_dy(1 / (8 * dy)), 
@@ -77,9 +77,10 @@ Constants::Constants(size_t Nx, size_t Ny_global, size_t Nz_global,
       one_over_dy(1 / dy), one_over_dz(1 / dz), P(Py * Pz), 
       Ny_owner(Ny_global / Py + ((static_cast<size_t>(y_rank) < Ny_global % Py) ? 1 : 0)),
       Nz_owner(Nz_global / Pz + ((static_cast<size_t>(z_rank) < Nz_global % Pz) ? 1 : 0)),
-      Ny((Py == 1) ? Ny_owner : ((y_rank == 0 || (y_rank == (Py-1) && !periodic_bc[1])) ? Ny_owner+1 : Ny_owner+2)),
-      Nz((Pz == 1) ? Nz_owner : ((z_rank == 0 || (z_rank == (Pz-1) && !periodic_bc[2])) ? Nz_owner+1 : Nz_owner+2)),
-      Nx_staggered(Nx + 1), 
+      Nx((periodic_bc[0] ? Nx_global+1 : Nx_global)),
+      Ny((Py == 1) ? (periodic_bc[1] ? Ny_owner+1 : Ny_owner) : ((y_rank == 0 || (y_rank == (Py-1) && !periodic_bc[1])) ? Ny_owner+1 : Ny_owner+2)),
+      Nz((Pz == 1) ? (periodic_bc[2] ? Nz_owner+1 : Nz_owner) : ((z_rank == 0 || (z_rank == (Pz-1) && !periodic_bc[2])) ? Nz_owner+1 : Nz_owner+2)),
+      Nx_staggered(periodic_bc[0] ? Nx : Nx + 1), 
       Ny_staggered((y_rank == Py-1 && !periodic_bc[1]) ? Ny + 1 : Ny), 
       Nz_staggered((z_rank == Pz-1 && !periodic_bc[2]) ? Nz + 1 : Nz),
       
@@ -112,8 +113,8 @@ Constants::Constants(size_t Nx, size_t Ny_global, size_t Nz_global,
   assert(rank >= 0 && rank < P);
 
   // Ensure that the previous and next processors in y direction are valid.
-  assert(prev_proc_y >= -1 && prev_proc_y < rank && next_proc_y >= -1 && next_proc_y < P);
-  assert(prev_proc_z >= -1 && prev_proc_z < rank && next_proc_z >= -1 && next_proc_z < P);
+  assert(prev_proc_y >= -1 && prev_proc_y < P && next_proc_y >= -1 && next_proc_y < P);
+  assert(prev_proc_z >= -1 && prev_proc_z < P && next_proc_z >= -1 && next_proc_z < P);
 }
 
 } // namespace mif

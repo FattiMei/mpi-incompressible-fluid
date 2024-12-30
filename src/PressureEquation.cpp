@@ -131,6 +131,7 @@ void solve_pressure_equation(PressureTensor &pressure,
 
 
     // Execute type 1 IDCT/IFFT along direction z, transpose from (y,x,z) to (x,z,y).
+    const Real normalization_constant_z = constants.Nz_domains_global * (structures.periodic_bc[2] ? 1.0 : 2.0);
     for (int j = 0; j < c2d.zSize[1]; j++) {
         for (int i = 0; i < c2d.zSize[0]; i++) {
             const int base_index = c2d.zSize[2]*c2d.zSize[0] * j + c2d.zSize[2] * i;
@@ -143,7 +144,7 @@ void solve_pressure_equation(PressureTensor &pressure,
 
             // Copy the transformed data.
             for (int k = 0; k < c2d.zSize[2]; k++) {
-                pressure(base_index+k) = structures.buffer_z[k] / (2.0*constants.Nz_domains_global);
+                pressure(base_index+k) = structures.buffer_z[k] / normalization_constant_z;
             }
         }
     }
@@ -151,6 +152,7 @@ void solve_pressure_equation(PressureTensor &pressure,
 
 
     // Execute type 1 IDCT/IFFT along direction y and transpose from (x,z,y) to (z,y,x).
+    const Real normalization_constant_y = constants.Ny_domains_global * (structures.periodic_bc[1] ? 1.0 : 2.0);
     for (int i = 0; i < c2d.ySize[0]; i++) {
         for (int k = 0; k < c2d.ySize[2]; k++) {
             const int base_index = c2d.ySize[2]*c2d.ySize[1] * i + c2d.ySize[1] * k;
@@ -163,7 +165,7 @@ void solve_pressure_equation(PressureTensor &pressure,
 
             // Copy the transformed data.
             for (int j = 0; j < c2d.ySize[1]; j++){
-                pressure(base_index+j) = structures.buffer_y[j] / (2.0*constants.Ny_domains_global);
+                pressure(base_index+j) = structures.buffer_y[j] / normalization_constant_y;
             }
         }
     }
@@ -171,6 +173,7 @@ void solve_pressure_equation(PressureTensor &pressure,
 
 
     // Execute type 1 IDCT/IFFT along direction x while in indexing (z,y,x), do not transpose.
+    const Real normalization_constant_x = constants.Nx_domains * (structures.periodic_bc[0] ? 1.0 : 2.0);
     for (int k = 0; k < c2d.xSize[2]; k++) {
         for (int j = 0; j < c2d.xSize[1]; j++) {
             const int base_index = c2d.xSize[0]*c2d.xSize[1] * k + c2d.xSize[0] * j;
@@ -183,7 +186,7 @@ void solve_pressure_equation(PressureTensor &pressure,
 
             // Copy the transformed data.
             for (int i = 0; i < c2d.xSize[0]; i++) {
-                pressure(base_index+i) = structures.buffer_x[i] / (2.0*constants.Nx_domains);
+                pressure(base_index+i) = structures.buffer_x[i] / normalization_constant_x;
             }
         }
     }

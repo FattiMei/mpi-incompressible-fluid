@@ -212,61 +212,34 @@ void StaggeredTensor::apply_periodic_bc() {
 
   // x faces.
   if (constants.periodic_bc[0]) {
-    if (staggering == StaggeringDirection::x) {
-      // Staggered case: copy the second to last x slice into the first,
-      // and the second x slice into the last.
-      for (size_t k = 0; k < sizes[2]; k++) {
-        for (size_t j = 0; j < sizes[1]; j++) {
-          this->operator()(0,j,k) = this->operator()(sizes[0]-2,j,k);
-          this->operator()(sizes[0]-1,j,k) = this->operator()(1,j,k);
-        }
-      }
-    } else {
-      // Unstaggered case: copy the first x slice into the last.
-      for (size_t k = 0; k < sizes[2]; k++) {
-        for (size_t j = 0; j < sizes[1]; j++) {
-          this->operator()(sizes[0]-1,j,k) = this->operator()(0,j,k);
-        }
+    // Copy the second to last x slice into the first,
+    // and the second x slice into the last.
+    for (size_t k = 0; k < sizes[2]; k++) {
+      for (size_t j = 0; j < sizes[1]; j++) {
+        this->operator()(0,j,k) = this->operator()(sizes[0]-2,j,k);
+        this->operator()(sizes[0]-1,j,k) = this->operator()(1,j,k);
       }
     }
   }
 
   if (constants.periodic_bc[1] && constants.Py == 1) {
-    if (staggering == StaggeringDirection::y) {
-      // Staggered case: copy the second to last y slice into the first,
-      // and the second y slice into the last.
-      for (size_t k = 0; k < sizes[2]; k++) {
-        for (size_t i = 0; i < sizes[0]; i++) {
-          this->operator()(i,0,k) = this->operator()(i,sizes[1]-2,k);
-          this->operator()(i,sizes[1]-1,k) = this->operator()(i,1,k);
-        }
-      }
-    } else {
-      // Unstaggered case: copy the first x slice into the last.
-      for (size_t k = 0; k < sizes[2]; k++) {
-        for (size_t i = 0; i < sizes[0]; i++) {
-          this->operator()(i,sizes[1]-1,k) = this->operator()(i,0,k);
-        }
+    // Copy the second to last y slice into the first,
+    // and the second y slice into the last.
+    for (size_t k = 0; k < sizes[2]; k++) {
+      for (size_t i = 0; i < sizes[0]; i++) {
+        this->operator()(i,0,k) = this->operator()(i,sizes[1]-2,k);
+        this->operator()(i,sizes[1]-1,k) = this->operator()(i,1,k);
       }
     }
   }
 
   if (constants.periodic_bc[2] && constants.Pz == 1) {
-    if (staggering == StaggeringDirection::z) {
-      // Staggered case: copy the second to last z slice into the first,
-      // and the second z slice into the last.
-      for (size_t j = 0; j < sizes[1]; j++) {
-        for (size_t i = 0; i < sizes[0]; i++) {
-          this->operator()(i,j,0) = this->operator()(i,j,sizes[2]-2);
-          this->operator()(i,j,sizes[2]-1) = this->operator()(i,j,1);
-        }
-      }
-    } else {
-      // Unstaggered case: copy the first x slice into the last.
-      for (size_t j = 0; j < sizes[1]; j++) {
-        for (size_t i = 0; i < sizes[0]; i++) {
-          this->operator()(i,j,sizes[2]-1) = this->operator()(i,j,0);
-        }
+    // Copy the second to last z slice into the first,
+    // and the second z slice into the last.
+    for (size_t j = 0; j < sizes[1]; j++) {
+      for (size_t i = 0; i < sizes[0]; i++) {
+        this->operator()(i,j,0) = this->operator()(i,j,sizes[2]-2);
+        this->operator()(i,j,sizes[2]-1) = this->operator()(i,j,1);
       }
     }
   }
