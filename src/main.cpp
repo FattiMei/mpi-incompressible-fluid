@@ -2,6 +2,7 @@
 #include "Norms.h"
 #include "PressureEquation.h"
 #include "Timestep.h"
+#include "inputParser.h"
 #include <cassert>
 #include <iostream>
 #include <mpi.h>
@@ -24,21 +25,17 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   // No arguments.
-  assert(argc == 1);
+  //assert(argc == 1);
 
   // Input parameters. TODO: read them from a file.
-  const size_t Nx_global = 32;
-  const size_t Ny_global = 32;
-  const size_t Nz_global = 32;
-  const Real dt = 1e-4;
-  const unsigned int num_time_steps = 1;
-  const int Pz = 3;
-  const int Py = 2;
-  const bool test_case_2 = false;
-
-  // Check processor consistency.
-  assert(Pz * Py == size);
-  assert(Pz > 0 && Py > 0);
+   size_t Nx_global;
+   size_t Ny_global;
+   size_t Nz_global;
+   Real dt;
+   unsigned int num_time_steps;
+   int Pz;
+   int Py;
+   bool test_case_2;
 
   // Set test case domain information.
   const Real min_x_global = test_case_2 ? -0.5 : 0.0;
@@ -50,14 +47,29 @@ int main(int argc, char *argv[]) {
   constexpr Real Re = 1e3;
   const std::array<bool, 3> periodic_bc{false, false, test_case_2};
   
-  // Note that the constants object is only constant within the scope of this
-  // particular processor. All processors will have their own subdomain
-  // on which they will compute the solution.
-  const Constants constants(Nx_global, Ny_global, Nz_global, 
-                            x_size, y_size, z_size, 
-                            min_x_global, min_y_global, min_z_global,
-                            Re, dt*num_time_steps, num_time_steps, 
-                            Py, Pz, rank, periodic_bc);
+//const std::string input_file = "../input/input.txt";
+ //run with ./mif ../input/input.txt
+  const std::string input_file = argv[1];
+  
+
+    try {
+        // Parse the input file
+        parse_input_file(input_file, Nx_global, Ny_global, Nz_global, 
+                         dt, num_time_steps, Pz, Py,test_case_2);
+    } catch (const std::exception &ex) {
+        std::cerr << "Error parsing input file: " << ex.what() << std::endl;
+        MPI_Finalize();
+        return -1;
+    }
+    // Check processor consistency.
+    assert(Pz * Py == size);
+    assert(Pz > 0 && Py > 0);
+    std::cout<<"Nx_global: "<<Nx_global<<" Ny_global: "<<Ny_global<<" Nz_global: "<<Nz_global<<" dt: "<<dt<<" num_time_steps: "<<num_time_steps<<" Pz: "<<Pz<<" Py: "<<Py<<" test_case_2: "<<test_case_2<<std::endl;
+    const Constants constants(Nx_global, Ny_global, Nz_global,
+                              1.0, 1.0, test_case_2 ? 1.0 : 2.0,
+                              test_case_2 ? -0.5 : 0.0, test_case_2 ? -0.5 : 0.0, test_case_2 ? -0.5 : -1.0,
+                              Re, dt * num_time_steps, num_time_steps,
+                              Py, Pz, rank, periodic_bc);
   PressureSolverStructures structures(constants);
 
   Reynolds = Re;
