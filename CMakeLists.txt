@@ -29,7 +29,7 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 
 # Set custom flags for Debug build.
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -O0 -march=native -mtune=native \
      -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
 
 # Set custom flags for Release build.
@@ -60,7 +60,8 @@ set(FORCING_TERM_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol_velocity.cpp)
 set(PRESSURE_GENERATOR ${CMAKE_SOURCE_DIR}/generators/manufsol_pressure.py)
 set(PRESSURE_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol_pressure.cpp)
 set(EXACT_SOLUTION_GENERATOR ${CMAKE_SOURCE_DIR}/generators/manufsol.py)
-set(EXACT_SOLUTION_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp)
+set(EXACT_SOLUTION_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp
+		include/output.h)
 
 set(CONVERGENCE_REPORT_NAME "convergence_report.csv")
 
