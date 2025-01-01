@@ -371,7 +371,6 @@ namespace mif{
                 header << "DATASET STRUCTURED_GRID\n";
                 header << "DIMENSIONS " << constants.Nx << " " << constants.Ny_global << " " << constants.Nz_global <<
                     "\n";
-                header << "POINTS " << total_points << " float\n";
                 MPI_File_write(fh, header.str().c_str(), header.str().size(), MPI_CHAR, &status);
                 std::stringstream scalars_u;
                 scalars_u << "\nPOINT_DATA 32768\nSCALARS scalars double 1\nLOOKUP_TABLE default\n";
