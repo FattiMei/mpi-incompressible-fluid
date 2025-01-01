@@ -309,6 +309,7 @@ namespace mif{
             for (int x = 0; x < constants.Nx; x++){
                 for (int y = 0; y < constants.Ny_owner; y++){
                     for (int z = 0; z < constants.Nz_owner; z++){
+                        //TODO rewrite interpolation
                         local_u[index] =
                             bitswap(
                                 velocity.u(x, y, z) - 0.5 * (velocity.u(x + 1, y, z) - velocity.u(x + 2, y, z)) * (x ==
@@ -365,28 +366,31 @@ namespace mif{
 
             if (rank == 0){
                 std::stringstream header;
-                header << "# vtk DataFile Version 3.0\n";
+                header << "# vtk DataFile Version 2.0\n";
                 header << "Velocity field\n";
                 header << "BINARY\n";
-                header << "DATASET STRUCTURED_GRID\n";
+                header << "DATASET STRUCTURED_POINTS\n";
                 header << "DIMENSIONS " << constants.Nx << " " << constants.Ny_global << " " << constants.Nz_global <<
                     "\n";
+                header << "ORIGIN 0 0 0\n";
+                header << "SPACING " << constants.dx << " " << constants.dy << " " << constants.dz << "\n";
                 MPI_File_write(fh, header.str().c_str(), header.str().size(), MPI_CHAR, &status);
                 std::stringstream scalars_u;
-                scalars_u << "\nPOINT_DATA 32768\nSCALARS scalars double 1\nLOOKUP_TABLE default\n";
+                scalars_u << "\nPOINT_DATA 32768\nSCALARS u double 1\nLOOKUP_TABLE default\n";
                 MPI_File_write(fh, scalars_u.str().c_str(), scalars_u.str().size(), MPI_CHAR, &status);
                 std::cout << "Size of global_u: " << global_u.size() << std::endl;
                 MPI_File_write(fh, global_u.data(), global_u.size() * sizeof(Real), MPI_CHAR, &status);
 
                 std::stringstream scalars_v;
-                scalars_v << "\nPOINT_DATA 32768\nSCALARS v double 1\nLOOKUP_TABLE default\n";
+                scalars_v << "\nSCALARS v double 1\nLOOKUP_TABLE default\n";
                 MPI_File_write(fh, scalars_v.str().c_str(), scalars_v.str().size(), MPI_CHAR, &status);
                 MPI_File_write(fh, global_v.data(), global_v.size() * sizeof(Real), MPI_CHAR, &status);
 
                 std::stringstream scalars_w;
-                scalars_w << "\nPOINT_DATA 32768\nSCALARS w double 1\nLOOKUP_TABLE default\n";
+                scalars_w << "\nSCALARS w double 1\nLOOKUP_TABLE default\n";
                 MPI_File_write(fh, scalars_w.str().c_str(), scalars_w.str().size(), MPI_CHAR, &status);
                 MPI_File_write(fh, global_w.data(), global_w.size() * sizeof(Real), MPI_CHAR, &status);
+                std::cout << global_w.size() << std::endl;
             }
 
             MPI_Barrier(MPI_COMM_WORLD);
