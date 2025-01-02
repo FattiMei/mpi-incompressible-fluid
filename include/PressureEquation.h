@@ -21,6 +21,7 @@ namespace mif {
                                                          Real dt);
 
     // Remove a constant from the pressure to obtain the exact solution.
+    // If needed, this will use MPI communication with tag 0.
     void adjust_pressure(StaggeredTensor &pressure,
                          const std::function<Real(Real, Real, Real)> &exact_pressure);
 }

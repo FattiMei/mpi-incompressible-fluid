@@ -82,9 +82,9 @@ void update_pressure(StaggeredTensor &pressure, const StaggeredTensor &pressure_
 }
 
 // Solve the pressure equation (different function call based on boundary conditions).
-#define PRESSURE_EQUATION_false(velocity, dt, new_time, prev_time) {                    \
+#define PRESSURE_EQUATION_false(velocity, dt, new_time, prev_time) {                     \
   solve_pressure_equation_homogeneous_periodic(pressure_buffer, pressure_solver_buffer,  \
-                                              velocity, dt);                            \
+                                               velocity, dt);                            \
 }
 
 #define PRESSURE_EQUATION_true(velocity, dt, new_time, prev_time) {                                                       \

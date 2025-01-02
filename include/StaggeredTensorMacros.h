@@ -1,5 +1,5 @@
-#ifndef VELOCITY_TENSOR_MACROS_H
-#define VELOCITY_TENSOR_MACROS_H
+#ifndef STAGGERED_TENSOR_MACROS_H
+#define STAGGERED_TENSOR_MACROS_H
 
 // Execute "CODE" over all points for a staggered tensor, or over all internal 
 // points if include_border is false.
@@ -102,4 +102,4 @@
                                             args)                              \
   }
 
-#endif // VELOCITY_TENSOR_MACROS_H
+#endif // STAGGERED_TENSOR_MACROS_H
