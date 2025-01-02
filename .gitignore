@@ -10,3 +10,5 @@ artifacts/*
 analysis/results.txt
 analysis/*.png
 *.o
+
+test/OpenFOAM/test1
