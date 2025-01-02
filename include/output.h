@@ -5,10 +5,13 @@
 #ifndef MPI_INCOMPRESSIBLE_FLUID_OUTPUT_H
 #define MPI_INCOMPRESSIBLE_FLUID_OUTPUT_H
 
+#include <bit>
 #include <string>
 #include <iostream>
 #include <vector>
 #include <byteswap.h>
+#include <string.h>
+#include <algorithm>
 #ifndef ENDIANESS
 #define ENDIANESS 0 //0 for little endian, 1 for big endian
 #endif
@@ -21,12 +24,33 @@ namespace mif{
         }
         else{
             if constexpr (constexpr size_t size = sizeof(Real); size == 4){
-                return bswap_32(value);
+		uint32_t x = *((uint32_t *) (&value));
+		uint32_t swapped = bswap_32(value);
+
+		value = *((Real *) (&swapped));
+
+                return value;
             }
             else{
-                return bswap_64(value);
+		uint64_t x = *((uint64_t *) (&value));
+		uint64_t swapped = bswap_64(value);
+
+		value = *((Real *) (&swapped));
+
+                return value;
             }
         }
+    }
+
+    double toBigEndian(double x) {
+	    uint64_t transmute = *reinterpret_cast<uint64_t*>(&x);
+	    uint64_t swapped = std::byteswap(transmute);
+
+	    return *reinterpret_cast<double*>(&swapped);
+    }
+
+    void vectorToBigEndian(std::vector<double> xs) {
+	    for (double& x : xs) x = toBigEndian(x);
     }
 
 
@@ -309,29 +333,41 @@ namespace mif{
             for (int x = 0; x < constants.Nx; x++){
                 for (int y = 0; y < constants.Ny_owner; y++){
                     for (int z = 0; z < constants.Nz_owner; z++){
-                        //TODO rewrite interpolation
-                        local_u[index] =
-                            bitswap(
-                                velocity.u(x, y, z) - 0.5 * (velocity.u(x + 1, y, z) - velocity.u(x + 2, y, z)) * (x ==
-                                    0)) +
-                            bitswap(((velocity.u(x, y, z) + velocity.u(x - 1, y, z)) / 2.0) * (x != 0));
+                        // TODO: rewrite interpolation
+			local_u[index] = ((x == 0) ?
+			    (velocity.u(x ,y, z) - 0.5*(velocity.u(x+1, y, z) - velocity.u(x+2, y, z)))
+			    :
+			    (velocity.u(x, y, z) + velocity.u(x - 1, y, z))
+			);
 
-                        local_v[index] =
-                            bitswap(
-                                velocity.v(x, y, z) - 0.5 * (velocity.v(x, y + 1, z) - velocity.v(x, y + 2, z)) * (y ==
-                                    0)) +
-                            bitswap(((velocity.v(x, y, z) + velocity.v(x, y - 1, z)) / 2.0) * (y != 0));
+                        local_v[index] = ((y == 0) ?
+			    (velocity.v(x, y, z) - 0.5 * (velocity.v(x, y + 1, z) - velocity.v(x, y + 2, z)))
+			    :
+                            ((velocity.v(x, y, z) + velocity.v(x, y - 1, z)) / 2.0)
+			);
 
-                        local_w[index] =
-                            bitswap(
-                                velocity.w(x, y, z) - 0.5 * (velocity.w(x, y, z + 1) - velocity.w(x, y, z + 2)) * (z ==
-                                    0)) +
-                            bitswap(((velocity.w(x, y, z) + velocity.w(x, y, z - 1)) / 2.0) * (z != 0));
+                        local_w[index] = ((z == 0) ?
+                            (velocity.w(x, y, z) - 0.5 * (velocity.w(x, y, z + 1) - velocity.w(x, y, z + 2)))
+			    :
+                            ((velocity.w(x, y, z) + velocity.w(x, y, z - 1)) / 2.0)
+			);
 
                         index++;
                     }
                 }
             }
+
+	    assert(any_of(local_u.begin(), local_u.end(), [](auto x) { return x != 0.0; }));
+	    assert(any_of(local_v.begin(), local_v.end(), [](auto x) { return x != 0.0; }));
+	    assert(any_of(local_w.begin(), local_w.end(), [](auto x) { return x != 0.0; }));
+
+	    // vtk format requires big endian data (x86 arch is LITTLE endian)
+	    {
+		// I think the bug lies in the conversion to big endian
+		vectorToBigEndian(local_u);
+		vectorToBigEndian(local_v);
+		vectorToBigEndian(local_w);
+	    }
 
             // Calculate local array sizes
             int local_size = local_u.size();
@@ -341,7 +377,8 @@ namespace mif{
             MPI_Gather(&local_size, 1, MPI_INT, counts.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 
-            if (rank == 0){
+	    // maybe every processor needs to know the displacements?
+            if (true || rank == 0){
                 displacements[0] = 0;
                 for (int i = 1; i < size; ++i){
                     displacements[i] = displacements[i - 1] + counts[i - 1];
