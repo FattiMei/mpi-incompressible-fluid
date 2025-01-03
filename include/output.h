@@ -98,6 +98,7 @@ namespace mif{
             for (int y = 0; y < Ny_owner; y++){
                 for (int z = 0; z < Nz_owner; z++){
                     points_coordinate.push_back(x * constants.dx);
+                    //TODO: push back is slow should use index arithmetic instead with resize
                     points_coordinate.push_back((y + base_j) * constants.dy);
                     points_coordinate.push_back((z + base_k) * constants.dz);
                     point_data_u.push_back(velocity.u(x, y, z));
@@ -151,28 +152,34 @@ namespace mif{
             }
             std::cout << std::endl;
         }
+        MPI_Request request[2];
 
-        // Broadcast the displacements to all processes
-        MPI_Bcast(displacements.data(), size, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(counts.data(), size, MPI_INT, 0, MPI_COMM_WORLD);
-        //wait for recive
+        // Initiate non-blocking broadcast for displacements and counts
+        MPI_Ibcast(displacements.data(), size, MPI_INT, 0, MPI_COMM_WORLD, &request[0]);
+        MPI_Ibcast(counts.data(), size, MPI_INT, 0, MPI_COMM_WORLD, &request[1]);
+
+        // Convert points_coordinate to big-endian format
         vectorToBigEndian(points_coordinate);
+        vectorToBigEndian(point_data_u);
+        vectorToBigEndian(point_data_v);
+        vectorToBigEndian(point_data_w);
+        //pressure one
+
+        // Wait for the non-blocking broadcasts to complete
+        MPI_Wait(&request[0], MPI_STATUS_IGNORE);
+        MPI_Wait(&request[1], MPI_STATUS_IGNORE);
         MPI_Barrier(MPI_COMM_WORLD); //BAD I GUESS each processor should receive only the relevant displacement
 
 
-        //now we can write the data to the file
-        //first we write the header of the file the the points coordinates as unstructured points
-
         std::stringstream header;
-        header << "# vtk DataFile Version 3.0\n";
+        header << "# vtk DataFile Version 2.0\n";
         header << "vtk output\n";
         header << "BINARY\n";
-        header << "DATASET UNSTRUCTURED_GRID \n";
+        header << "DATASET UNSTRUCTURED_GRID \n\n";
         header << "POINTS " << (displacements[size - 1] + counts[size - 1]) / 3 << " " << type.str() << "\n";
         int header_size = header.str().size();
         if (rank == 0){
             MPI_File_write(fh, header.str().c_str(), header_size, MPI_CHAR, &status);
-            //print points_coordinate
             for (int point = 0; point < points_coordinate.size(); point = point + 3){
                 // Real x =  correct_endianness<Real>(points_coordinate[point]);
                 // Real y = correct_endianness<Real>(points_coordinate[point + 1]);
@@ -189,24 +196,22 @@ namespace mif{
 
         MPI_File_write_at(fh, my_offset, points_coordinate.data(),
                           points_coordinate.size() * sizeof(Real),
-                          MPI_BYTE, &status); //maybe I should use iwritw_at
+                          MPI_BYTE, &status);
+        //maybe I could use a non-blocking write here and then wait for all to finish at the end of the function TODO check this
 
         //now we write the u component of the velocity
         int global_offset = displacements[size - 1] + counts[size - 1];
-        vectorToBigEndian(point_data_u);
         global_offset = global_offset * sizeof(Real) + header_size;
         {
             std::stringstream local_u_header;
-            local_u_header.clear();
-            local_u_header.str("");
-            local_u_header << "\nPOINT_DATA " << (displacements[size - 1] + counts[size - 1]) / 3 << "\n";
+            local_u_header << "\nCELLS 0 0 \n CELL_TYPES 0\nPOINT_DATA " << (displacements[size - 1] + counts[size - 1])
+                / 3 << "\n";
             local_u_header << "SCALARS u " << type.str() << " 1\n";
             local_u_header << "LOOKUP_TABLE default\n";
             int local_u_header_size = local_u_header.str().size();
             if (rank == 0){
                 MPI_File_write_at(fh, global_offset, local_u_header.str().c_str(), local_u_header_size, MPI_CHAR,
                                   &status);
-                std::cout << "Global offset: " << global_offset << " Header size: " << local_u_header_size << std::endl;
             }
 
             my_offset = global_offset + displacements[rank] / 3 * sizeof(Real) + local_u_header_size;
