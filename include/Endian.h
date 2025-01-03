@@ -5,6 +5,7 @@
 namespace mif {
 // in case the cluster compiler is not so modern, we provide a fallback implementation
 #ifdef LEGACY_COMPILER
+#include <stdint.h>
 #include <byteswap.h>
 
 constexpr float correct_endianness(float x) {

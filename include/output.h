@@ -8,7 +8,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include "VTKEndians.h"
+#include "Endian.h"
 #ifndef ENDIANESS
 #define ENDIANESS 0 //0 for little endian, 1 for big endian
 #endif
