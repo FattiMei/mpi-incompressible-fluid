@@ -18,8 +18,7 @@ constexpr double correct_endianness(double x) {
 	uint64_t trasmute = *reinterpret_cast<uint64_t*>(&x);
 	uint64_t swapped = bswap_64(x);
 
-	return *reinterpret_cast<float*>(&swapped);
-
+	return *reinterpret_cast<double*>(&swapped);
 }
 
 #else
@@ -42,6 +41,16 @@ constexpr Type correct_endianness(const Type x) noexcept {
 	return x;
 }
 
+constexpr void test_implementations() {
+	static_assert(10.0f == correct_endianness(correct_endianness(10.0f)));
+	static_assert(-123.456f == correct_endianness(correct_endianness(-123.456f)));
+
+	static_assert(10.0d == correct_endianness(correct_endianness(10.0d)));
+	static_assert(-123.456d == correct_endianness(correct_endianness(-123.456d)));
+
+	static_assert(123.456 != correct_endianness(123.456));
+}
+
 #endif
 
 
@@ -50,14 +59,8 @@ void vectorToBigEndian(std::vector<floating> &xs) noexcept {
         for (floating& x : xs) x = correct_endianness(x);
 }
 
-
-  constexpr void test_implementations() {
- 	static_assert(10.0d == correct_endianness(correct_endianness(10.0d)));
- 	static_assert(-1.123e7 == correct_endianness(correct_endianness(-1.123e7)));
- 	static_assert(123.456 != correct_endianness(123.456));
- }
-
 };
 
 
 #endif
+
