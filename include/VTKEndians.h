@@ -24,6 +24,7 @@ constexpr double correct_endianness(double x) {
 
 #else
 
+
 template <std::floating_point Type>
 constexpr Type correct_endianness(const Type x) noexcept {
 	if constexpr (std::endian::native == std::endian::little){
@@ -44,17 +45,17 @@ constexpr Type correct_endianness(const Type x) noexcept {
 #endif
 
 
-template <typename floating>
-void vectorToBigEndian(std::vector<floating> &xs) {
+template <std::floating_point floating>
+void vectorToBigEndian(std::vector<floating> &xs) noexcept {
         for (floating& x : xs) x = correct_endianness(x);
 }
 
 
-constexpr void test_implementations() {
-	static_assert(10.0d == correct_endianness(correct_endianness(10.0d)));
-	static_assert(-1.123e7 == correct_endianness(correct_endianness(-1.123e7)));
-	static_assert(123.456 != correct_endianness(123.456));
-}
+  constexpr void test_implementations() {
+ 	static_assert(10.0d == correct_endianness(correct_endianness(10.0d)));
+ 	static_assert(-1.123e7 == correct_endianness(correct_endianness(-1.123e7)));
+ 	static_assert(123.456 != correct_endianness(123.456));
+ }
 
 };
 

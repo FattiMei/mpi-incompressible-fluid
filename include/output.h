@@ -5,12 +5,10 @@
 #ifndef MPI_INCOMPRESSIBLE_FLUID_OUTPUT_H
 #define MPI_INCOMPRESSIBLE_FLUID_OUTPUT_H
 
-#include <bit>
 #include <string>
 #include <iostream>
 #include <vector>
-#include <algorithm>
-#include "Endian.h"
+#include "VTKEndians.h"
 #ifndef ENDIANESS
 #define ENDIANESS 0 //0 for little endian, 1 for big endian
 #endif
