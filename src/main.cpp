@@ -5,7 +5,7 @@
 #include <cassert>
 #include <iostream>
 #include <mpi.h>
-#include "output.h"
+#include "VTKExport.h"
 
 double Reynolds;
 

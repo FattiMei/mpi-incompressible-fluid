@@ -1,22 +1,17 @@
-//
-// Created by giorgio on 28/12/2024.
-//
-
-#ifndef MPI_INCOMPRESSIBLE_FLUID_OUTPUT_H
-#define MPI_INCOMPRESSIBLE_FLUID_OUTPUT_H
-
-#include <string>
-#include <iostream>
-#include <vector>
 #include "Endian.h"
-#ifndef ENDIANESS
-#define ENDIANESS 0 //0 for little endian, 1 for big endian
-#endif
+#include "VTKExport.h"
 
 
-namespace mif{
-    void writeVTK(const std::string& filename, VelocityTensor& velocity, const Constants& constants,
-                  StaggeredTensor& pressure, int rank, int size){
+namespace mif {
+
+void writeVTK(
+	const std::string&     filename,
+	const VelocityTensor&  velocity,
+	const Constants&       constants,
+	const StaggeredTensor& pressure,
+	const int              rank,
+	const int              size
+) {
         MPI_Offset my_offset, my_current_offset;
         MPI_File fh;
         MPI_Status status;
@@ -244,90 +239,6 @@ namespace mif{
         // points offset and write data
         MPI_Barrier(MPI_COMM_WORLD); //Do I need this? Maybe not
         MPI_File_close(&fh);
-    }
+}
 
-
-
-    void writeSerialVTK(const std::string& filename, VelocityTensor& velocity, const Constants& constants,
-                        StaggeredTensor& pressure, int rank){
-        {
-            FILE* fh = fopen(filename.c_str(), "wb");
-            if (fh == nullptr){
-                std::cerr << "Error opening file" << std::endl;
-                return;
-            }
-            std::vector<Real> local_u, local_v, local_w, local_p;
-
-
-            local_u.reserve(constants.Nx * constants.Ny_global * constants.Nz_global);
-            local_v.reserve(constants.Nx * constants.Ny_global * constants.Nz_global);
-            local_w.reserve(constants.Nx * constants.Ny_global * constants.Nz_global);
-            local_p.reserve(constants.Nx * constants.Ny_global * constants.Nz_global);
-
-            for (int z = 0; z < constants.Nz_global; z++){
-                for (int y = 0; y < constants.Ny_global; y++){
-                    for (int x = 0; x < constants.Nx; x++){
-                        //TODO preallocate
-                        local_u.push_back(velocity.u(x, y, z));
-                        local_v.push_back(velocity.v(x, y, z));
-                        local_w.push_back(velocity.w(x, y, z));
-                        local_p.push_back(pressure(x, y, z));
-                    }
-                }
-            }
-
-
-            vectorToBigEndian(local_u);
-            vectorToBigEndian(local_v);
-            vectorToBigEndian(local_w);
-            vectorToBigEndian(local_p);
-
-
-            if (rank == 0){
-                std::stringstream header;
-                header << "# vtk DataFile Version 2.0\n";
-                header << "Velocity field\n";
-                header << "BINARY\n";
-                header << "DATASET STRUCTURED_POINTS\n";
-                header << "DIMENSIONS " << constants.Nx << " " << constants.Ny_global << " " << constants.Nz_global <<
-                    "\n";
-                header << "ORIGIN 0 0 0\n";
-                header << "SPACING " << constants.dx << " " << constants.dy << " " << constants.dz << "\n";
-                // MPI_File_write(fh, header.str().c_str(), header.str().size(), MPI_CHAR, &status);
-                fwrite(header.str().c_str(), sizeof(char), header.str().size(), fh);
-                std::stringstream scalars_u;
-                scalars_u << "\nPOINT_DATA " << constants.Nx * constants.Ny_global * constants.Nz_global <<
-                    " \nSCALARS u double 1\nLOOKUP_TABLE default\n";
-                // MPI_File_write(fh, scalars_u.str().c_str(), scalars_u.str().size(), MPI_CHAR, &status);
-                fwrite(scalars_u.str().c_str(), sizeof(char), scalars_u.str().size(), fh);
-                // MPI_File_write(fh, global_u.data(), global_u.size() * sizeof(Real), MPI_CHAR, &status);
-                fwrite(local_u.data(), sizeof(Real), local_u.size(), fh);
-                std::stringstream scalars_v;
-                scalars_v << "\nSCALARS v double 1\nLOOKUP_TABLE default\n";
-                // MPI_File_write(fh, scalars_v.str().c_str(), scalars_v.str().size(), MPI_CHAR, &status);
-                // MPI_File_write(fh, global_v.data(), global_v.size() * sizeof(Real), MPI_CHAR, &status);
-                fwrite(scalars_v.str().c_str(), sizeof(char), scalars_v.str().size(), fh);
-                fwrite(local_v.data(), sizeof(Real), local_v.size(), fh);
-
-                std::stringstream scalars_w;
-                scalars_w << "\nSCALARS w double 1\nLOOKUP_TABLE default\n";
-                // MPI_File_write(fh, scalars_w.str().c_str(), scalars_w.str().size(), MPI_CHAR, &status);
-                // MPI_File_write(fh, global_w.data(), global_w.size() * sizeof(Real), MPI_CHAR, &status);
-                // std::cout << global_w.size() << std::endl;
-                fwrite(scalars_w.str().c_str(), sizeof(char), scalars_w.str().size(), fh);
-                fwrite(local_w.data(), sizeof(Real), local_w.size(), fh);
-                std::stringstream scalars_p;
-                scalars_p << "\nSCALARS p double 1\nLOOKUP_TABLE default\n";
-                // MPI_File_write(fh, scalars_w.str().c_str(), scalars_w.str().size(), MPI_CHAR, &status);
-                // MPI_File_write(fh, global_w.data(), global_w.size() * sizeof(Real), MPI_CHAR, &status);
-                // std::cout << global_w.size() << std::endl;
-                fwrite(scalars_p.str().c_str(), sizeof(char), scalars_p.str().size(), fh);
-                fwrite(local_p.data(), sizeof(Real), local_p.size(), fh);
-            }
-
-            fclose(fh);
-        }
-    }
-} // mif
-
-#endif //MPI_INCOMPRESSIBLE_FLUID_OUTPUT_H
+};

@@ -2,15 +2,15 @@
 #define ENDIAN_H
 
 
+#include <cstdint>
 #include <vector>
 
 
-namespace mif {
 // in case the cluster compiler is not so modern, we provide a fallback implementation
-#ifdef LEGACY_COMPILER
-#include <stdint.h>
+#ifdef MIF_LEGACY_COMPILER
 #include <byteswap.h>
 
+namespace mif {
 constexpr float correct_endianness(float x) {
 	uint32_t trasmute = *reinterpret_cast<uint32_t*>(&x);
 	uint32_t swapped = bswap_32(x);
@@ -24,20 +24,23 @@ constexpr double correct_endianness(double x) {
 
 	return *reinterpret_cast<double*>(&swapped);
 }
+};
 
 #else
 
+#include <bit>
 
+namespace mif {
 template <std::floating_point Type>
 constexpr Type correct_endianness(const Type x) noexcept {
 	if constexpr (std::endian::native == std::endian::little){
 		if constexpr (std::is_same_v<Type, float>){
-			const auto transmute = std::bit_cast<std::uint32_t>(x);
+			const auto transmute = std::bit_cast<uint32_t>(x);
 			auto swapped = std::byteswap(transmute);
 			return std::bit_cast<Type>(swapped);
 		}
 		else if constexpr (std::is_same_v<Type, double>){
-			const auto transmute = std::bit_cast<std::uint64_t>(x);
+			const auto transmute = std::bit_cast<uint64_t>(x);
 			auto swapped = std::byteswap(transmute);
 			return std::bit_cast<Type>(swapped);
 		}
@@ -54,17 +57,16 @@ constexpr void test_implementations() {
 
 	static_assert(123.456 != correct_endianness(123.456));
 }
-
+};
 #endif
 
 
+namespace mif {
 template <std::floating_point floating>
 void vectorToBigEndian(std::vector<floating> &xs) noexcept {
         for (floating& x : xs) x = correct_endianness(x);
 }
-
 };
 
 
-#endif
-
+#endif // ENDIAN_H
