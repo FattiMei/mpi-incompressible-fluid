@@ -2,6 +2,9 @@
 #define ENDIAN_H
 
 
+#include <vector>
+
+
 namespace mif {
 // in case the cluster compiler is not so modern, we provide a fallback implementation
 #ifdef LEGACY_COMPILER
