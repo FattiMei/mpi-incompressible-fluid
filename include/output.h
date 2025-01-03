@@ -9,8 +9,6 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include <byteswap.h>
-#include <string.h>
 #include <algorithm>
 #ifndef ENDIANESS
 #define ENDIANESS 0 //0 for little endian, 1 for big endian
@@ -18,44 +16,37 @@
 
 
 namespace mif{
-    Real bitswap(Real value){
-        if constexpr (ENDIANESS == 1){
-            return value;
-        }
-        else{
-            if constexpr (constexpr size_t size = sizeof(Real); size == 4){
-		uint32_t x = *((uint32_t *) (&value));
-		uint32_t swapped = bswap_32(value);
-
-		value = *((Real *) (&swapped));
-
-                return value;
+    template <std::floating_point Type>
+    constexpr Type correct_endianness(const Type x) noexcept{
+        if constexpr (std::endian::native == std::endian::little){
+            if constexpr (std::is_same_v<Type, float>){
+                const auto transmute = std::bit_cast<std::uint32_t>(x);
+                auto swapped = std::byteswap(transmute);
+                return std::bit_cast<Type>(swapped);
             }
-            else{
-		uint64_t x = *((uint64_t *) (&value));
-		uint64_t swapped = bswap_64(value);
-
-		value = *((Real *) (&swapped));
-
-                return value;
+            else if constexpr (std::is_same_v<Type, double>){
+                const auto transmute = std::bit_cast<std::uint64_t>(x);
+                auto swapped = std::byteswap(transmute);
+                return std::bit_cast<Type>(swapped);
             }
         }
+        return x;
     }
 
-    double toBigEndian(double x) {
-	    uint64_t transmute = *reinterpret_cast<uint64_t*>(&x);
-	    uint64_t swapped = std::byteswap(transmute);
+    double toBigEndian(double x){
+        uint64_t transmute = *reinterpret_cast<uint64_t*>(&x);
+        uint64_t swapped = std::byteswap(transmute);
 
-	    return *reinterpret_cast<double*>(&swapped);
+        return *reinterpret_cast<double*>(&swapped);
     }
 
-    void vectorToBigEndian(std::vector<double> xs) {
-	    for (double& x : xs) x = toBigEndian(x);
+    void vectorToBigEndian(std::vector<Real>& xs){
+        for (Real& x : xs) x = correct_endianness<Real>(x);
     }
 
 
-    /*void writeVTK(const std::string& filename, VelocityTensor& velocity, const Constants& constants,
-                  StaggeredTensor& pressure, int rank){
+    void writeVTK(const std::string& filename, VelocityTensor& velocity, const Constants& constants,
+                  StaggeredTensor& pressure, int rank, int size){
         MPI_Offset my_offset, my_current_offset;
         MPI_File fh;
         MPI_Status status;
@@ -71,16 +62,15 @@ namespace mif{
         std::vector<Real> global_data;
 
         if (rank == 0){
-            global_points.resize(constants.Nx * constants.Ny_global  * 3 *3+ constants.Nx * constants.Ny_global * 3);
-            global_data.resize(constants.Nx * constants.Ny_global  * 3*3 + constants.Nx * constants.Ny_global * 3);
+            global_points.resize(constants.Nx * constants.Ny_global * 3 * 3 + constants.Nx * constants.Ny_global * 3);
+            global_data.resize(constants.Nx * constants.Ny_global * 3 * 3 + constants.Nx * constants.Ny_global * 3);
         }
-        stringstream type;
+        std::stringstream type;
         if constexpr (constexpr size_t _size = sizeof(Real); _size == 8){
             type << "double";
         }
         else
             type << "float";
-
 
 
         int Nx = constants.Nx;
@@ -93,227 +83,115 @@ namespace mif{
         // Start indices (base_j, base_k) based on rank
         int base_j = constants.base_j + 1;
         int base_k = constants.base_k + 1;
-        std::vector<Real> points_coordinate(3 * (1 * Ny_owner * Nz_owner + Nx * 1 * Nz_owner + Nx * Ny_owner * 1));
-        std::vector<Real> point_data(3 * (1 * Ny_owner * Nz_owner + Nx * 1 * Nz_owner + Nx * Ny_owner * 1));
+        if (base_k == 1) base_k = 0; //TODO: check if this is correct
+        if (base_j == 1) base_j = 0;
+        std::vector<Real> points_coordinate;
+        std::vector<Real> point_data_u, point_data_v, point_data_w;
+        //reserve space
+        points_coordinate.reserve(local_cells * 3);
+        point_data_u.reserve(local_cells);
+        point_data_v.reserve(local_cells);
+        point_data_w.reserve(local_cells);
         //my_offset = header_size + (base_j * Ny + base_k)
         {
             int x = 0; //x=0 plane
             for (int y = 0; y < Ny_owner; y++){
                 for (int z = 0; z < Nz_owner; z++){
-                    points_coordinate[3 * (y + z * Ny_owner)] = bitswap(x);
-                    points_coordinate[3 * (y + z * Ny_owner) + 1] = bitswap((y + base_j) );
-                    points_coordinate[3 * (y + z * Ny_owner) + 2] = bitswap((z + base_k) );
-
-
-                    point_data[3 * (y + z * Ny_owner)] =
-                        bitswap(
-                            velocity.u(x, y, z) - 0.5 * (velocity.u(x + 1, y, z) - velocity.u(x + 2, y, z)) * (x == 0));
-
-                    point_data[3 * (y + z * Ny_owner) + 1] =
-                        bitswap(
-                            velocity.v(x, y, z) - 0.5 * (velocity.v(x, y + 1, z) - velocity.v(x, y + 2, z)) * (y == 0));
-
-                    point_data[3 * (y + z * Ny_owner) + 2] =
-                        bitswap(
-                            velocity.w(x, y, z) - 0.5 * (velocity.w(x, y, z + 1) - velocity.w(x, y, z + 2)) * (z == 0));
-
-                    point_data[3 * (y + z * Ny_owner)] +=
-                        bitswap(((velocity.u(x, y, z) + velocity.u(x - 1, y, z)) / 2.0) * (x != 0));
-
-                    point_data[3 * (y + z * Ny_owner) + 1] +=
-                        bitswap(((velocity.v(x, y, z) + velocity.v(x, y - 1, z)) / 2.0) * (y != 0));
-
-                    point_data[3 * (y + z * Ny_owner) + 2] +=
-                        bitswap(((velocity.w(x, y, z) + velocity.w(x, y, z - 1)) / 2.0) * (z != 0));
+                    points_coordinate.push_back(x);
+                    points_coordinate.push_back(y + base_j);
+                    points_coordinate.push_back(z + base_k);
+                    point_data_u.push_back(velocity.u(x, y, z));
+                    point_data_v.push_back(velocity.v(x, y, z));
+                    point_data_w.push_back(velocity.w(x, y, z));
                 }
             }
         }
         {
-            int plane_offset = Nz_owner * Ny_owner;
             int y = 0; //y=0 plane
-            for (int x = 0; x < Nx; x++)
+            for (int x = 1; x < Nx; x++)
                 for (int z = 0; z < Nz_owner; z++){
-                    int index = plane_offset + x * Nz_owner + z;
-                    points_coordinate[3 * index] = bitswap(x);
-                    points_coordinate[3 * index + 1] = bitswap((y + base_j));
-                    points_coordinate[3 * index + 2] = bitswap((z + base_k) );
+                    points_coordinate.push_back(x);
+                    points_coordinate.push_back(y + base_j);
+                    points_coordinate.push_back(z + base_k);
 
-
-                    point_data[3 * index] =
-                        bitswap(
-                            velocity.u(x, y, z) - 0.5 * (velocity.u(x + 1, y, z) - velocity.u(x + 2, y, z)) * (x == 0));
-
-                    point_data[3 * index + 1] =
-                        bitswap(
-                            velocity.v(x, y, z) - 0.5 * (velocity.v(x, y + 1, z) - velocity.v(x, y + 2, z)) * (y == 0));
-
-                    point_data[3 * index + 2] =
-                        bitswap(
-                            velocity.w(x, y, z) - 0.5 * (velocity.w(x, y, z + 1) - velocity.w(x, y, z + 2)) * (z == 0));
-
-                    point_data[3 * index] +=
-                        bitswap(((velocity.u(x, y, z) + velocity.u(x - 1, y, z)) / 2.0) * (x != 0));
-
-                    point_data[3 * index + 1] +=
-                        bitswap(((velocity.v(x, y, z) + velocity.v(x, y - 1, z)) / 2.0) * (y != 0));
-
-                    point_data[3 * index + 2] +=
-                        bitswap(((velocity.w(x, y, z) + velocity.w(x, y, z - 1)) / 2.0) * (z != 0));
+                    point_data_u.push_back(velocity.u(x, y, z));
+                    point_data_v.push_back(velocity.v(x, y, z));
+                    point_data_w.push_back(velocity.w(x, y, z));
                 }
         }
         {
-            int plane_offset = Nz_owner * Ny_owner + Nx * Nz_owner;
-            for (int x = 0; x < Nx; x++)
-                for (int y = 0; y < Ny_owner; y++){
+            for (int x = 1; x < Nx; x++)
+                for (int y = 1; y < Ny_owner; y++){
                     int z = 0;
-                    int index = plane_offset + x * Ny_owner + y;
-                    points_coordinate[3 * index] = bitswap(x );
-                    points_coordinate[3 * index + 1] = bitswap((y + base_j) );
-                    points_coordinate[3 * index + 2] = bitswap((z + base_k) );
+                    points_coordinate.push_back(x);
+                    points_coordinate.push_back(y + base_j);
+                    points_coordinate.push_back(z + base_k);
 
-
-                    point_data[3 * index] =
-                        bitswap(
-                            velocity.u(x, y, z) - 0.5 * (velocity.u(x + 1, y, z) - velocity.u(x + 2, y, z)) * (x == 0));
-
-                    point_data[3 * index + 1] =
-                        bitswap(
-                            velocity.v(x, y, z) - 0.5 * (velocity.v(x, y + 1, z) - velocity.v(x, y + 2, z)) * (y == 0));
-
-                    point_data[3 * index + 2] =
-                        bitswap(
-                            velocity.w(x, y, z) - 0.5 * (velocity.w(x, y, z + 1) - velocity.w(x, y, z + 2)) * (z == 0));
-
-                    point_data[3 * index] +=
-                        bitswap(((velocity.u(x, y, z) + velocity.u(x - 1, y, z)) / 2.0) * (x != 0));
-
-                    point_data[3 * index + 1] +=
-                        bitswap(((velocity.v(x, y, z) + velocity.v(x, y - 1, z)) / 2.0) * (y != 0));
-
-                    point_data[3 * index + 2] +=
-                        bitswap(((velocity.w(x, y, z) + velocity.w(x, y, z - 1)) / 2.0) * (z != 0));
+                    point_data_u.push_back(velocity.u(x, y, z));
+                    point_data_v.push_back(velocity.v(x, y, z));
+                    point_data_w.push_back(velocity.w(x, y, z));
                 }
         }
 
 
-        local_data = point_data;
-        local_points = points_coordinate;
-        MPI_Gather(local_points.data(), local_cells, MPI_REAL,
-                   global_points.data(), local_cells, MPI_REAL, 0, MPI_COMM_WORLD);
-
-        MPI_Gather(local_data.data(), local_cells, MPI_REAL,
-                   global_data.data(), local_cells, MPI_REAL, 0, MPI_COMM_WORLD);
+        std::vector<int> counts(size), displacements(size);
+        int local_size = points_coordinate.size();
+        MPI_Gather(&local_size, 1, MPI_INT, counts.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 
         if (rank == 0){
-            //remove duplicates from global_points, duplicatesa are tripletes  of poits where x1==x2 and y1==y2 ecc  and the respective data TODO: this is BAD very BAD
-             std::vector<int> indices;
-             for (int i = 0; i < global_points.size(); i+=3){
-                 bool found = false;
-                    for (int j = 0; j < global_points.size(); j+=3){
-                        if (i != j){
-                            if (global_points[i] == global_points[j] && global_points[i + 1] == global_points[j + 1] && global_points[i + 2] == global_points[j + 2]){
-                                found = true;
-                                std::cout << "Found duplicate" << std::endl;
-                                std::cout << "x: " << global_points[i] << " y: " << global_points[i + 1] << " z: " << global_points[i + 2] << std::endl;
-                                std::cout << "x: " << global_points[j] << " y: " << global_points[j + 1] << " z: " << global_points[j + 2] << std::endl;
-
-                                break;
-                            }
-                        }
-                    }
-                 if (!found){
-                     indices.push_back(i);
-                 }
-             }
-            std::cout << "Number of index: " << indices.size() << std::endl;
-             std::vector<Real> new_points;
-             std::vector<Real> new_data;
-             for (int i = 0; i < global_points.size(); i+=3){
-                 if (std::find(indices.begin(), indices.end(), i) != indices.end()){
-                     new_points.push_back(global_points[i]);
-                     new_points.push_back(global_points[i + 1]);
-                     new_points.push_back(global_points[i + 2]);
-                     new_data.push_back(global_data[i]);
-                     new_data.push_back(global_data[i + 1]);
-                     new_data.push_back(global_data[i + 2]);
-                 }
-             }
-             global_points = new_points;
-             global_data = new_data;
-            stringstream header;
-
-            header << "# vtk DataFile Version 5.1\n";
-            header << "vtk output\n";
-            header << "BINARY\n";
-            header << "DATASET UNSTRUCTURED_GRID\n";
-            header << "POINTS " << global_points.size()/3  << " " <<type.str() << "\n";
-            std::cout << "Number of points: " << global_points.size() << std::endl;
-            int header_size = header.str().size();
-
-            MPI_File_write(fh, header.str().c_str(), header_size, MPI_CHAR, &status);
-
-            MPI_File_write_at(fh, header_size, global_points.data(),
-                              global_points.size()  * sizeof(Real),
-                              MPI_CHAR, &status);
-            std::cout << "Nx: " << constants.Nx  << std::endl;
-            std::cout << "Ny: " << constants.Ny_global  << std::endl;
-            std::cout << "Nx * Ny *3: " << constants.Nx * constants.Ny_global * 3 << std::endl;
-            stringstream point_data_header;
-            point_data_header << "\n" << "POINT_DATA " << global_points.size()/3 << "\n";
-            point_data_header << "VECTORS velocity " << type.str() << " 3" << "\n";
-            point_data_header << "LOOKUP_TABLE default" << "\n";
-            int point_data_header_size = point_data_header.str().size();
-            MPI_File_write_at(fh, header_size + global_points.size() *3 * sizeof(Real),
-                              point_data_header.str().c_str(),
-                              point_data_header_size, MPI_CHAR, &status);
-
-            //wirte look up table
-            MPI_File_write_at(fh, header_size +point_data_header_size + global_points.size() *3 * sizeof(Real),
-                              global_data.data(),
-                              global_points.size() * 3  * sizeof(Real),
-                              MPI_CHAR, &status);
+            displacements[0] = 0;
+            for (int i = 1; i < size; ++i){
+                displacements[i] = displacements[i - 1] + counts[i - 1];
+            }
+            std::cout << "Displacements: ";
+            for (int i = 0; i < size; i++){
+                std::cout << displacements[i] << " ";
+            }
         }
 
+        // Broadcast the displacements to all processes
+        MPI_Bcast(displacements.data(), size, MPI_INT, 0, MPI_COMM_WORLD);
+        //wait for recive
+        MPI_Barrier(MPI_COMM_WORLD); //BAD I GUESS
 
-        //         MPI_File_write_at(fh, my_offset, points_coordinate.data(),
-        //                           3 * (1 * Ny_owner * Nz_owner + Nx * 1 * Nz_owner + Nx * Ny_owner * 1) * sizeof(Real),
-        //                           MPI_REAL, &status);
+        //now we can write the data to the file
+        //first we write the header of the file the the points coordinates as unstructured points
 
+        std::stringstream header;
+        header << "# vtk DataFile Version 3.0\n";
+        header << "vtk output\n";
+        header << "BINARY\n";
+        header << "DATASET UNSTRUCTURED_GRID \n";
+        header << "POINTS " << points_coordinate.size() / 3 << " " << type.str() << "\n";
+        int header_size = header.str().size();
+        if (rank == 0){
+            MPI_File_write(fh, header.str().c_str(), header_size, MPI_CHAR, &status);
+        }
+        vectorToBigEndian(points_coordinate);
+        my_offset = header_size + displacements[rank] * sizeof(Real);
+        //write all arguments to console for debugging
+        std::cout << "Rank: " << rank << std::endl;
+        std::cout << "Displacement: " << displacements[rank] << std::endl;
+        std::cout << "My offset: " << my_offset << std::endl;
+        std::cout << "Size of points_coordinate: " << points_coordinate.size() << std::endl;
+        std::cout << "Size of point_data_u: " << point_data_u.size() << std::endl;
+        std::cout << "Size of point_data_v: " << point_data_v.size() << std::endl;
+        std::cout << "Size of point_data_w: " << point_data_w.size() << std::endl;
+        std::cout << "Size of local_cells: " << local_cells << std::endl;
 
-        // stringstream point_data_header;
-        // /*
-        // POINT_DATA 27
-        // SCALARS scalars float 1
-        // LOOKUP_TABLE default
-        // #1#
-        //
-        // point_data_header << "POINT_DATA " << number_of_cells << "\n";
-        // point_data_header << "VECTORS velocity " << type.str() << " 3" << "\n";
-        // point_data_header << "LOOKUP_TABLE velocity" << "\n";
-        // int point_data_header_size = point_data_header.str().size();
-        //
-        //
-        // my_offset =header_size + 3 * (1 * Ny_owner * Nz_owner + Nx * 1 * Nz_owner + Nx * Ny_owner * 1) * sizeof(Real) + rank * Nx * Ny_owner * Nz_owner * 3 * sizeof(Real);
-        // if (rank == 0){
-        //
-        //
-        //
-        //
-        //
-        //
-        //
-        //
-        // }
+        MPI_File_write_at(fh, my_offset, points_coordinate.data(),
+                          points_coordinate.size() * sizeof(Real),
+                          MPI_CHAR, &status);
 
 
         // points offset and write data
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_File_close(&fh);
-    }*/
+    }
 
 
-    void writeVTK(const std::string& filename, VelocityTensor& velocity, const Constants& constants,
+    /*void writeVTK(const std::string& filename, VelocityTensor& velocity, const Constants& constants,
                   StaggeredTensor& pressure, int rank, int size){
         {
             MPI_File fh;
@@ -328,46 +206,66 @@ namespace mif{
             std::vector<Real> local_v(constants.Nx * constants.Ny_owner * constants.Nz_owner);
             std::vector<Real> local_w(constants.Nx * constants.Ny_owner * constants.Nz_owner);
 
-            // Fill local arrays
+
             int index = 0;
             for (int x = 0; x < constants.Nx; x++){
-                for (int y = 0; y < constants.Ny_owner; y++){
-                    for (int z = 0; z < constants.Nz_owner; z++){
-                        // TODO: rewrite interpolation
-			local_u[index] = ((x == 0) ?
-			    (velocity.u(x ,y, z) - 0.5*(velocity.u(x+1, y, z) - velocity.u(x+2, y, z)))
-			    :
-			    (velocity.u(x, y, z) + velocity.u(x - 1, y, z))
-			);
+                // For first processor (rank == 0), include the full range (with ghost points).
+                // For other processors, start from index 1, as the first row/column is a ghost point.
+                int y_start = (rank == 0) ? 0 : 1;
+                int y_end = constants.Ny_owner; // This is the local size without the ghost points
 
-                        local_v[index] = ((y == 0) ?
-			    (velocity.v(x, y, z) - 0.5 * (velocity.v(x, y + 1, z) - velocity.v(x, y + 2, z)))
-			    :
-                            ((velocity.v(x, y, z) + velocity.v(x, y - 1, z)) / 2.0)
-			);
+                int z_start = (rank == 0) ? 0 : 1;
+                int z_end = constants.Nz_owner;
 
-                        local_w[index] = ((z == 0) ?
-                            (velocity.w(x, y, z) - 0.5 * (velocity.w(x, y, z + 1) - velocity.w(x, y, z + 2)))
-			    :
-                            ((velocity.w(x, y, z) + velocity.w(x, y, z - 1)) / 2.0)
-			);
+                for (int y = y_start; y < y_end; y++){
+                    for (int z = z_start; z < z_end; z++){
+                        // Calculate global indices with base_j and base_k
+                        int global_y = y + constants.base_j; // Adjust for processor offset in y-direction
+                        int global_z = z + constants.base_k;
+                        // Adjust for processor offset in z-direction DO I NEED IT? maybve for reconstruction
 
+                        // Interpolations
+                        {
+                            local_u[index] = (x == 0)
+                                                 ? (velocity.u(x, y, z) - 0.5 * (velocity.u(x + 1, y, z) - velocity.
+                                                     u(x + 2, y, z)))
+                                                 : (velocity.u(x, y, z) + velocity.u(x - 1, y, z)) / 2;
+
+                            local_v[index] = (y == 0)
+                                                 ? (velocity.v(x, y, z) - 0.5 * (velocity.v(x, y + 1, z) - velocity.
+                                                     v(x, y + 2, z)))
+                                                 : ((velocity.v(x, y, z) + velocity.v(x, y - 1, z)) / 2.0);
+
+                            local_w[index] = (z == 0)
+                                                 ? (velocity.w(x, y, z) - 0.5 * (velocity.w(x, y, z + 1) - velocity.
+                                                     w(x, y, z + 2)))
+                                                 : ((velocity.w(x, y, z) + velocity.w(x, y, z - 1)) / 2.0);
+                        }
+                        // Increment index for next local point
                         index++;
                     }
                 }
             }
 
-	    assert(any_of(local_u.begin(), local_u.end(), [](auto x) { return x != 0.0; }));
-	    assert(any_of(local_v.begin(), local_v.end(), [](auto x) { return x != 0.0; }));
-	    assert(any_of(local_w.begin(), local_w.end(), [](auto x) { return x != 0.0; }));
 
-	    // vtk format requires big endian data (x86 arch is LITTLE endian)
-	    {
-		// I think the bug lies in the conversion to big endian
-		vectorToBigEndian(local_u);
-		vectorToBigEndian(local_v);
-		vectorToBigEndian(local_w);
-	    }
+            if (rank == 0){
+                std::cout << "Size of local_u: " << local_u.size() << std::endl;
+                std::cout << "Size of local_v: " << local_v.size() << std::endl;
+                std::cout << "Size of local_w: " << local_w.size() << std::endl;
+            }
+
+
+            assert(std::ranges::any_of(local_u.begin(), local_u.end(), [](auto x) { return x != 0.0; }));
+            assert(std::ranges::any_of(local_v.begin(), local_v.end(), [](auto x) { return x != 0.0; }));
+            assert(std::ranges::any_of(local_w.begin(), local_w.end(), [](auto x) { return x != 0.0; }));
+
+            // vtk format requires big endian data (x86 arch is LITTLE endian)
+
+            // I think the bug lies in the conversion to big endian
+            vectorToBigEndian(local_u);
+            vectorToBigEndian(local_v);
+            vectorToBigEndian(local_w);
+
 
             // Calculate local array sizes
             int local_size = local_u.size();
@@ -377,13 +275,16 @@ namespace mif{
             MPI_Gather(&local_size, 1, MPI_INT, counts.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 
-	    // maybe every processor needs to know the displacements?
-            if (true || rank == 0){
+            // maybe every processor needs to know the displacements?
+            if (rank == 0){
                 displacements[0] = 0;
                 for (int i = 1; i < size; ++i){
                     displacements[i] = displacements[i - 1] + counts[i - 1];
                 }
             }
+
+            // Broadcast the displacements to all processes
+            MPI_Bcast(displacements.data(), size, MPI_INT, 0, MPI_COMM_WORLD);
 
             std::vector<Real> global_u, global_v, global_w;
             if (rank == 0){
@@ -432,6 +333,87 @@ namespace mif{
 
             MPI_Barrier(MPI_COMM_WORLD);
             MPI_File_close(&fh);
+        }
+    }*/
+
+    void writeSerialVTK(const std::string& filename, VelocityTensor& velocity, const Constants& constants,
+                        StaggeredTensor& pressure, int rank){
+        {
+            FILE* fh = fopen(filename.c_str(), "wb");
+            if (fh == nullptr){
+                std::cerr << "Error opening file" << std::endl;
+                return;
+            }
+            std::vector<Real> local_u, local_v, local_w, local_p;
+
+
+            local_u.reserve(constants.Nx * constants.Ny_global * constants.Nz_global);
+            local_v.reserve(constants.Nx * constants.Ny_global * constants.Nz_global);
+            local_w.reserve(constants.Nx * constants.Ny_global * constants.Nz_global);
+            local_p.reserve(constants.Nx * constants.Ny_global * constants.Nz_global);
+
+            for (int z = 0; z < constants.Nz_global; z++){
+                for (int y = 0; y < constants.Ny_global; y++){
+                    for (int x = 0; x < constants.Nx; x++){
+                        //TODO preallocate
+                        local_u.push_back(velocity.u(x, y, z));
+                        local_v.push_back(velocity.v(x, y, z));
+                        local_w.push_back(velocity.w(x, y, z));
+                        local_p.push_back(pressure(x, y, z));
+                    }
+                }
+            }
+
+
+            vectorToBigEndian(local_u);
+            vectorToBigEndian(local_v);
+            vectorToBigEndian(local_w);
+            vectorToBigEndian(local_p);
+
+
+            if (rank == 0){
+                std::stringstream header;
+                header << "# vtk DataFile Version 2.0\n";
+                header << "Velocity field\n";
+                header << "BINARY\n";
+                header << "DATASET STRUCTURED_POINTS\n";
+                header << "DIMENSIONS " << constants.Nx << " " << constants.Ny_global << " " << constants.Nz_global <<
+                    "\n";
+                header << "ORIGIN 0 0 0\n";
+                header << "SPACING " << constants.dx << " " << constants.dy << " " << constants.dz << "\n";
+                // MPI_File_write(fh, header.str().c_str(), header.str().size(), MPI_CHAR, &status);
+                fwrite(header.str().c_str(), sizeof(char), header.str().size(), fh);
+                std::stringstream scalars_u;
+                scalars_u << "\nPOINT_DATA " << constants.Nx * constants.Ny_global * constants.Nz_global <<
+                    " \nSCALARS u double 1\nLOOKUP_TABLE default\n";
+                // MPI_File_write(fh, scalars_u.str().c_str(), scalars_u.str().size(), MPI_CHAR, &status);
+                fwrite(scalars_u.str().c_str(), sizeof(char), scalars_u.str().size(), fh);
+                // MPI_File_write(fh, global_u.data(), global_u.size() * sizeof(Real), MPI_CHAR, &status);
+                fwrite(local_u.data(), sizeof(Real), local_u.size(), fh);
+                std::stringstream scalars_v;
+                scalars_v << "\nSCALARS v double 1\nLOOKUP_TABLE default\n";
+                // MPI_File_write(fh, scalars_v.str().c_str(), scalars_v.str().size(), MPI_CHAR, &status);
+                // MPI_File_write(fh, global_v.data(), global_v.size() * sizeof(Real), MPI_CHAR, &status);
+                fwrite(scalars_v.str().c_str(), sizeof(char), scalars_v.str().size(), fh);
+                fwrite(local_v.data(), sizeof(Real), local_v.size(), fh);
+
+                std::stringstream scalars_w;
+                scalars_w << "\nSCALARS w double 1\nLOOKUP_TABLE default\n";
+                // MPI_File_write(fh, scalars_w.str().c_str(), scalars_w.str().size(), MPI_CHAR, &status);
+                // MPI_File_write(fh, global_w.data(), global_w.size() * sizeof(Real), MPI_CHAR, &status);
+                // std::cout << global_w.size() << std::endl;
+                fwrite(scalars_w.str().c_str(), sizeof(char), scalars_w.str().size(), fh);
+                fwrite(local_w.data(), sizeof(Real), local_w.size(), fh);
+                std::stringstream scalars_p;
+                scalars_p << "\nSCALARS p double 1\nLOOKUP_TABLE default\n";
+                // MPI_File_write(fh, scalars_w.str().c_str(), scalars_w.str().size(), MPI_CHAR, &status);
+                // MPI_File_write(fh, global_w.data(), global_w.size() * sizeof(Real), MPI_CHAR, &status);
+                // std::cout << global_w.size() << std::endl;
+                fwrite(scalars_p.str().c_str(), sizeof(char), scalars_p.str().size(), fh);
+                fwrite(local_p.data(), sizeof(Real), local_p.size(), fh);
+            }
+
+            fclose(fh);
         }
     }
 } // mif
