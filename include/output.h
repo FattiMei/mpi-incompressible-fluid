@@ -10,41 +10,13 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include "Endian.h"
 #ifndef ENDIANESS
 #define ENDIANESS 0 //0 for little endian, 1 for big endian
 #endif
 
 
 namespace mif{
-    template <std::floating_point Type>
-    constexpr Type correct_endianness(const Type x) noexcept{
-        if constexpr (std::endian::native == std::endian::little){
-            if constexpr (std::is_same_v<Type, float>){
-                const auto transmute = std::bit_cast<std::uint32_t>(x);
-                auto swapped = std::byteswap(transmute);
-                return std::bit_cast<Type>(swapped);
-            }
-            else if constexpr (std::is_same_v<Type, double>){
-                const auto transmute = std::bit_cast<std::uint64_t>(x);
-                auto swapped = std::byteswap(transmute);
-                return std::bit_cast<Type>(swapped);
-            }
-        }
-        return x;
-    }
-
-    double toBigEndian(double x){
-        uint64_t transmute = *reinterpret_cast<uint64_t*>(&x);
-        uint64_t swapped = std::byteswap(transmute);
-
-        return *reinterpret_cast<double*>(&swapped);
-    }
-
-    void vectorToBigEndian(std::vector<Real>& xs){
-        for (Real& x : xs) x = correct_endianness<Real>(x);
-    }
-
-
     void writeVTK(const std::string& filename, VelocityTensor& velocity, const Constants& constants,
                   StaggeredTensor& pressure, int rank, int size){
         MPI_Offset my_offset, my_current_offset;
