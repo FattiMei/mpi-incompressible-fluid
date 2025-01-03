@@ -69,6 +69,7 @@ void writeVTK(
         int Ny_owner = constants.Ny_owner;
         int Nz_owner = constants.Nz_owner;
 
+
         // Start indices (base_j, base_k) based on rank
         int base_j = constants.base_j + 1;
         int base_k = constants.base_k + 1;
@@ -188,9 +189,60 @@ void writeVTK(
                           MPI_BYTE, &status);
         //maybe I could use a non-blocking write here and then wait for all to finish at the end of the function TODO check this
 
-        //now we write the u component of the velocity
         int num_elem = displacements[size - 1] + counts[size - 1];
         int global_offset = num_elem * sizeof(Real) + bufsize;
+
+	// write information about the cells, I cheat and make the processor 0 write all things
+	const int n_cells_x_plane = 1;
+	{
+
+	    int local_cell_header_size = sprintf(
+		buf,
+		"\nCELLS %d %d\n",
+		n_cells_x_plane,
+		5 * n_cells_x_plane
+	    );
+
+            if (rank == 0) {
+                MPI_File_write_at(fh, global_offset, buf, local_cell_header_size, MPI_CHAR, &status);
+            }
+
+	    global_offset += local_cell_header_size;
+
+	    std::vector<int> cell_data{4, 0, 1, 2, 3};
+	    vectorToBigEndian(cell_data);
+
+	    if (rank == 0) {
+                MPI_File_write_at(fh, global_offset, cell_data.data(), cell_data.size(), MPI_INT, &status);
+	    }
+
+	    global_offset += cell_data.size() * sizeof(int);
+	}
+	{
+	    int local_cell_type_header_size = sprintf(
+		buf,
+		"\nCELL_TYPES %d\n",
+		n_cells_x_plane
+	    );
+
+            if (rank == 0) {
+                MPI_File_write_at(fh, global_offset, buf, local_cell_type_header_size, MPI_CHAR, &status);
+            }
+
+	    global_offset += local_cell_type_header_size;
+
+	    std::vector<int> cell_type(n_cells_x_plane, 9);
+	    vectorToBigEndian(cell_type);
+
+	    if (rank == 0) {
+                MPI_File_write_at(fh, global_offset, cell_type.data(), cell_type.size(), MPI_INT, &status);
+	    }
+
+	    global_offset += cell_type.size() * sizeof(int);
+	}
+
+
+        //now we write the u component of the velocity
         {
 	    int local_u_header_size = sprintf(
 		buf,

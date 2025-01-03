@@ -31,18 +31,28 @@ constexpr double correct_endianness(double x) {
 #include <bit>
 
 namespace mif {
-template <std::floating_point Type>
-constexpr Type correct_endianness(const Type x) noexcept {
+template <typename T>
+constexpr T correct_endianness(const T x) noexcept {
 	if constexpr (std::endian::native == std::endian::little){
-		if constexpr (std::is_same_v<Type, float>){
+		if constexpr (std::is_same_v<T, float>){
 			const auto transmute = std::bit_cast<uint32_t>(x);
 			auto swapped = std::byteswap(transmute);
-			return std::bit_cast<Type>(swapped);
+			return std::bit_cast<T>(swapped);
 		}
-		else if constexpr (std::is_same_v<Type, double>){
+		else if constexpr (std::is_same_v<T, double>){
 			const auto transmute = std::bit_cast<uint64_t>(x);
 			auto swapped = std::byteswap(transmute);
-			return std::bit_cast<Type>(swapped);
+			return std::bit_cast<T>(swapped);
+		}
+		else if constexpr (std::is_same_v<T, uint32_t>){
+			const auto transmute = std::bit_cast<uint32_t>(x);
+			auto swapped = std::byteswap(transmute);
+			return std::bit_cast<T>(swapped);
+		}
+		else if constexpr (std::is_same_v<T, int>){
+			const auto transmute = std::bit_cast<int>(x);
+			auto swapped = std::byteswap(transmute);
+			return std::bit_cast<T>(swapped);
 		}
 	}
 	return x;
@@ -62,9 +72,9 @@ constexpr void test_implementations() {
 
 
 namespace mif {
-template <std::floating_point floating>
-void vectorToBigEndian(std::vector<floating> &xs) noexcept {
-        for (floating& x : xs) x = correct_endianness(x);
+template <typename T>
+void vectorToBigEndian(std::vector<T> &xs) noexcept {
+        for (T& x : xs) x = correct_endianness(x);
 }
 };
 
