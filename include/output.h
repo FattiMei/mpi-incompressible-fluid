@@ -122,9 +122,10 @@ namespace mif{
                 }
         }
         if (base_k == 0){
+            int z = 0;
             for (int x = 1; x < Nx; x++)
-                for (int y = 1; y < Ny_owner; y++){
-                    int z = 0;
+                for (int y = 0; y < Ny_owner; y++){
+                    if (base_j==0 && y==0) continue;
                     points_coordinate.push_back(x * constants.dx);
                     points_coordinate.push_back((y + base_j) * constants.dy);
                     points_coordinate.push_back((z + base_k) * constants.dz);
@@ -200,11 +201,11 @@ namespace mif{
         //maybe I could use a non-blocking write here and then wait for all to finish at the end of the function TODO check this
 
         //now we write the u component of the velocity
-        int global_offset = displacements[size - 1] + counts[size - 1];
-        global_offset = global_offset * sizeof(Real) + header_size;
+        int num_elem = displacements[size - 1] + counts[size - 1];
+        int global_offset = num_elem * sizeof(Real) + header_size;
         {
             std::stringstream local_u_header;
-            local_u_header << "\nCELLS 0 0 \n CELL_TYPES 0\nPOINT_DATA " << (displacements[size - 1] + counts[size - 1])
+            local_u_header << "\nPOINT_DATA " << (displacements[size - 1] + counts[size - 1])
                 / 3 << "\n";
             local_u_header << "SCALARS u " << type.str() << " 1\n";
             local_u_header << "LOOKUP_TABLE default\n";
@@ -226,150 +227,6 @@ namespace mif{
     }
 
 
-    /*void writeVTK(const std::string& filename, VelocityTensor& velocity, const Constants& constants,
-                  StaggeredTensor& pressure, int rank, int size){
-        {
-            MPI_File fh;
-            MPI_Status status;
-            MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
-                          MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
-
-            int total_points = constants.Nx * constants.Ny_global * constants.Nz_global;
-
-            // Prepare local arrays for velocities with interpolation
-            std::vector<Real> local_u(constants.Nx * constants.Ny_owner * constants.Nz_owner);
-            std::vector<Real> local_v(constants.Nx * constants.Ny_owner * constants.Nz_owner);
-            std::vector<Real> local_w(constants.Nx * constants.Ny_owner * constants.Nz_owner);
-
-
-            int index = 0;
-            for (int x = 0; x < constants.Nx; x++){
-                // For first processor (rank == 0), include the full range (with ghost points).
-                // For other processors, start from index 1, as the first row/column is a ghost point.
-                int y_start = (rank == 0) ? 0 : 1;
-                int y_end = constants.Ny_owner; // This is the local size without the ghost points
-
-                int z_start = (rank == 0) ? 0 : 1;
-                int z_end = constants.Nz_owner;
-
-                for (int y = y_start; y < y_end; y++){
-                    for (int z = z_start; z < z_end; z++){
-                        // Calculate global indices with base_j and base_k
-                        int global_y = y + constants.base_j; // Adjust for processor offset in y-direction
-                        int global_z = z + constants.base_k;
-                        // Adjust for processor offset in z-direction DO I NEED IT? maybve for reconstruction
-
-                        // Interpolations
-                        {
-                            local_u[index] = (x == 0)
-                                                 ? (velocity.u(x, y, z) - 0.5 * (velocity.u(x + 1, y, z) - velocity.
-                                                     u(x + 2, y, z)))
-                                                 : (velocity.u(x, y, z) + velocity.u(x - 1, y, z)) / 2;
-
-                            local_v[index] = (y == 0)
-                                                 ? (velocity.v(x, y, z) - 0.5 * (velocity.v(x, y + 1, z) - velocity.
-                                                     v(x, y + 2, z)))
-                                                 : ((velocity.v(x, y, z) + velocity.v(x, y - 1, z)) / 2.0);
-
-                            local_w[index] = (z == 0)
-                                                 ? (velocity.w(x, y, z) - 0.5 * (velocity.w(x, y, z + 1) - velocity.
-                                                     w(x, y, z + 2)))
-                                                 : ((velocity.w(x, y, z) + velocity.w(x, y, z - 1)) / 2.0);
-                        }
-                        // Increment index for next local point
-                        index++;
-                    }
-                }
-            }
-
-
-            if (rank == 0){
-                std::cout << "Size of local_u: " << local_u.size() << std::endl;
-                std::cout << "Size of local_v: " << local_v.size() << std::endl;
-                std::cout << "Size of local_w: " << local_w.size() << std::endl;
-            }
-
-
-            assert(std::ranges::any_of(local_u.begin(), local_u.end(), [](auto x) { return x != 0.0; }));
-            assert(std::ranges::any_of(local_v.begin(), local_v.end(), [](auto x) { return x != 0.0; }));
-            assert(std::ranges::any_of(local_w.begin(), local_w.end(), [](auto x) { return x != 0.0; }));
-
-            // vtk format requires big endian data (x86 arch is LITTLE endian)
-
-            // I think the bug lies in the conversion to big endian
-            vectorToBigEndian(local_u);
-            vectorToBigEndian(local_v);
-            vectorToBigEndian(local_w);
-
-
-            // Calculate local array sizes
-            int local_size = local_u.size();
-
-            // Gather sizes from all ranks
-            std::vector<int> counts(size), displacements(size);
-            MPI_Gather(&local_size, 1, MPI_INT, counts.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-
-            // maybe every processor needs to know the displacements?
-            if (rank == 0){
-                displacements[0] = 0;
-                for (int i = 1; i < size; ++i){
-                    displacements[i] = displacements[i - 1] + counts[i - 1];
-                }
-            }
-
-            // Broadcast the displacements to all processes
-            MPI_Bcast(displacements.data(), size, MPI_INT, 0, MPI_COMM_WORLD);
-
-            std::vector<Real> global_u, global_v, global_w;
-            if (rank == 0){
-                global_u.resize(displacements[size - 1] + counts[size - 1], 0.0);
-                global_v.resize(displacements[size - 1] + counts[size - 1], 0.0);
-                global_w.resize(displacements[size - 1] + counts[size - 1], 0.0);
-            }
-
-            MPI_Gatherv(local_u.data(), local_size, MPI_DOUBLE, global_u.data(),
-                        counts.data(), displacements.data(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-            MPI_Gatherv(local_v.data(), local_size, MPI_DOUBLE, global_v.data(),
-                        counts.data(), displacements.data(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-            MPI_Gatherv(local_w.data(), local_size, MPI_DOUBLE, global_w.data(),
-                        counts.data(), displacements.data(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-            if (rank == 0){
-                std::stringstream header;
-                header << "# vtk DataFile Version 2.0\n";
-                header << "Velocity field\n";
-                header << "BINARY\n";
-                header << "DATASET STRUCTURED_POINTS\n";
-                header << "DIMENSIONS " << constants.Nx << " " << constants.Ny_global << " " << constants.Nz_global <<
-                    "\n";
-                header << "ORIGIN 0 0 0\n";
-                header << "SPACING " << constants.dx << " " << constants.dy << " " << constants.dz << "\n";
-                MPI_File_write(fh, header.str().c_str(), header.str().size(), MPI_CHAR, &status);
-                std::stringstream scalars_u;
-                scalars_u << "\nPOINT_DATA 32768\nSCALARS u double 1\nLOOKUP_TABLE default\n";
-                MPI_File_write(fh, scalars_u.str().c_str(), scalars_u.str().size(), MPI_CHAR, &status);
-                std::cout << "Size of global_u: " << global_u.size() << std::endl;
-                MPI_File_write(fh, global_u.data(), global_u.size() * sizeof(Real), MPI_CHAR, &status);
-
-                std::stringstream scalars_v;
-                scalars_v << "\nSCALARS v double 1\nLOOKUP_TABLE default\n";
-                MPI_File_write(fh, scalars_v.str().c_str(), scalars_v.str().size(), MPI_CHAR, &status);
-                MPI_File_write(fh, global_v.data(), global_v.size() * sizeof(Real), MPI_CHAR, &status);
-
-                std::stringstream scalars_w;
-                scalars_w << "\nSCALARS w double 1\nLOOKUP_TABLE default\n";
-                MPI_File_write(fh, scalars_w.str().c_str(), scalars_w.str().size(), MPI_CHAR, &status);
-                MPI_File_write(fh, global_w.data(), global_w.size() * sizeof(Real), MPI_CHAR, &status);
-                std::cout << global_w.size() << std::endl;
-            }
-
-            MPI_Barrier(MPI_COMM_WORLD);
-            MPI_File_close(&fh);
-        }
-    }*/
 
     void writeSerialVTK(const std::string& filename, VelocityTensor& velocity, const Constants& constants,
                         StaggeredTensor& pressure, int rank){
