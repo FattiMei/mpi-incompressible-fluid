@@ -97,35 +97,36 @@ namespace mif{
             int x = 0; //x=0 plane
             for (int y = 0; y < Ny_owner; y++){
                 for (int z = 0; z < Nz_owner; z++){
-                    points_coordinate.push_back(x);
-                    points_coordinate.push_back(y + base_j);
-                    points_coordinate.push_back(z + base_k);
+                    points_coordinate.push_back(x * constants.dx);
+                    points_coordinate.push_back((y + base_j) * constants.dy);
+                    points_coordinate.push_back((z + base_k) * constants.dz);
                     point_data_u.push_back(velocity.u(x, y, z));
                     point_data_v.push_back(velocity.v(x, y, z));
                     point_data_w.push_back(velocity.w(x, y, z));
                 }
             }
         }
-        {
+        if (base_j == 0){
+            // ALLERT THIS ONLY IF AT THE BORDER
             int y = 0; //y=0 plane
             for (int x = 1; x < Nx; x++)
                 for (int z = 0; z < Nz_owner; z++){
-                    points_coordinate.push_back(x);
-                    points_coordinate.push_back(y + base_j);
-                    points_coordinate.push_back(z + base_k);
+                    points_coordinate.push_back(x * constants.dx);
+                    points_coordinate.push_back((y + base_j) * constants.dy);
+                    points_coordinate.push_back((z + base_k) * constants.dz);
 
                     point_data_u.push_back(velocity.u(x, y, z));
                     point_data_v.push_back(velocity.v(x, y, z));
                     point_data_w.push_back(velocity.w(x, y, z));
                 }
         }
-        {
+        if (base_k == 0){
             for (int x = 1; x < Nx; x++)
                 for (int y = 1; y < Ny_owner; y++){
                     int z = 0;
-                    points_coordinate.push_back(x);
-                    points_coordinate.push_back(y + base_j);
-                    points_coordinate.push_back(z + base_k);
+                    points_coordinate.push_back(x * constants.dx);
+                    points_coordinate.push_back((y + base_j) * constants.dy);
+                    points_coordinate.push_back((z + base_k) * constants.dz);
 
                     point_data_u.push_back(velocity.u(x, y, z));
                     point_data_v.push_back(velocity.v(x, y, z));
@@ -148,12 +149,16 @@ namespace mif{
             for (int i = 0; i < size; i++){
                 std::cout << displacements[i] << " ";
             }
+            std::cout << std::endl;
         }
 
         // Broadcast the displacements to all processes
         MPI_Bcast(displacements.data(), size, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(counts.data(), size, MPI_INT, 0, MPI_COMM_WORLD);
         //wait for recive
-        MPI_Barrier(MPI_COMM_WORLD); //BAD I GUESS
+        vectorToBigEndian(points_coordinate);
+        MPI_Barrier(MPI_COMM_WORLD); //BAD I GUESS each processor should receive only the relevant displacement
+
 
         //now we can write the data to the file
         //first we write the header of the file the the points coordinates as unstructured points
@@ -163,30 +168,55 @@ namespace mif{
         header << "vtk output\n";
         header << "BINARY\n";
         header << "DATASET UNSTRUCTURED_GRID \n";
-        header << "POINTS " << points_coordinate.size() / 3 << " " << type.str() << "\n";
+        header << "POINTS " << (displacements[size - 1] + counts[size - 1]) / 3 << " " << type.str() << "\n";
         int header_size = header.str().size();
         if (rank == 0){
             MPI_File_write(fh, header.str().c_str(), header_size, MPI_CHAR, &status);
+            //print points_coordinate
+            for (int point = 0; point < points_coordinate.size(); point = point + 3){
+                // Real x =  correct_endianness<Real>(points_coordinate[point]);
+                // Real y = correct_endianness<Real>(points_coordinate[point + 1]);
+                // Real z = correct_endianness<Real>(points_coordinate[point + 2]);
+                // std::cout << "Point: " << x << " " << y << " " << z << std::endl;
+            }
         }
-        vectorToBigEndian(points_coordinate);
         my_offset = header_size + displacements[rank] * sizeof(Real);
         //write all arguments to console for debugging
-        std::cout << "Rank: " << rank << std::endl;
-        std::cout << "Displacement: " << displacements[rank] << std::endl;
-        std::cout << "My offset: " << my_offset << std::endl;
-        std::cout << "Size of points_coordinate: " << points_coordinate.size() << std::endl;
-        std::cout << "Size of point_data_u: " << point_data_u.size() << std::endl;
-        std::cout << "Size of point_data_v: " << point_data_v.size() << std::endl;
-        std::cout << "Size of point_data_w: " << point_data_w.size() << std::endl;
-        std::cout << "Size of local_cells: " << local_cells << std::endl;
+        // std::cout << "Rank: " << rank << " Displacement: " << displacements[rank] << " My offset: " << my_offset
+        //   << " Size of points_coordinate: " << points_coordinate.size() << " Size of point_data_u: "
+        //   << point_data_u.size() << " Size of point_data_v: " << point_data_v.size() << " Size of point_data_w: "
+        //   << point_data_w.size() << " Size of local_cells: " << local_cells << std::endl;
 
         MPI_File_write_at(fh, my_offset, points_coordinate.data(),
                           points_coordinate.size() * sizeof(Real),
-                          MPI_CHAR, &status);
+                          MPI_BYTE, &status); //maybe I should use iwritw_at
 
+        //now we write the u component of the velocity
+        int global_offset = displacements[size - 1] + counts[size - 1];
+        vectorToBigEndian(point_data_u);
+        global_offset = global_offset * sizeof(Real) + header_size;
+        {
+            std::stringstream local_u_header;
+            local_u_header.clear();
+            local_u_header.str("");
+            local_u_header << "\nPOINT_DATA " << (displacements[size - 1] + counts[size - 1]) / 3 << "\n";
+            local_u_header << "SCALARS u " << type.str() << " 1\n";
+            local_u_header << "LOOKUP_TABLE default\n";
+            int local_u_header_size = local_u_header.str().size();
+            if (rank == 0){
+                MPI_File_write_at(fh, global_offset, local_u_header.str().c_str(), local_u_header_size, MPI_CHAR,
+                                  &status);
+                std::cout << "Global offset: " << global_offset << " Header size: " << local_u_header_size << std::endl;
+            }
+
+            my_offset = global_offset + displacements[rank] / 3 * sizeof(Real) + local_u_header_size;
+            std::cout << "rank " << rank << " my_offset: " << my_offset << " size: " << size << std::endl;
+            MPI_File_write_at(fh, my_offset, point_data_u.data(), point_data_u.size() * sizeof(Real), MPI_BYTE,
+                              &status);
+        }
 
         // points offset and write data
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD); //Do I need this? Maybe not
         MPI_File_close(&fh);
     }
 
