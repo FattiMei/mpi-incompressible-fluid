@@ -1,5 +1,34 @@
+#include <cstdio>
 #include "Endian.h"
 #include "VTKExport.h"
+
+
+// If someone wants to put the hands in this program, here is a brief description:
+//
+// REQUIREMENTS:
+//   * export u, v, w, and p (interpolated on pressure points) at planes
+//     - x = 0
+//     - y = 0
+//     - z = 0
+//
+// IMPLEMENTATION:
+//   * each processor writes a little piece of a single big file using MPI file API
+//   * each need to know where we are in the file (global offset)
+//     - for the parts where only the first processor writes data, the other ones
+//       will "render" the data and update their local index
+//
+// SECTIONS:
+//   1. interpolation
+//   2. point coordinates computing
+//   3. vtk header
+//   4. vtk point data
+//   5. vtk point values
+//
+// MISSING:
+//   * cell support for vtk: the file will be rendered as surfaces on paraview.
+//     right now only "point gaussian" option is available and it's not good
+//
+// The desired structure of the vtk file is available at analysis/vtk/cell.vtk
 
 
 namespace mif {
@@ -12,6 +41,10 @@ void writeVTK(
 	const int              rank,
 	const int              size
 ) {
+	const char* typestr = (sizeof(Real) == 8) ? "double" : "float";
+	char buf[1024];
+	int bufsize = 0;
+	
         MPI_Offset my_offset, my_current_offset;
         MPI_File fh;
         MPI_Status status;
@@ -28,13 +61,6 @@ void writeVTK(
             global_points.resize(constants.Nx * constants.Ny_global * 3 * 3 + constants.Nx * constants.Ny_global * 3);
             global_data.resize(constants.Nx * constants.Ny_global * 3 * 3 + constants.Nx * constants.Ny_global * 3);
         }
-        std::stringstream type;
-        if constexpr (constexpr size_t _size = sizeof(Real); _size == 8){
-            type << "double";
-        }
-        else
-            type << "float";
-
 
         int Nx = constants.Nx;
         int Ny = constants.Ny_global;
@@ -62,9 +88,9 @@ void writeVTK(
             for (int y = 0; y < Ny_owner; y++){
                 for (int z = 0; z < Nz_owner; z++){
                     points_coordinate.push_back(x * constants.dx);
-                    //TODO: push back is slow should use index arithmetic instead with resize
                     points_coordinate.push_back((y + base_j) * constants.dy);
                     points_coordinate.push_back((z + base_k) * constants.dz);
+
                     point_data_u.push_back(velocity.u(x, y, z));
                     point_data_v.push_back(velocity.v(x, y, z));
                     point_data_w.push_back(velocity.w(x, y, z));
@@ -75,7 +101,7 @@ void writeVTK(
         if (base_j == 0){
             // ALLERT THIS ONLY IF AT THE BORDER
             int y = 0; //y=0 plane
-            for (int x = 1; x < Nx; x++)
+            for (int x = 0; x < Nx; x++)
                 for (int z = 0; z < Nz_owner; z++){
                     points_coordinate.push_back(x * constants.dx);
                     points_coordinate.push_back((y + base_j) * constants.dy);
@@ -89,7 +115,7 @@ void writeVTK(
         }
         if (base_k == 0){
             int z = 0;
-            for (int x = 1; x < Nx; x++)
+            for (int x = 0; x < Nx; x++)
                 for (int y = 0; y < Ny_owner; y++){
                     if (base_j == 0 && y == 0) continue;
                     points_coordinate.push_back(x * constants.dx);
@@ -139,23 +165,18 @@ void writeVTK(
         MPI_Barrier(MPI_COMM_WORLD);
         //BAD, I'dont know if I need this or not, shouldn't be too bad though, but I should check TODO check this
 
-        std::stringstream header;
-        header << "# vtk DataFile Version 2.0\n";
-        header << "vtk output\n";
-        header << "BINARY\n";
-        header << "DATASET UNSTRUCTURED_GRID \n";
-        header << "POINTS " << (displacements[size - 1] + counts[size - 1]) / 3 << " " << type.str() << "\n";
-        int header_size = header.str().size();
-        if (rank == 0){
-            MPI_File_write(fh, header.str().c_str(), header_size, MPI_CHAR, &status);
-            for (int point = 0; point < points_coordinate.size(); point = point + 3){
-                // Real x =  correct_endianness<Real>(points_coordinate[point]);
-                // Real y = correct_endianness<Real>(points_coordinate[point + 1]);
-                // Real z = correct_endianness<Real>(points_coordinate[point + 2]);
-                // std::cout << "Point: " << x << " " << y << " " << z << std::endl;
-            }
+	bufsize = sprintf(
+		buf,
+		"# vtk DataFile Version 2.0\nvtk output\nBINARY\nDATASET UNSTRUCTURED_GRID \nPOINTS %d %s\n",
+		(displacements[size - 1] + counts[size - 1]) / 3,
+		typestr
+	);
+
+        if (rank == 0) {
+            MPI_File_write(fh, buf, strlen(buf), MPI_CHAR, &status);
         }
-        my_offset = header_size + displacements[rank] * sizeof(Real);
+
+        my_offset = bufsize + displacements[rank] * sizeof(Real);
         //write all arguments to console for debugging
         // std::cout << "Rank: " << rank << " Displacement: " << displacements[rank] << " My offset: " << my_offset
         //   << " Size of points_coordinate: " << points_coordinate.size() << " Size of point_data_u: "
@@ -169,16 +190,17 @@ void writeVTK(
 
         //now we write the u component of the velocity
         int num_elem = displacements[size - 1] + counts[size - 1];
-        int global_offset = num_elem * sizeof(Real) + header_size;
+        int global_offset = num_elem * sizeof(Real) + bufsize;
         {
-            std::stringstream local_u_header;
-            local_u_header << "\nPOINT_DATA " << (displacements[size - 1] + counts[size - 1]) / 3 << "\n";
-            local_u_header << "SCALARS u " << type.str() << " 1\n";
-            local_u_header << "LOOKUP_TABLE default\n";
-            int local_u_header_size = local_u_header.str().size();
-            if (rank == 0){
-                MPI_File_write_at(fh, global_offset, local_u_header.str().c_str(), local_u_header_size, MPI_CHAR,
-                                  &status);
+	    int local_u_header_size = sprintf(
+		buf,
+		"\nPOINT_DATA %d\nSCALARS u %s 1\nLOOKUP_TABLE default\n",
+		(displacements[size - 1] + counts[size - 1]) / 3,
+		typestr
+	    );
+
+            if (rank == 0) {
+                MPI_File_write_at(fh, global_offset, buf, local_u_header_size, MPI_CHAR, &status);
             }
 
             my_offset = global_offset + displacements[rank] / 3 * sizeof(Real) + local_u_header_size;
@@ -190,13 +212,14 @@ void writeVTK(
 
 
         {
-            std::stringstream local_v_header;
-            local_v_header << "\nSCALARS v " << type.str() << " 1\n";
-            local_v_header << "LOOKUP_TABLE default\n";
-            int local_v_header_size = local_v_header.str().size();
-            if (rank == 0){
-                MPI_File_write_at(fh, global_offset, local_v_header.str().c_str(), local_v_header_size, MPI_CHAR,
-                                  &status);
+	    int local_v_header_size = sprintf(
+		buf,
+		"\nSCALARS v %s 1\nLOOKUP_TABLE default\n",
+		typestr
+	    );
+
+            if (rank == 0) {
+                MPI_File_write_at(fh, global_offset, buf, local_v_header_size, MPI_CHAR, &status);
             }
 
             my_offset = global_offset + displacements[rank] / 3 * sizeof(Real) + local_v_header_size;
@@ -206,13 +229,14 @@ void writeVTK(
         }
 
         {
-            std::stringstream local_w_header;
-            local_w_header << "\nSCALARS w " << type.str() << " 1\n";
-            local_w_header << "LOOKUP_TABLE default\n";
-            int local_w_header_size = local_w_header.str().size();
-            if (rank == 0){
-                MPI_File_write_at(fh, global_offset, local_w_header.str().c_str(), local_w_header_size, MPI_CHAR,
-                                  &status);
+	    int local_w_header_size = sprintf(
+		buf,
+		"\nSCALARS w %s 1\nLOOKUP_TABLE default\n",
+		typestr
+	    );
+
+            if (rank == 0) {
+                MPI_File_write_at(fh, global_offset, buf, local_w_header_size, MPI_CHAR, &status);
             }
 
             my_offset = global_offset + displacements[rank] / 3 * sizeof(Real) + local_w_header_size;
@@ -221,13 +245,14 @@ void writeVTK(
             global_offset += (displacements[size - 1] + counts[size - 1]) / 3 * sizeof(Real) + local_w_header_size;
         }
         {
-            std::stringstream local_p_header;
-            local_p_header << "\nSCALARS p " << type.str() << " 1\n";
-            local_p_header << "LOOKUP_TABLE default\n";
-            int local_p_header_size = local_p_header.str().size();
-            if (rank == 0){
-                MPI_File_write_at(fh, global_offset, local_p_header.str().c_str(), local_p_header_size, MPI_CHAR,
-                                  &status);
+	    int local_p_header_size = sprintf(
+		buf,
+		"\nSCALARS p %s 1\nLOOKUP_TABLE default\n",
+		typestr
+	    );
+
+            if (rank == 0) {
+                MPI_File_write_at(fh, global_offset, buf, local_p_header_size, MPI_CHAR, &status);
             }
 
             my_offset = global_offset + displacements[rank] / 3 * sizeof(Real) + local_p_header_size;
