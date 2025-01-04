@@ -11,5 +11,7 @@ analysis/results.txt
 analysis/*.png
 *.o
 
-*pvsm
+test/OpenFOAM/test1
+
 source_openfoam.sh
+*.pvsm

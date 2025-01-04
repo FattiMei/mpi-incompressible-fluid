@@ -6,6 +6,7 @@
 #include <cassert>
 #include <iostream>
 #include <mpi.h>
+#include "VTKExport.h"
 
 double Reynolds;
 
@@ -15,7 +16,7 @@ int main(int argc, char *argv[]) {
 
   // The rank of the current processor is the id of the processor.
   int rank;
-  
+
   // The size of the communicator is the number of processors overall.
   int size;
 
@@ -68,8 +69,10 @@ int main(int argc, char *argv[]) {
   const Real z_size = test_case_2 ? 1.0 : 2.0;
   constexpr Real Re = 1e3;
   const std::array<bool, 3> periodic_bc{false, false, test_case_2};
-  
   // Create needed structures.
+  // Note that the constants object is only constant within the scope of this
+  // particular processor. All processors will have their own subdomain
+  // on which they will compute the solution.
   const Constants constants(Nx_global, Ny_global, Nz_global,
                             1.0, 1.0, test_case_2 ? 1.0 : 2.0,
                             test_case_2 ? -0.5 : 0.0, test_case_2 ? -0.5 : 0.0, test_case_2 ? -0.5 : -1.0,
@@ -81,7 +84,7 @@ int main(int argc, char *argv[]) {
   // Create the tensors.
   VelocityTensor velocity(constants);
   VelocityTensor velocity_buffer(constants);
-  VelocityTensor rhs_buffer(constants);
+  VelocityTensor velocity_buffer_2(constants);
   StaggeredTensor pressure(constants, StaggeringDirection::none);
   StaggeredTensor pressure_buffer(constants, StaggeringDirection::none);
   PressureTensor pressure_solver_buffer(structures);
@@ -98,10 +101,13 @@ int main(int argc, char *argv[]) {
     const Real current_time = time_step * constants.dt;
 
     // Update the solution inside the mesh.
-    timestep(velocity, velocity_buffer, rhs_buffer, exact_velocity, current_time, pressure, pressure_buffer, pressure_solver_buffer);
+    timestep(velocity, velocity_buffer, velocity_buffer_2, exact_velocity, current_time, pressure, pressure_buffer, pressure_solver_buffer);
   }
 
-  // TODO: store the required parts of the solution as a vtk and some dat files.
+  // Store the requested slices as a VTK file.
+  writeVTK("solution.vtk", velocity, pressure);
+  
+  // TODO: store the required parts of the solution as dat files.
 
   // Finalize MPI.
   MPI_Finalize();

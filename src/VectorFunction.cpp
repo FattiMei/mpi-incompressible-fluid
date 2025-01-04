@@ -17,6 +17,26 @@ VectorFunction::VectorFunction(const std::function<Real(Real, Real, Real)> f_u,
     : f_u(f_u), f_v(f_v), f_w(f_w),
       components{&this->f_u, &this->f_v, &this->f_w} {};
 
+VectorFunction VectorFunction::operator*(const Real scalar) const {
+  const std::function<Real(Real, Real, Real)> new_f_u = 
+      [scalar, *this](Real x, Real y, Real z) { return scalar * f_u(x, y, z); };
+  const std::function<Real(Real, Real, Real)> new_f_v = 
+      [scalar, *this](Real x, Real y, Real z) { return scalar * f_v(x, y, z); };
+  const std::function<Real(Real, Real, Real)> new_f_w = 
+      [scalar, *this](Real x, Real y, Real z) { return scalar * f_w(x, y, z); };
+  return VectorFunction(new_f_u, new_f_v, new_f_w);
+}
+
+VectorFunction VectorFunction::operator+(const VectorFunction &other) const {
+  const std::function<Real(Real, Real, Real)> new_f_u = 
+      [*this, other](Real x, Real y, Real z) { return f_u(x, y, z) + other.f_u(x, y, z); };
+  const std::function<Real(Real, Real, Real)> new_f_v = 
+      [*this, other](Real x, Real y, Real z) { return f_v(x, y, z) + other.f_v(x, y, z); };
+  const std::function<Real(Real, Real, Real)> new_f_w = 
+      [*this, other](Real x, Real y, Real z) { return f_w(x, y, z) + other.f_w(x, y, z); };
+  return VectorFunction(new_f_u, new_f_v, new_f_w);
+}
+
 TimeVectorFunction::TimeVectorFunction(
     const std::function<Real(Real, Real, Real, Real)> f_u,
     const std::function<Real(Real, Real, Real, Real)> f_v,

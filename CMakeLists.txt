@@ -29,7 +29,7 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 
 # Set custom flags for Debug build.
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -O0 -march=native -mtune=native \
      -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
 
 # Set custom flags for Release build.
@@ -42,6 +42,12 @@ if(NOT DEFINED VERBOSE)
 endif ()
 
 #add_definitions(-DOPT_CPU_CACHE)
+add_definitions(-DMIF_LEGACY_COMPILER)
+
+get_directory_property(MYDEFS COMPILE_DEFINITIONS)
+if (MYDEFS MATCHES "MIF_LEGACY_COMPILER")
+	MESSAGE(WARNING "Using legacy endian conversion")
+endif()
 
 set(EXE_NAME "mif")
 set(CONVERGENCE_TEST_EXE_NAME "convergence_test")
@@ -94,6 +100,7 @@ add_library(
 	${SOURCE_DIR}/VectorFunction.cpp
 	${SOURCE_DIR}/VelocityTensor.cpp
 	${SOURCE_DIR}/InputParser.cpp
+	${SOURCE_DIR}/VTKExport.cpp
 	${FORCING_TERM_ARTIFACT}
 	${PRESSURE_ARTIFACT}
 	${EXACT_SOLUTION_ARTIFACT}
@@ -121,6 +128,7 @@ add_executable(tensor_usage_test test/tensor_usage_test.cpp)
 
 add_executable(velocity_test test/velocity_test.cpp)
 add_executable(velocity_test_mixed test/velocity_test_mixed.cpp)
+
 add_executable(mpi_test test/mpi_test.cpp)
 
 add_executable(fftw_Dirichlet3D test/fftw3D_Dirichlet.cpp)

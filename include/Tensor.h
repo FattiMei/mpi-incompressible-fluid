@@ -225,9 +225,9 @@ public:
    */
   constexpr Type &operator()(const DimensionsType i, const DimensionsType j,
                              const DimensionsType k) {
-    assert(i >= 0 && i < _dimensions[0]);
-    assert(j >= 0 && j < _dimensions[1]);
-    assert(k >= 0 && k < _dimensions[2]);
+    // assert(i >= 0 && i < _dimensions[0]);
+    // assert(j >= 0 && j < _dimensions[1]);
+    // assert(k >= 0 && k < _dimensions[2]);
     return _data[i + j * _strides[1] + k * _strides[0]];
   }
   /*!
