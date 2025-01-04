@@ -106,6 +106,10 @@ int main(int argc, char *argv[]) {
 
   // Store the requested slices as a VTK file.
   writeVTK("solution.vtk", velocity, pressure);
+
+  if (rank == 0 and size == 1) {
+    writeVTKFullMesh("full.vtk", velocity, pressure);
+  }
   
   // TODO: store the required parts of the solution as dat files.
 
