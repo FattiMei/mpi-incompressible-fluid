@@ -120,9 +120,9 @@ namespace mif{
             int index = 0;
             for (int y = 0; y < Ny_owner; y++){
                 for (int z = 0; z < Nz_owner; z++){
-                    points_coordinate.push_back(x * constants.dx);
-                    points_coordinate.push_back((y + base_j) * constants.dy);
-                    points_coordinate.push_back(((z + base_k) * constants.dz));
+                    points_coordinate.push_back(x * constants.dx + constants.min_x_global);
+                    points_coordinate.push_back((y + base_j) * constants.dy + constants.min_y_global);
+                    points_coordinate.push_back(((z + base_k) * constants.dz) + constants.min_z_global);
                     //TODO: check from the requirements if we need to offset the z coordinate by domain size/2 or not (I think we need to since the domain z is (-h,h ) and the vtk z is (0,2h))
 
                     // point_data_u.push_back(velocity.u(x, y, z));
@@ -138,9 +138,9 @@ namespace mif{
             int y = 0; //y=0 plane
             for (int x = 0; x < Nx; x++)
                 for (int z = 0; z < Nz_owner; z++){
-                    points_coordinate.push_back(x * constants.dx);
-                    points_coordinate.push_back((y + base_j) * constants.dy);
-                    points_coordinate.push_back((z + base_k) * constants.dz);
+                    points_coordinate.push_back(x * constants.dx + constants.min_x_global);
+                    points_coordinate.push_back((y + base_j) * constants.dy + constants.min_y_global);
+                    points_coordinate.push_back((z + base_k) * constants.dz + constants.min_z_global);
 
                     point_data_u.push_back((velocity.u(x, y, z) + velocity.u(x + 1, y, z)) / 2);
                     point_data_v.push_back((velocity.v(x, y, z) + velocity.v(x, y + 1, z)) / 2);
@@ -153,9 +153,9 @@ namespace mif{
             for (int x = 0; x < Nx; x++)
                 for (int y = 0; y < Ny_owner; y++){
                     if (base_j == 0 && y == 0) continue; //if you want the repeated points, remove this line
-                    points_coordinate.push_back(x * constants.dx);
-                    points_coordinate.push_back((y + base_j) * constants.dy);
-                    points_coordinate.push_back((z + base_k) * constants.dz);
+                    points_coordinate.push_back(x * constants.dx + constants.min_x_global);
+                    points_coordinate.push_back((y + base_j) * constants.dy + constants.min_y_global);
+                    points_coordinate.push_back((z + base_k) * constants.dz + constants.min_z_global);
 
                     point_data_u.push_back((velocity.u(x, y, z) + velocity.u(x + 1, y, z)) / 2);
                     point_data_v.push_back((velocity.v(x, y, z) + velocity.v(x, y + 1, z)) / 2);
@@ -307,7 +307,7 @@ namespace mif{
         const Constants& constants,
         const StaggeredTensor& pressure,
         const int rank,
-        const int size,
+        const int mpisize,
         const int direction,
         const Real x, const Real y, const Real z
     ){
@@ -323,19 +323,19 @@ namespace mif{
 
 
         //get the index of the point
-        int i = (int)(x / constants.dx);
-        int j = (int)(y / constants.dy);
-        int k = (int)(z / constants.dz);
+        int i = (int)((x - constants.min_x_global
+        ) / constants.dx);
+        int j = (int)((y - constants.min_y_global) / constants.dy);
+        int k = (int)((z - constants.min_z_global) / constants.dz);
 
         MPI_File* fh;
 
         std::vector<Real> point_data_u, point_data_v, point_data_w, point_data_p;
-        int max_size = constants.Nx * (direction == 0) + constants.Ny * (direction == 1) + constants.Nz * (direction ==
-            2);
-        point_data_u.reserve(max_size);
-        point_data_v.reserve(max_size);
-        point_data_w.reserve(max_size);
-        point_data_p.reserve(max_size);
+        int size = constants.Nx * (direction == 0) + constants.Ny * (direction == 1) + constants.Nz * (direction == 2);
+        point_data_u.reserve(size);
+        point_data_v.reserve(size);
+        point_data_w.reserve(size);
+        point_data_p.reserve(size);
         std::vector<Real> points_coordinate;
         int base_j = constants.base_j + 1;
         int base_k = constants.base_k + 1;
@@ -346,7 +346,7 @@ namespace mif{
             //check if the point is in the domain using base_j and base_k
             for (int i = 0; i < constants.Nx; i++){
                 if (base_j + constants.Ny_owner > j && base_j <= j && base_k + constants.Nz_owner > k && base_k <= k){
-                    points_coordinate.push_back(i * constants.dx);
+                    points_coordinate.push_back(i * constants.dx + constants.min_x_global);
                     point_data_u.push_back(
                         (velocity.u(i, j - base_j, k - base_k) + velocity.u(i + 1, j - base_j, k - base_k)) / 2);
                     point_data_v.push_back(
@@ -357,41 +357,99 @@ namespace mif{
                 }
             }
         }
-        //TODO: implement the other directions
+        else if (direction == 1){
+            for (int j = 0; j < constants.Ny_owner; j++){
+                if (base_k + constants.Nz_owner > k && base_k <= k){
+                    points_coordinate.push_back(j * constants.dy + constants.min_y_global);
+                    point_data_u.push_back(
+                        (velocity.u(i - base_j, j, k - base_k) + velocity.u(i - base_j + 1, j, k - base_k)) / 2);
+                    point_data_v.push_back(
+                        (velocity.v(i - base_j, j, k - base_k) + velocity.v(i - base_j, j + 1, k - base_k)) / 2);
+                    point_data_w.push_back(
+                        (velocity.w(i - base_j, j, k - base_k) + velocity.w(i - base_j, j, k - base_k + 1)) / 2);
+                    point_data_w.push_back(pressure(i - base_j, j, k - base_k));
+                }
+            }
+        }
+        else if (direction == 2){
+            for (int z= 0 ; z < constants.Nz_owner; z++){
+                if (base_j + constants.Ny_owner > j && base_j <= j){
+                    points_coordinate.push_back(z * constants.dz + constants.min_z_global);
+                    point_data_u.push_back(
+                        (velocity.u(i - base_j, j - base_j, z) + velocity.u(i - base_j + 1, j - base_j, z)) / 2);
+                    point_data_v.push_back(
+                        (velocity.v(i - base_j, j - base_j, z) + velocity.v(i - base_j, j - base_j + 1, z)) / 2);
+                    point_data_w.push_back(
+                        (velocity.w(i - base_j, j - base_j, z) + velocity.w(i - base_j, j - base_j, z + 1)) / 2);
+                    point_data_w.push_back(pressure(i - base_j, j - base_j, z));
+                }
+            }
 
+
+        }
         size_t local_size = point_data_u.size();
         //send all the data to the first processor
-        std::vector<size_t> sizes(size);
-        std::vector<int> counts(size), displacements(size);
+        std::vector<int> counts(mpisize), displacements(mpisize);
         MPI_Gather(&local_size, 1, MPI_INT, counts.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+        if (rank == 0){
+            for (int i = 0; i < mpisize; i++){
+                counts[i] *= sizeof(Real);
+            }
+        }
+        if (rank == 0){
+            displacements[0] = 0;
+            for (int i = 0; i < mpisize; i++){
+                displacements[i] = displacements[i - 1] + counts[i - 1];
+            }
+        }
 
 
         //alocate the space for the data
-        std::vector<Real> point_data_u_global(std::accumulate(counts.begin(), counts.end(), 0));
-        std::vector<Real> point_data_v_global(std::accumulate(counts.begin(), counts.end(), 0));
-        std::vector<Real> point_data_w_global(std::accumulate(counts.begin(), counts.end(), 0));
-        std::vector<Real> point_data_p_global(std::accumulate(counts.begin(), counts.end(), 0));
-        std::vector<Real> points_coordinate_global(std::accumulate(counts.begin(), counts.end(), 0) * 3);
-
-        //send the data to the first processor
-        MPI_Gatherv(point_data_u.data(), local_size * sizeof(Real), MPI_BYTE, point_data_u.data(), counts.data(),
-                    displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        std::vector<Real> point_data_u_global(std::accumulate(counts.begin(), counts.end(), 0) / 8);
+        std::vector<Real> point_data_v_global(std::accumulate(counts.begin(), counts.end(), 0) / 8);
+        std::vector<Real> point_data_w_global(std::accumulate(counts.begin(), counts.end(), 0) / 8);
+        std::vector<Real> point_data_p_global(std::accumulate(counts.begin(), counts.end(), 0) / 8);
+        std::vector<Real> points_coordinate_global(std::accumulate(counts.begin(), counts.end(), 0) / 8);
 
 
-        MPI_Gatherv(point_data_v.data(), local_size * sizeof(Real), MPI_BYTE, point_data_v.data(), counts.data(),
-                    displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        MPI_Gatherv(point_data_w.data(), local_size * sizeof(Real), MPI_BYTE, point_data_w.data(), counts.data(),
-                    displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        MPI_Gatherv(point_data_p.data(), local_size * sizeof(Real), MPI_BYTE, point_data_p.data(), counts.data(),
-                    displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        MPI_Gatherv(points_coordinate.data(), local_size * sizeof(Real), MPI_BYTE, points_coordinate.data(),
-                    counts.data(), displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        if (rank == 0 || local_size > 0){
+            std::cout << "Rank: " << rank << " Local size: " << local_size << std::endl;
+            if (rank == 0){
+                std::cout << "displacements: ";
+                for (int i = 0; i < displacements.size(); i++){
+                    std::cout << displacements[i] << " ";
+                }
+                std::cout << std::endl;
+            }
+            //send the data to the first processor
+            MPI_Gatherv(point_data_u.data(), local_size * sizeof(Real), MPI_BYTE, point_data_u_global.data(),
+                        counts.data(),
+                        displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
 
+
+            MPI_Gatherv(point_data_v.data(), local_size * sizeof(Real), MPI_BYTE, point_data_v_global.data(),
+                        counts.data(),
+                        displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+            MPI_Gatherv(point_data_w.data(), local_size * sizeof(Real), MPI_BYTE, point_data_w_global.data(),
+                        counts.data(),
+                        displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+            MPI_Gatherv(point_data_p.data(), local_size * sizeof(Real), MPI_BYTE, point_data_p_global.data(),
+                        counts.data(),
+                        displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+            MPI_Gatherv(points_coordinate.data(), local_size * sizeof(Real), MPI_BYTE, points_coordinate_global.data(),
+                        counts.data(), displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        }
 
         //sort the data based on the coordinates and write it to the file
         if (rank == 0){
             insertionSort(points_coordinate_global, point_data_u_global, point_data_v_global, point_data_w_global,
                           point_data_p_global);
+            std::cout << "Writing to file" << std::endl;
+            //log some data to console
+            std::cout << "Writing to file" << std::endl;
+            std::cout << "Size: " << points_coordinate_global.size() << std::endl;
+            std::cout << "Counts: " << counts.size() << std::endl;
+
             FILE* file = fopen(filename.c_str(), "w");
             if (direction == 0){
                 for (int i = 0; i < points_coordinate_global.size(); i++){
