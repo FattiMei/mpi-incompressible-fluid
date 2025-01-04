@@ -273,6 +273,34 @@ namespace mif{
     }
 
 
+    void insertionSort(std::vector<Real>& coordinates, std::vector<Real>& u, std::vector<Real>& v, std::vector<Real>& w,
+                       std::vector<Real>& p){
+        //TODO: does it works, not sure I'm tired
+        int n = coordinates.size();
+        for (int i = 1; i < n; i++){
+            Real key = coordinates[i];
+            Real key_u = u[i];
+            Real key_v = v[i];
+            Real key_w = w[i];
+            Real key_p = p[i];
+            int j = i - 1;
+            while (j >= 0 && coordinates[j] > key){
+                coordinates[j + 1] = coordinates[j];
+                u[j + 1] = u[j];
+                v[j + 1] = v[j];
+                w[j + 1] = w[j];
+                p[j + 1] = p[j];
+                j = j - 1;
+            }
+            coordinates[j + 1] = key;
+            u[j + 1] = key_u;
+            v[j + 1] = key_v;
+            w[j + 1] = key_w;
+            p[j + 1] = key_p;
+        }
+    }
+
+
     void writeDat(
         const std::string& filename,
         const VelocityTensor& velocity,
@@ -300,16 +328,14 @@ namespace mif{
         int k = (int)(z / constants.dz);
 
         MPI_File* fh;
-        MPI_Status status;
-        MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
-                      MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, fh);
 
         std::vector<Real> point_data_u, point_data_v, point_data_w, point_data_p;
-        int size = constants.Nx * (direction == 0) + constants.Ny * (direction == 1) + constants.Nz * (direction == 2);
-        point_data_u.reserve(size);
-        point_data_v.reserve(size);
-        point_data_w.reserve(size);
-        point_data_p.reserve(size);
+        int max_size = constants.Nx * (direction == 0) + constants.Ny * (direction == 1) + constants.Nz * (direction ==
+            2);
+        point_data_u.reserve(max_size);
+        point_data_v.reserve(max_size);
+        point_data_w.reserve(max_size);
+        point_data_p.reserve(max_size);
         std::vector<Real> points_coordinate;
         int base_j = constants.base_j + 1;
         int base_k = constants.base_k + 1;
@@ -341,14 +367,51 @@ namespace mif{
 
 
         //alocate the space for the data
-        if (rank == 0){
-            point_data_u.resize(std::accumulate(counts.begin(), counts.end(), 0));
-            point_data_v.resize(std::accumulate(counts.begin(), counts.end(), 0));
-            point_data_w.resize(std::accumulate(counts.begin(), counts.end(), 0));
-            point_data_p.resize(std::accumulate(counts.begin(), counts.end(), 0));
-        }
+        std::vector<Real> point_data_u_global(std::accumulate(counts.begin(), counts.end(), 0));
+        std::vector<Real> point_data_v_global(std::accumulate(counts.begin(), counts.end(), 0));
+        std::vector<Real> point_data_w_global(std::accumulate(counts.begin(), counts.end(), 0));
+        std::vector<Real> point_data_p_global(std::accumulate(counts.begin(), counts.end(), 0));
+        std::vector<Real> points_coordinate_global(std::accumulate(counts.begin(), counts.end(), 0) * 3);
+
         //send the data to the first processor
-        MPI_Gatherv(point_data_u.data(), local_size, MPI_REAL, point_data_u.data(), counts.data(), displacements.data(),
-                    MPI_REAL, 0, MPI_COMM_WORLD);
+        MPI_Gatherv(point_data_u.data(), local_size * sizeof(Real), MPI_BYTE, point_data_u.data(), counts.data(),
+                    displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+
+        MPI_Gatherv(point_data_v.data(), local_size * sizeof(Real), MPI_BYTE, point_data_v.data(), counts.data(),
+                    displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        MPI_Gatherv(point_data_w.data(), local_size * sizeof(Real), MPI_BYTE, point_data_w.data(), counts.data(),
+                    displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        MPI_Gatherv(point_data_p.data(), local_size * sizeof(Real), MPI_BYTE, point_data_p.data(), counts.data(),
+                    displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        MPI_Gatherv(points_coordinate.data(), local_size * sizeof(Real), MPI_BYTE, points_coordinate.data(),
+                    counts.data(), displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+
+        //sort the data based on the coordinates and write it to the file
+        if (rank == 0){
+            insertionSort(points_coordinate_global, point_data_u_global, point_data_v_global, point_data_w_global,
+                          point_data_p_global);
+            FILE* file = fopen(filename.c_str(), "w");
+            if (direction == 0){
+                for (int i = 0; i < points_coordinate_global.size(); i++){
+                    fprintf(file, "%f %f %f %f %f %f %f\n", points_coordinate_global[i], y, z, point_data_u_global[i],
+                            point_data_v_global[i], point_data_w_global[i], point_data_p_global[i]);
+                }
+            }
+            else if (direction == 1){
+                for (int i = 0; i < points_coordinate_global.size(); i++){
+                    fprintf(file, "%f %f %f %f %f %f %f\n", x, points_coordinate_global[i], z, point_data_u_global[i],
+                            point_data_v_global[i], point_data_w_global[i], point_data_p_global[i]);
+                }
+            }
+            else if (direction == 2){
+                for (int i = 0; i < points_coordinate_global.size(); i++){
+                    fprintf(file, "%f %f %f %f %f %f %f\n", x, y, points_coordinate_global[i], point_data_u_global[i],
+                            point_data_v_global[i], point_data_w_global[i], point_data_p_global[i]);
+                }
+            }
+            fclose(file);
+        }
     }
 }
