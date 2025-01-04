@@ -4,9 +4,6 @@
 #include "PressureGradient.h"
 #include "StaggeredTensorMacros.h"
 
-#include "Norms.h"
-#include "Manufactured.h"
-
 namespace mif {
 
 // Compute a component of Y2 (first step of the method).
@@ -19,6 +16,7 @@ namespace mif {
         calculate_momentum_rhs_##component(velocity, i, j, k);                                \
     const Real p_grad = pressure_gradient_##component(pressure, i, j, k);                     \
     velocity_buffer.component(i, j, k) = velocity.component(i, j, k) + a1 * rhs - b * p_grad; \
+    velocity_buffer_2.component(i, j, k) = rhs;                                               \
   )                                                                                           \
 }
 
@@ -29,13 +27,14 @@ namespace mif {
   const Real a2 = 50.0 / 120.0 * dt;                                                          \
   const Real b = a1+a2;                                                                       \
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity_buffer_2.component, false,                \
-    const Real rhs_1 =                                                                        \
-        calculate_momentum_rhs_##component(velocity, i, j, k);                                \
+    const Real rhs_1 = velocity_buffer_2.component(i, j, k);                                  \
     const Real rhs_2 =                                                                        \
         calculate_momentum_rhs_##component(velocity_buffer, i, j, k);                         \
+    const Real rhs_2_scaled = a2 * rhs_2;                                                     \
     const Real p_grad = pressure_gradient_##component(pressure, i, j, k);                     \
     velocity_buffer_2.component(i, j, k) = velocity_buffer.component(i, j, k) +               \
-        a1 * rhs_1 + a2 * rhs_2 - b * p_grad;                                                 \
+        a1 * rhs_1 + rhs_2_scaled - b * p_grad;                                               \
+    velocity.component(i, j, k) = rhs_2_scaled;                                               \
   )                                                                                           \
 }
 
@@ -46,11 +45,11 @@ namespace mif {
   const Real a3 = 90.0 / 120.0 * dt;                                                          \
   const Real b = a2+a3;                                                                       \
   STAGGERED_TENSOR_ITERATE_OVER_ALL_POINTS(velocity.component, false,                         \
-    const Real rhs_2 = calculate_momentum_rhs_##component(velocity_buffer, i, j, k);          \
+    const Real rhs_2_scaled = -velocity.component(i, j, k);                                   \
     const Real rhs_3 = calculate_momentum_rhs_##component(velocity_buffer_2, i, j, k);        \
     const Real p_grad = pressure_gradient_##component(pressure, i, j, k);                     \
     velocity.component(i, j, k) = velocity_buffer_2.component(i,j,k) +                        \
-        a2 * rhs_2 + a3 * rhs_3 - b * p_grad;                                                 \
+        rhs_2_scaled + a3 * rhs_3 - b * p_grad;                                               \
   )                                                                                           \
 }
 
