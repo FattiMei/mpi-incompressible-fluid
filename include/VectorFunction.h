@@ -22,6 +22,9 @@ public:
   const std::function<Real(Real, Real, Real)> f_v;
   const std::function<Real(Real, Real, Real)> f_w;
   const std::array<const std::function<Real(Real, Real, Real)> *, 3> components;
+
+  VectorFunction operator+(const VectorFunction &other) const;
+  VectorFunction operator*(const Real scalar) const;
 };
 
 // A collection of 3 functions with 4 Real inputs (t,x,y,z) and one Real

@@ -1,10 +1,13 @@
-#include "Manufactured.h"
-#include "Norms.h"
-#include "PressureEquation.h"
-#include "Timestep.h"
 #include <cassert>
 #include <iostream>
 #include <mpi.h>
+#include "Manufactured.h"
+#include "Norms.h"
+#include "PressureEquation.h"
+#include "PressureGradient.h"
+#include "StaggeredTensorMacros.h"
+#include "Timestep.h"
+#include "VTKExport.h"
 
 double Reynolds;
 
@@ -44,6 +47,7 @@ int main(int argc, char *argv[]) {
   constexpr Real Re = 1e3;
   constexpr Real final_time = 1e-4;
   const unsigned int num_time_steps = std::atoi(argv[2]);
+  const std::array<bool, 3> periodic_bc{false, false, false};
 
   // Given the number of processors in the z direction, compute the number of
   // processors in the y direction and verify that the total number of
@@ -60,7 +64,7 @@ int main(int argc, char *argv[]) {
                             x_size, y_size, z_size, 
                             min_x_global, min_y_global, min_z_global,
                             Re, final_time, num_time_steps, 
-                            Py, Pz, rank);
+                            Py, Pz, rank, periodic_bc);
   PressureSolverStructures structures(constants);
 
   Reynolds = Re;
@@ -68,9 +72,9 @@ int main(int argc, char *argv[]) {
   // Create the tensors.
   VelocityTensor velocity(constants);
   VelocityTensor velocity_buffer(constants);
-  VelocityTensor rhs_buffer(constants);
-  StaggeredTensor pressure({constants.Nx, constants.Ny, constants.Nz}, constants);
-  StaggeredTensor pressure_buffer({constants.Nx, constants.Ny, constants.Nz}, constants);
+  VelocityTensor velocity_buffer_2(constants);
+  StaggeredTensor pressure(constants, StaggeringDirection::none);
+  StaggeredTensor pressure_buffer(constants, StaggeringDirection::none);
   PressureTensor pressure_solver_buffer(structures);
 
   // Set the initial conditions.
@@ -78,11 +82,11 @@ int main(int argc, char *argv[]) {
   velocity.set(exact_velocity.set_time(0.0), true);
   const std::function<Real(Real, Real, Real)> &initial_pressure = [](Real x, Real y, Real z) { return p_exact(0.0, x, y, z); };
   pressure.set(initial_pressure, true);
-  TimeVectorFunction exact_pressure_gradient(dp_dx_exact_p_test, dp_dy_exact_p_test, dp_dz_exact_p_test);
+  TimeVectorFunction exact_pressure_gradient(dp_dx_exact, dp_dy_exact, dp_dz_exact);
 
   // Compute and print convergence conditions.
-  /*
   // Note: assuming the highest velocity value is obtained at time 0.
+  /*
   Real highest_velocity = 0.0;
   for (size_t k = 0; k < constants.Nz; k++) {
     for (size_t j = 0; j < constants.Ny; j++) {
@@ -113,8 +117,13 @@ int main(int argc, char *argv[]) {
     const Real current_time = time_step * constants.dt;
 
     // Update the solution inside the mesh.
-    timestep_nhn(velocity, velocity_buffer, rhs_buffer, exact_velocity, exact_pressure_gradient, current_time, pressure, pressure_buffer, pressure_solver_buffer);
+    timestep(velocity, velocity_buffer, velocity_buffer_2, exact_velocity, current_time, pressure, pressure_buffer, pressure_solver_buffer);
   }
+
+  // Compute the pressure gradient.
+  VelocityTensor pressure_gradient(constants);
+  VELOCITY_TENSOR_SET_FOR_ALL_POINTS(pressure_gradient, pressure_gradient_u, pressure_gradient_v, pressure_gradient_w, false, pressure, i, j, k)
+  pressure_gradient.apply_bc(exact_pressure_gradient.set_time(final_time));
 
   // Remove a constant from the pressure.
   adjust_pressure(pressure, [&final_time](Real x, Real y, Real z){return p_exact(final_time,x,y,z);});
@@ -126,6 +135,9 @@ int main(int argc, char *argv[]) {
   const Real error_l1_local_p = ErrorL1Norm(pressure, p_exact, final_time);
   const Real error_l2_local_p = ErrorL2Norm(pressure, p_exact, final_time);
   const Real error_lInf_local_p = ErrorLInfNorm(pressure, p_exact, final_time);
+  const Real error_l1_local_pg = ErrorL1Norm(pressure_gradient, exact_pressure_gradient, final_time);
+  const Real error_l2_local_pg = ErrorL2Norm(pressure_gradient, exact_pressure_gradient, final_time);
+  const Real error_lInf_local_pg = ErrorLInfNorm(pressure_gradient, exact_pressure_gradient, final_time);
   
   // The global error is computed by accumulating the errors on the processor
   // with rank 0.
@@ -135,11 +147,18 @@ int main(int argc, char *argv[]) {
   const Real error_l1_global_p = accumulate_error_mpi_l1(error_l1_local_p, constants);
   const Real error_l2_global_p = accumulate_error_mpi_l2(error_l2_local_p, constants);
   const Real error_lInf_global_p = accumulate_error_mpi_linf(error_lInf_local_p, constants);
+  const Real error_l1_global_pg = accumulate_error_mpi_l1(error_l1_local_pg, constants);
+  const Real error_l2_global_pg = accumulate_error_mpi_l2(error_l2_local_pg, constants);
+  const Real error_lInf_global_pg = accumulate_error_mpi_linf(error_lInf_local_pg, constants);
 
   if (rank == 0) {
     std::cout << error_l1_global_v << " " << error_l2_global_v << " " << error_lInf_global_v << 
-    " " << error_l1_global_p << " " << error_l2_global_p << " " << error_lInf_global_p << std::endl;
+    " " << error_l1_global_p << " " << error_l2_global_p << " " << error_lInf_global_p << 
+    " " << error_l1_global_pg << " " << error_l2_global_pg << " " << error_lInf_global_pg << std::endl;
   }
+
+
+  writeVTK("full.vtk", velocity, constants, pressure, rank, size);
 
   // Finalize MPI.
   MPI_Finalize();

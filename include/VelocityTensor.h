@@ -10,20 +10,20 @@ namespace mif {
 class UTensor : public StaggeredTensor {
 public:
   UTensor(const Constants &constants)
-      : StaggeredTensor({constants.Nx_staggered, constants.Ny, constants.Nz}, constants) {}
+      : StaggeredTensor(constants, StaggeringDirection::x) {}
 
   inline Real evaluate_function_at_index(
-      size_t i, size_t j, size_t k,
+      int i, int j, int k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.min_x_global + constants.dx * i - constants.dx_over_2, 
+    return f(constants.min_x_global + constants.dx * (constants.base_i+i) - constants.dx_over_2, 
              constants.min_y_global + constants.dy * (constants.base_j+j),
              constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 
   inline Real evaluate_function_at_index(
-      Real time, size_t i, size_t j, size_t k,
+      Real time, int i, int j, int k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.min_x_global + constants.dx * i - constants.dx_over_2, 
+    return f(time, constants.min_x_global + constants.dx * (constants.base_i+i) - constants.dx_over_2, 
              constants.min_y_global + constants.dy * (constants.base_j+j),
              constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
@@ -33,20 +33,20 @@ public:
 class VTensor : public StaggeredTensor {
 public:
   VTensor(const Constants &constants)
-      : StaggeredTensor({constants.Nx, constants.Ny_staggered, constants.Nz}, constants) {}
+      : StaggeredTensor(constants, StaggeringDirection::y) {}
 
   inline Real evaluate_function_at_index(
-      size_t i, size_t j, size_t k,
+      int i, int j, int k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.min_x_global + constants.dx * i, 
+    return f(constants.min_x_global + constants.dx * (constants.base_i+i), 
              constants.min_y_global + constants.dy * (constants.base_j+j) - constants.dy_over_2,
              constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 
   inline Real evaluate_function_at_index(
-      Real time, size_t i, size_t j, size_t k,
+      Real time, int i, int j, int k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.min_x_global + constants.dx * i, 
+    return f(time, constants.min_x_global + constants.dx * (constants.base_i+i), 
              constants.min_y_global + constants.dy * (constants.base_j+j) - constants.dy_over_2,
              constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
@@ -56,20 +56,20 @@ public:
 class WTensor : public StaggeredTensor {
 public:
   WTensor(const Constants &constants)
-      : StaggeredTensor({constants.Nx, constants.Ny, constants.Nz_staggered}, constants) {}
+      : StaggeredTensor(constants, StaggeringDirection::z) {}
 
   inline Real evaluate_function_at_index(
-      size_t i, size_t j, size_t k,
+      int i, int j, int k,
       const std::function<Real(Real, Real, Real)> &f) const override {
-    return f(constants.min_x_global + constants.dx * i, 
+    return f(constants.min_x_global + constants.dx * (constants.base_i+i), 
              constants.min_y_global + constants.dy * (constants.base_j+j),
              constants.min_z_global + constants.dz * (constants.base_k+k) - constants.dz_over_2); 
   }
 
   inline Real evaluate_function_at_index(
-      Real time, size_t i, size_t j, size_t k,
+      Real time, int i, int j, int k,
       const std::function<Real(Real, Real, Real, Real)> &f) const override {
-    return f(time, constants.min_x_global + constants.dx * i, 
+    return f(time, constants.min_x_global + constants.dx * (constants.base_i+i), 
              constants.min_y_global + constants.dy * (constants.base_j+j),
              constants.min_z_global + constants.dz * (constants.base_k+k) - constants.dz_over_2); 
   }
@@ -100,10 +100,12 @@ public:
   // components of the function.
   void set(const VectorFunction &f, bool include_border);
 
-  // Apply Dirichlet boundary conditions to all components of the velocity
-  // on all boundaries. The function assumes the velocity field is
-  // divergence free.
-  void apply_all_dirichlet_bc(const VectorFunction &exact_velocity);
+  // Apply boundary conditions to all components of the velocity
+  // on all Dirichlet boundaries. Dirichlet BC are used on boundaries for which
+  // constants does not specify periodic BC. Periodic BC are used
+  // elsewhere.
+  // The function assumes the velocity field is divergence free.
+  void apply_bc(const VectorFunction &exact_velocity);
 };
 
 } // namespace mif

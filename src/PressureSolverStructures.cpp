@@ -2,35 +2,50 @@
 #include <cassert>
 
 namespace mif {
-    inline Real compute_eigenvalue_neumann(size_t index, Real delta, size_t N_domains) {
-        return 2.0 * (std::cos(M_PI * index / N_domains) - 1.0) / (delta*delta);
+    inline Real compute_eigenvalue_neumann(size_t index, Real delta, size_t N) {
+        return 2.0 * (std::cos(M_PI * index / (N - 1)) - 1.0) / (delta*delta);
+    }
+    inline Real compute_eigenvalue_periodic(size_t index, Real delta, size_t N) {
+        return 2.0 * (std::cos(2.0 * M_PI * index / N) - 1.0) / (delta*delta);
     }
 
     PressureSolverStructures::PressureSolverStructures(const Constants &constants):
-        boundary_conditions{true, true, true},
-        c2d(C2Decomp(constants.Nx, constants.Ny_global, constants.Nz_global, constants.Py, constants.Pz, boundary_conditions)),
-        buffer_x(static_cast<Real*>(fftw_malloc(sizeof(Real) * constants.Nx))),
-        buffer_y(static_cast<Real*>(fftw_malloc(sizeof(Real) * constants.Ny_global))),
-        buffer_z(static_cast<Real*>(fftw_malloc(sizeof(Real) * constants.Nz_global))),
-        fft_plan_x(fftw_plan_r2r_1d(constants.Nx, buffer_x, buffer_x, FFTW_REDFT00, FFTW_ESTIMATE)),
-        fft_plan_y(fftw_plan_r2r_1d(constants.Ny_global, buffer_y, buffer_y, FFTW_REDFT00, FFTW_ESTIMATE)),
-        fft_plan_z(fftw_plan_r2r_1d(constants.Nz_global, buffer_z, buffer_z, FFTW_REDFT00, FFTW_ESTIMATE)),
+        periodic_bc{constants.periodic_bc[0], constants.periodic_bc[1], constants.periodic_bc[2]},
+        Nx_points(constants.Nx_global - (periodic_bc[0] ? 1 : 0)), 
+        Ny_points(constants.Ny_global - (periodic_bc[1] ? 1 : 0)), 
+        Nz_points(constants.Nz_global - (periodic_bc[2] ? 1 : 0)), 
+        c2d(C2Decomp(Nx_points, Ny_points, Nz_points, constants.Py, constants.Pz, periodic_bc)),
+        buffer_x(static_cast<Real*>(fftw_malloc(sizeof(Real) * Nx_points))),
+        buffer_y(static_cast<Real*>(fftw_malloc(sizeof(Real) * Ny_points))),
+        buffer_z(static_cast<Real*>(fftw_malloc(sizeof(Real) * Nz_points))),
+        fft_plan_x(fftw_plan_r2r_1d(Nx_points, buffer_x, buffer_x, periodic_bc[0] ? FFTW_R2HC : FFTW_REDFT00, FFTW_ESTIMATE)),
+        fft_plan_y(fftw_plan_r2r_1d(Ny_points, buffer_y, buffer_y, periodic_bc[1] ? FFTW_R2HC : FFTW_REDFT00, FFTW_ESTIMATE)),
+        fft_plan_z(fftw_plan_r2r_1d(Nz_points, buffer_z, buffer_z, periodic_bc[2] ? FFTW_R2HC : FFTW_REDFT00, FFTW_ESTIMATE)),
+        ifft_plan_x(fftw_plan_r2r_1d(Nx_points, buffer_x, buffer_x, periodic_bc[0] ? FFTW_HC2R : FFTW_REDFT00, FFTW_ESTIMATE)),
+        ifft_plan_y(fftw_plan_r2r_1d(Ny_points, buffer_y, buffer_y, periodic_bc[1] ? FFTW_HC2R : FFTW_REDFT00, FFTW_ESTIMATE)),
+        ifft_plan_z(fftw_plan_r2r_1d(Nz_points, buffer_z, buffer_z, periodic_bc[2] ? FFTW_HC2R : FFTW_REDFT00, FFTW_ESTIMATE)),
         eigenvalues({c2d.zSize[1], c2d.zSize[0], c2d.zSize[2]}) {
         // Check decomposition validity.
-        assert(static_cast<size_t>(c2d.xSize[0]) == constants.Nx);
-        assert(static_cast<size_t>(c2d.ySize[1]) == constants.Ny_global);
-        assert(static_cast<size_t>(c2d.zSize[2]) == constants.Nz_global);
+        assert(c2d.xSize[0] == Nx_points);
+        assert(c2d.ySize[1] == Ny_points);
+        assert(c2d.zSize[2] == Nz_points);
 
         // Initialize eigenvalues.
         assert(c2d.zStart[2] == 0);
         for (int j = 0; j < c2d.zSize[1]; j++) {
-            const Real lambda_2 = compute_eigenvalue_neumann(j+c2d.zStart[1], constants.dy, constants.Ny_domains_global);
+            const Real lambda_2 = periodic_bc[1] ? 
+                compute_eigenvalue_periodic(j+c2d.zStart[1], constants.dy, Ny_points):
+                compute_eigenvalue_neumann(j+c2d.zStart[1], constants.dy, Ny_points);
             const Real base_index_1 = j*c2d.zSize[0]*c2d.zSize[2];
             for (int i = 0; i < c2d.zSize[0]; i++) {
                 const Real base_index_2 = base_index_1 + i*c2d.zSize[2];
-                const Real lambda_1 = compute_eigenvalue_neumann(i+c2d.zStart[0], constants.dx, constants.Nx_domains);
+                const Real lambda_1 = periodic_bc[0] ? 
+                    compute_eigenvalue_periodic(i+c2d.zStart[0], constants.dx, Nx_points) :
+                    compute_eigenvalue_neumann(i+c2d.zStart[0], constants.dx, Nx_points);
                 for (int k = 0; k < c2d.zSize[2]; k++) {
-                    const Real lambda_3 = compute_eigenvalue_neumann(k, constants.dz, constants.Nz_domains_global);
+                    const Real lambda_3 = periodic_bc[2] ? 
+                        compute_eigenvalue_periodic(k, constants.dz, Nz_points) :
+                        compute_eigenvalue_neumann(k, constants.dz, Nz_points);
                     eigenvalues(base_index_2 + k) = 1/(lambda_1 + lambda_2 + lambda_3);
                 }
             }
@@ -44,6 +59,9 @@ namespace mif {
         fftw_destroy_plan(fft_plan_x);
         fftw_destroy_plan(fft_plan_y);
         fftw_destroy_plan(fft_plan_z);
+        fftw_destroy_plan(ifft_plan_x);
+        fftw_destroy_plan(ifft_plan_y);
+        fftw_destroy_plan(ifft_plan_z);
         fftw_cleanup();
     }
 }

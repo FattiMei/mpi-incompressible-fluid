@@ -69,21 +69,21 @@ void timestep_velocity(VelocityTensor &velocity, VelocityTensor &velocity_buffer
   COMPUTE_STEP(Y2)
 
   // Apply Dirichlet boundary conditions.
-  velocity_buffer.apply_all_dirichlet_bc(exact_velocity.set_time(time_1));
+  velocity_buffer.apply_bc(exact_velocity.set_time(time_1));
 
   // Stage 2.
   // Compute the solution inside the domain.
   COMPUTE_STEP(Y3)
 
   // Apply Dirichlet boundary conditions.
-  velocity.apply_all_dirichlet_bc(exact_velocity.set_time(time_2));
+  velocity.apply_bc(exact_velocity.set_time(time_2));
 
   // Stage 3.
   // Compute the solution inside the domain.
   COMPUTE_STEP(U_STAR)
 
   // Apply Dirichlet boundary conditions.
-  velocity_buffer.apply_all_dirichlet_bc(exact_velocity.set_time(final_time));
+  velocity_buffer.apply_bc(exact_velocity.set_time(final_time));
 
   // Put the solution in the original tensors.
   velocity.swap_data(velocity_buffer);
