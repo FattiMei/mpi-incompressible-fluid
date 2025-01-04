@@ -279,7 +279,7 @@ namespace mif{
         const Constants& constants,
         const StaggeredTensor& pressure,
         const int rank,
-        const int size,
+        const int mpisize,
         const int direction,
         const Real x, const Real y, const Real z
     ){
@@ -335,8 +335,8 @@ namespace mif{
 
         size_t local_size = point_data_u.size();
         //send all the data to the first processor
-        std::vector<size_t> sizes(size);
-        std::vector<int> counts(size), displacements(size);
+        std::vector<size_t> sizes(mpisize);
+        std::vector<int> counts(mpisize), displacements(mpisize);
         MPI_Gather(&local_size, 1, MPI_INT, counts.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 
