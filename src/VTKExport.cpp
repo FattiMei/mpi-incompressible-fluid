@@ -168,8 +168,9 @@ namespace mif {
         {
             assert(constants.min_y_global <= 0.0 && (constants.min_y_global + constants.y_size_global) >= 0.0);
             const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_y_global, constants.dy);
-            const int j = std::get<0>(index);
-            if (j >= start_j_write_global && j < end_j_write_global) {
+            const int j_global = std::get<0>(index);
+            if (j_global >= start_j_write_global && j_global < end_j_write_global) {
+                const int j = j_global - start_j_write_global;
                 for (int i = start_i_write_local; i < end_i_write_local; i++) {
                     for (int k = start_k_write_local; k < end_k_write_local; k++) {
                         write_point(i, j, k);
@@ -182,8 +183,9 @@ namespace mif {
         {
             assert(constants.min_z_global <= 0.0 && (constants.min_z_global + constants.z_size_global) >= 0.0);
             const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_z_global, constants.dz);
-            const int k = std::get<0>(index);
-            if (k >= start_k_write_global && k < end_k_write_global) {
+            const int k_global = std::get<0>(index);
+            if (k_global >= start_k_write_global && k_global < end_k_write_global) {
+                const int k = k_global - start_k_write_global;
                 for (int i = start_i_write_local; i < end_i_write_local; i++) {
                     for (int j = start_j_write_local; j < end_j_write_local; j++) {
                         write_point(i, j, k);
