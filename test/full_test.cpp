@@ -7,6 +7,7 @@
 #include "PressureGradient.h"
 #include "StaggeredTensorMacros.h"
 #include "Timestep.h"
+#include "VTKExport.h"
 
 double Reynolds;
 
@@ -155,6 +156,9 @@ int main(int argc, char *argv[]) {
     " " << error_l1_global_p << " " << error_l2_global_p << " " << error_lInf_global_p << 
     " " << error_l1_global_pg << " " << error_l2_global_pg << " " << error_lInf_global_pg << std::endl;
   }
+
+
+  writeVTK("full.vtk", velocity, constants, pressure, rank, size);
 
   // Finalize MPI.
   MPI_Finalize();

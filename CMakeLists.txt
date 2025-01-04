@@ -42,6 +42,7 @@ if(NOT DEFINED VERBOSE)
 endif ()
 
 #add_definitions(-DOPT_CPU_CACHE)
+add_definitions(-DMIF_LEGACY_COMPILER)
 
 set(EXE_NAME "mif")
 set(CONVERGENCE_TEST_EXE_NAME "convergence_test")
