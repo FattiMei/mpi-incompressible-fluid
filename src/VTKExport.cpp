@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstdio>
 #include <numeric>
+#include <fstream>
 #include <tuple>
 #include "Endians.h"
 #include "VTKExport.h"
@@ -299,6 +300,100 @@ namespace mif {
 
         // Close the file.
         MPI_File_close(&fh);
+    }
+
+    void writeVTKFullMesh(const std::string&     filename,
+			  const VelocityTensor&  velocity,
+			  const StaggeredTensor& pressure) {
+      std::ofstream out(filename);
+      const Constants &constants = velocity.constants;
+      const int size = constants.Py * constants.Pz;
+
+      assert(size == 1);
+
+      const size_t Nx = constants.Nx_global;
+      const size_t Ny = (constants.y_rank == 0 && constants.periodic_bc[1]) ? constants.Ny_owner+1 : constants.Ny_owner;
+      const size_t Nz = (constants.z_rank == 0 && constants.periodic_bc[2]) ? constants.Nz_owner+1 : constants.Nz_owner;
+      const int start_i_write_local = constants.periodic_bc[0] ? 1 : 0;
+      const int start_j_write_local = (constants.prev_proc_y == -1) ? 0 : 1;
+      const int start_k_write_local = (constants.prev_proc_z == -1) ? 0 : 1;
+      const int end_i_write_local = start_i_write_local + Nx;
+      const int end_j_write_local = start_j_write_local + Ny;
+      const int end_k_write_local = start_k_write_local + Nz;
+
+      out
+        << "# vtk DataFile Version 3.0\n"
+	<< "pressure mesh solution\n"
+	<< "ASCII\n"
+	<< "DATASET STRUCTURED_POINTS\n"
+	<< "DIMENSIONS " << Nx << ' ' << Ny << ' ' << Nz << '\n'
+	<< "ORIGIN 0 0 0\n"
+	<< "SPACING " << constants.dx << ' ' << constants.dy << ' ' << constants.dz << '\n'
+	<< "POINT_DATA " << Nx*Ny*Nz << '\n';
+
+      out
+        << "SCALARS u double 1\n"
+	<< "LOOKUP_TABLE default\n";
+
+      for (int k = start_k_write_local; k < end_k_write_local; ++k) {
+	for (int j = start_j_write_local; j < end_j_write_local; ++j) {
+	  for (int i = start_i_write_local; i < end_i_write_local; ++i) {
+	    out << ((velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2) << ' ';
+          }
+	}
+      }
+
+      out
+        << "SCALARS v double 1\n"
+	<< "LOOKUP_TABLE default\n";
+
+      for (int k = start_k_write_local; k < end_k_write_local; ++k) {
+	for (int j = start_j_write_local; j < end_j_write_local; ++j) {
+	  for (int i = start_i_write_local; i < end_i_write_local; ++i) {
+	    out << ((velocity.v(i, j, k) + velocity.v(i, j + 1, k)) / 2) << ' ';
+          }
+	}
+      }
+
+      out
+        << "SCALARS w double 1\n"
+	<< "LOOKUP_TABLE default\n";
+
+      for (int k = start_k_write_local; k < end_k_write_local; ++k) {
+	for (int j = start_j_write_local; j < end_j_write_local; ++j) {
+	  for (int i = start_i_write_local; i < end_i_write_local; ++i) {
+	    out << ((velocity.w(i, j, k) + velocity.w(i, j, k + 1)) / 2) << ' ';
+          }
+	}
+      }
+
+      out
+        << "SCALARS |u| double 1\n"
+	<< "LOOKUP_TABLE default\n";
+
+      for (int k = start_k_write_local; k < end_k_write_local; ++k) {
+	for (int j = start_j_write_local; j < end_j_write_local; ++j) {
+	  for (int i = start_i_write_local; i < end_i_write_local; ++i) {
+	    const Real ux = ((velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2);
+	    const Real uy = ((velocity.v(i, j, k) + velocity.v(i, j + 1, k)) / 2);
+	    const Real uz = ((velocity.w(i, j, k) + velocity.w(i, j, k + 1)) / 2);
+
+	    out << std::sqrt(ux*ux + uy*uy + uz*uz) << ' ';
+          }
+	}
+      }
+
+      out
+        << "SCALARS p double 1\n"
+	<< "LOOKUP_TABLE default\n";
+
+      for (int k = start_k_write_local; k < end_k_write_local; ++k) {
+	for (int j = start_j_write_local; j < end_j_write_local; ++j) {
+	  for (int i = start_i_write_local; i < end_i_write_local; ++i) {
+	    out << pressure(i,j,k) << ' ';
+          }
+	}
+      }
     }
 
 } // mif
