@@ -14,14 +14,14 @@ namespace mif {
 // setting Dirichlet boundary conditions on the velocity and homogeneous Neumann on the pressure.
 // MPI messages with tags in [0, 35] will be used.
 void timestep(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
-              VelocityTensor &rhs_buffer, const TimeVectorFunction &exact_velocity,
+              VelocityTensor &velocity_buffer_2, const TimeVectorFunction &exact_velocity,
               Real t_n, StaggeredTensor &pressure, StaggeredTensor &pressure_buffer, 
               PressureTensor &pressure_solver_buffer);
 
 // Do the same things, but with non-homogeneous Neumann boundary conditions
 // on the pressure.
 void timestep_nhn(VelocityTensor &velocity, VelocityTensor &velocity_buffer,
-                  VelocityTensor &rhs_buffer, const TimeVectorFunction &exact_velocity,
+                  VelocityTensor &velocity_buffer_2, const TimeVectorFunction &exact_velocity,
                   const TimeVectorFunction &exact_pressure_gradient, Real t_n,
                   StaggeredTensor &pressure, StaggeredTensor &pressure_buffer, 
                   PressureTensor &pressure_solver_buffer);

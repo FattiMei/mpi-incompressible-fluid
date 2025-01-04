@@ -1,6 +1,7 @@
 #include "Norms.h"
 #include <cmath>
 #include <mpi.h>
+#include "StaggeredTensorMacros.h"
 
 namespace mif {
 
@@ -25,7 +26,7 @@ Real compute_error(
     for (size_t j = 1; j < constants.Ny - 1; j++) {
       const Real y = constants.min_y_global + (constants.base_j+j) * constants.dy;
       for (size_t i = 1; i < constants.Nx - 1; i++) {
-        const Real x = constants.min_x_global + i * constants.dx;
+        const Real x = constants.min_x_global + (constants.base_i+i) * constants.dx;
 
         const Real interpolated_u =
             (velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2.0;
@@ -88,44 +89,13 @@ Real compute_error(
     const StaggeredTensor &pressure, const std::function<Real(Real, Real, Real, Real)> &exact_pressure, 
     Real time, const std::function<Real(Real, Real)> &reduction_operation) {
   Real integral = 0.0;
-  const Constants &constants = pressure.constants;
 
-  size_t lower_limit_y, upper_limit_y, lower_limit_z, upper_limit_z;
-  const std::array<size_t, 3> &sizes = pressure.sizes();              
-  if (pressure.constants.prev_proc_y != -1) {                         
-    lower_limit_y = 1;                                              
-  } else {                                                          
-    lower_limit_y = 0;                                              
-  };                                                                
-  if (pressure.constants.next_proc_y != -1) {                         
-    upper_limit_y = sizes[1] - 1;                                   
-  } else {                                                          
-    upper_limit_y = sizes[1];                                       
-  };                                                                
-  if (pressure.constants.prev_proc_z != -1) {                         
-    lower_limit_z = 1;                                              
-  } else {                                                          
-    lower_limit_z = 0;                                              
-  };                                                                
-  if (pressure.constants.next_proc_z != -1) {                         
-    upper_limit_z = sizes[2] - 1;                                   
-  } else {                                                          
-    upper_limit_z = sizes[2];                                       
-  }; 
-
-  for (size_t k = lower_limit_z; k < upper_limit_z; k++) {
+  STAGGERED_TENSOR_ITERATE_OVER_ALL_OWNER_POINTS(pressure, 
     const Real z = constants.min_z_global + (constants.base_k+k) * constants.dz;
-    for (size_t j = lower_limit_y; j < upper_limit_y; j++) {
-      const Real y = constants.min_y_global + (constants.base_j+j) * constants.dy;
-      for (size_t i = 0; i < constants.Nx; i++) {
-        const Real x = constants.min_x_global + i * constants.dx;
-
-        const Real error = exact_pressure(time, x, y, z) - pressure(i,j,k);
-
-        integral = reduction_operation(integral, error);
-      }
-    }
-  }
+    const Real y = constants.min_y_global + (constants.base_j+j) * constants.dy;
+    const Real x = constants.min_x_global + (constants.base_i+i) * constants.dx;
+    const Real error = exact_pressure(time, x, y, z) - pressure(i,j,k);
+    integral = reduction_operation(integral, error);)
 
   return integral;
 }

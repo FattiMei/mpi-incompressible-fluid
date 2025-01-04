@@ -11,6 +11,10 @@
 
 namespace mif {
 
+enum StaggeringDirection {
+  x, y, z, none
+};
+
 /*!
  * @class StaggeredTensor
  * @brief A tensor with staggered components.
@@ -25,15 +29,20 @@ namespace mif {
  */
 class StaggeredTensor : public Tensor<Real, 3U, size_t> {
 public:
-  StaggeredTensor(const std::array<size_t, 3> &in_dimensions, const Constants &constants);
+  StaggeredTensor(const Constants &constants, const StaggeringDirection &staggering);
 
   // Send data to neighbouring processors using MPI.
   // This will use the tags in [base_tag, base_tag+3].
+  // This includes periodic BC across processor boundaries.
   void send_mpi_data(int base_tag);
 
   // Receive data from neighbouring processors using MPI.
   // This will use the tags in [base_tag, base_tag+3].
   void receive_mpi_data(int base_tag);
+
+  // Apply periodic BC on the boundaries specified in Constants.
+  // This does not apply periodic BC across processor boundaries.
+  void apply_periodic_bc();
 
   // Swapping data with another tensor by flipping the buffer pointers is not
   // enough, as the MPI addressing will be messed up. This function should be
@@ -43,6 +52,10 @@ public:
   void recompute_mpi_addressing();
 
   const Constants &constants;
+
+  // Direction in which the tensor is staggered.
+  StaggeringDirection staggering;
+
   // A MPI datatype representing a slice with constant y coordinate.
   MPI_Datatype Slice_type_constant_y; 
 
@@ -82,32 +95,32 @@ public:
    * @param constants An object containing information on the domain.
    */
   inline Real evaluate_function_at_index_unstaggered(
-    Real time, size_t i, size_t j, size_t k,
+    Real time, int i, int j, int k,
       const std::function<Real(Real, Real, Real, Real)> &f) const {
-    return f(time, constants.min_x_global + constants.dx * i, 
+    return f(time, constants.min_x_global + constants.dx * (constants.base_i+i), 
              constants.min_y_global + constants.dy * (constants.base_j+j),
              constants.min_z_global + constants.dz * (constants.base_k+k));    
   }
 
   // Do the same, but without the time dependency.
   inline Real evaluate_function_at_index_unstaggered(
-    size_t i, size_t j, size_t k,
+    int i, int j, int k,
       const std::function<Real(Real, Real, Real)> &f) const {
-    return f(constants.min_x_global + constants.dx * i, 
+    return f(constants.min_x_global + constants.dx * (constants.base_i+i), 
              constants.min_y_global + constants.dy * (constants.base_j+j),
              constants.min_z_global + constants.dz * (constants.base_k+k)); 
   }
 
   // Do the same considering staggering.
   virtual inline Real evaluate_function_at_index(
-    Real time, size_t i, size_t j, size_t k,
+    Real time, int i, int j, int k,
     const std::function<Real(Real, Real, Real, Real)> &f) const {
       return evaluate_function_at_index_unstaggered(time, i, j, k, f);
   }
 
   // Do the same considering staggering.
   virtual inline Real evaluate_function_at_index(
-      size_t i, size_t j, size_t k,
+      int i, int j, int k,
       const std::function<Real(Real, Real, Real)> &f) const {
       return evaluate_function_at_index_unstaggered(i, j, k, f);
   }

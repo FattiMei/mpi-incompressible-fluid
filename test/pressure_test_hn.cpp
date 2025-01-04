@@ -27,6 +27,7 @@ int main(int argc, char* argv[]) {
     const size_t Ny_global = Nx_global * 3;
     const size_t Nz_global = Nx_global * 5;
     constexpr Real time = 1.0;
+    const std::array<bool, 3> periodic_bc{false, false, false};
 
     const int Pz = std::atol(argv[2]);
     const int Py = size / Pz;
@@ -40,12 +41,12 @@ int main(int argc, char* argv[]) {
     const Constants constants(Nx_global, Ny_global, Nz_global, 
                               x_size, y_size, z_size, 
                               min_x_global, min_y_global, min_z_global,
-                              1.0, 1.0, 1, Py, Pz, rank);
+                              1.0, 1.0, 1, Py, Pz, rank, periodic_bc);
     PressureSolverStructures structures(constants);
     
     VelocityTensor velocity(constants);
     PressureTensor pressure_solver_buffer(structures);
-    StaggeredTensor pressure({constants.Nx, constants.Ny, constants.Nz}, constants);
+    StaggeredTensor pressure(constants, StaggeringDirection::none);
 
     // Set the right-hand side.
     TimeVectorFunction exact_velocity(u_exact_p_test, v_exact_p_test, w_exact_p_test);
@@ -53,7 +54,7 @@ int main(int argc, char* argv[]) {
 
     // Solve.
     const auto before = chrono::high_resolution_clock::now();
-    solve_pressure_equation_homogeneous_neumann(pressure, pressure_solver_buffer, velocity, constants.dt);
+    solve_pressure_equation_homogeneous_periodic(pressure, pressure_solver_buffer, velocity, constants.dt);
     const auto after = chrono::high_resolution_clock::now();
     const Real execution_time = (after-before).count() / 1e9;
 

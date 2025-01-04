@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 #include <iostream>
 #include "ManufacturedVelocity.h"
 #include "Norms.h"
@@ -7,7 +8,7 @@
 double Reynolds;
 
 // Simple main for the test case with no pressure and exact solution known,
-// with all Dirichlet BC.
+// with mixed Dirichlet and periodic BC.
 int main(int argc, char *argv[]) {
   using namespace mif;
 
@@ -34,8 +35,8 @@ int main(int argc, char *argv[]) {
   constexpr Real min_x_global = 0.0;
   constexpr Real min_y_global = 0.0;
   constexpr Real min_z_global = 0.0;
-  constexpr Real x_size = 1.0;
-  constexpr Real y_size = 1.0;
+  constexpr Real x_size = 2.0 * M_PI;
+  constexpr Real y_size = 2.0 * M_PI;
   constexpr Real z_size = 1.0;
   const size_t Nx_global = std::atol(argv[1]);
   const size_t Ny_global = Nx_global;
@@ -43,7 +44,7 @@ int main(int argc, char *argv[]) {
   constexpr Real Re = 1e4;
   constexpr Real final_time = 1e-4;
   const unsigned int num_time_steps = std::atoi(argv[2]);
-  const std::array<bool, 3> periodic_bc{false, false, false};
+  const std::array<bool, 3> periodic_bc{true, true, false};
 
   // Given the number of processors in the z direction, compute the number of
   // processors in the y direction and verify that the total number of
@@ -82,6 +83,10 @@ int main(int argc, char *argv[]) {
     // Update the solution inside the mesh.
     timestep_velocity(velocity, velocity_buffer, rhs_buffer, exact_velocity, current_time);
   }
+
+  //if (rank == 0) velocity.u.print();
+  //MPI_Barrier(MPI_COMM_WORLD);
+  //if (rank == 1) velocity.u.print();
 
   // Compute the norms of the error.
   const Real error_l1_local = ErrorL1Norm(velocity, exact_velocity, final_time);

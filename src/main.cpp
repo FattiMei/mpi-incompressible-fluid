@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
   constexpr Real y_size = 1.0;
   const Real z_size = test_case_2 ? 1.0 : 2.0;
   constexpr Real Re = 1e3;
+  const std::array<bool, 3> periodic_bc{false, false, test_case_2};
 
   // Note that the constants object is only constant within the scope of this
   // particular processor. All processors will have their own subdomain
@@ -56,8 +57,8 @@ int main(int argc, char *argv[]) {
   const Constants constants(Nx_global, Ny_global, Nz_global,
                             x_size, y_size, z_size,
                             min_x_global, min_y_global, min_z_global,
-                            Re, dt * num_time_steps, num_time_steps,
-                            Py, Pz, rank);
+                            Re, dt*num_time_steps, num_time_steps, 
+                            Py, Pz, rank, periodic_bc);
   PressureSolverStructures structures(constants);
 
   Reynolds = Re;
@@ -65,9 +66,9 @@ int main(int argc, char *argv[]) {
   // Create the tensors.
   VelocityTensor velocity(constants);
   VelocityTensor velocity_buffer(constants);
-  VelocityTensor rhs_buffer(constants);
-  StaggeredTensor pressure({constants.Nx, constants.Ny, constants.Nz}, constants);
-  StaggeredTensor pressure_buffer({constants.Nx, constants.Ny, constants.Nz}, constants);
+  VelocityTensor velocity_buffer_2(constants);
+  StaggeredTensor pressure(constants, StaggeringDirection::none);
+  StaggeredTensor pressure_buffer(constants, StaggeringDirection::none);
   PressureTensor pressure_solver_buffer(structures);
 
   // Set the initial conditions.
@@ -90,7 +91,7 @@ int main(int argc, char *argv[]) {
     const Real current_time = time_step * constants.dt;
 
     // Update the solution inside the mesh.
-    timestep(velocity, velocity_buffer, rhs_buffer, exact_velocity, current_time, pressure, pressure_buffer, pressure_solver_buffer);
+    timestep(velocity, velocity_buffer, velocity_buffer_2, exact_velocity, current_time, pressure, pressure_buffer, pressure_solver_buffer);
   }
 
   // TODO: store the required parts of the solution as a vtk and some dat files.

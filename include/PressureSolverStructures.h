@@ -12,14 +12,20 @@
 namespace mif {
     class PressureSolverStructures {
     public:
-        bool boundary_conditions[3];
+        bool periodic_bc[3];
+        const int Nx_points;
+        const int Ny_points;
+        const int Nz_points;
         C2Decomp c2d;
         Real *buffer_x; // Buffer to perform fft along the x direction.
         Real *buffer_y; // Buffer to perform fft along the y direction.
         Real *buffer_z; // Buffer to perform fft along the z direction.
-        fftw_plan fft_plan_x;
-        fftw_plan fft_plan_y;
-        fftw_plan fft_plan_z;
+        const fftw_plan fft_plan_x;
+        const fftw_plan fft_plan_y;
+        const fftw_plan fft_plan_z;
+        const fftw_plan ifft_plan_x;
+        const fftw_plan ifft_plan_y;
+        const fftw_plan ifft_plan_z;
 
         // The following tensor contains precomputed eigenvalues,
         // with position (j,i,k) containing 1 over the sum of the

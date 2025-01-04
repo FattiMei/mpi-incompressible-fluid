@@ -107,9 +107,8 @@ int main(int argc, char *argv[]) {
   assert(Pz * Py == totRank);
   assert(Pz > 0 && Py > 0);
   const mif::Constants constants(nx, ny, nz, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0,
-                                 1.0, 1, Py, Pz, mpiRank);
-  mif::StaggeredTensor local_tensor({constants.Nx, constants.Ny, constants.Nz},
-                                    constants);
+                                 1.0, 1, Py, Pz, mpiRank, {false, false, false});
+  mif::StaggeredTensor local_tensor(constants, mif::StaggeringDirection::none);
 
   // Our local tensor will have these dimensions
   auto const n1 = constants.Nz;
@@ -175,7 +174,7 @@ int main(int argc, char *argv[]) {
          << " x " << tot_Nz << '\n';
   }
   C2Decomp *c2d;
-  bool periodicBC[3] = {true, true, true};
+  bool periodicBC[3] = {false, false, false};
   c2d = new C2Decomp(tot_Nx, tot_Ny, tot_Nz, Py, Pz, periodicBC);
   if (!mpiRank)
     cout << "######################################## Done initializing\n";

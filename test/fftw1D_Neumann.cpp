@@ -25,6 +25,8 @@ void apply_operator_neumann(const int N, const double x[], double b[]) {
 }
 
 
+// This test the FFT method to solve the problem Ax=b
+// @MatteoLeone wants to solve a real problem Laplacian(p) = f
 int main() {
 	int total_points = N;
 

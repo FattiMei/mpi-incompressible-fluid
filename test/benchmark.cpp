@@ -28,7 +28,7 @@ static void timestepper(benchmark::State &state) {
   const size_t Ny = Nx;
   const size_t Nz = Nx;
 
-  const Constants constants(Nx, Ny, Nz, Lx, Ly, Lz, 0.0, 0.0, 0.0, Reynolds, deltat, 1, 1, 1, 0);
+  const Constants constants(Nx, Ny, Nz, Lx, Ly, Lz, 0.0, 0.0, 0.0, Reynolds, deltat, 1, 1, 1, 0, {false, false, false});
 
   VelocityTensor velocity(constants);
   VelocityTensor velocity_buffer(constants);

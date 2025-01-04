@@ -57,7 +57,7 @@ if __name__ == "__main__":
         or simp(dp_dz.subs(z, 2 * sp.pi)) != 0
     ):
         sys.stderr.write(
-            "[WARNING]: the proposed manufactured solution does not have homogeneous Neumann boundary conditions.\n"
+            "[WARNING]: the proposed manufactured solution does not have homogeneous Neumann boundary conditions on [0, 2pi]^3.\n"
         )
 
     # Generate the C code through sympy's codegen utility.
