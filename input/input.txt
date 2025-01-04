@@ -3,6 +3,6 @@ dt : 1e-4
 Nx : 32
 Ny : 32
 Nz : 32
-Px : 1
-Py : 1
+Py : 2
+Pz : 3
 test_case_2 : false

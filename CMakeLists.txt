@@ -3,7 +3,7 @@ project(mpi_incompressible_fluid)
 
 
 find_package(Python3 REQUIRED)
-#find_package(benchmark)
+find_package(benchmark)
 
 find_package(PkgConfig REQUIRED)
 pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
@@ -93,7 +93,7 @@ add_library(
 	${SOURCE_DIR}/TimestepVelocity.cpp
 	${SOURCE_DIR}/VectorFunction.cpp
 	${SOURCE_DIR}/VelocityTensor.cpp
-	${SOURCE_DIR}/inputParser.cpp
+	${SOURCE_DIR}/InputParser.cpp
 	${FORCING_TERM_ARTIFACT}
 	${PRESSURE_ARTIFACT}
 	${EXACT_SOLUTION_ARTIFACT}

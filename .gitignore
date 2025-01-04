@@ -10,3 +10,6 @@ artifacts/*
 analysis/results.txt
 analysis/*.png
 *.o
+
+*pvsm
+source_openfoam.sh
