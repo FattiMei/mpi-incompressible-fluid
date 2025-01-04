@@ -59,7 +59,7 @@ constexpr T correct_endianness(const T x) noexcept {
 }
 
 constexpr void test_implementations() {
-	static_assert(10.0f == correct_endianness(correct_endianness(10.0f)));
+	static_assert(10.0f == correct_endianness(correct_endianness(10.0f)));//This is not that good of a test but it is better than nothing, this would pass even if the function was x return -x
 	static_assert(-123.456f == correct_endianness(correct_endianness(-123.456f)));
 
 	static_assert(10.0d == correct_endianness(correct_endianness(10.0d)));
