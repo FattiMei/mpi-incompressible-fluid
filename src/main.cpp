@@ -1,6 +1,7 @@
-#include "TestCaseBoundaries.h"
+#include "InputParser.h"
 #include "Norms.h"
 #include "PressureEquation.h"
+#include "TestCaseBoundaries.h"
 #include "Timestep.h"
 #include <cassert>
 #include <iostream>
@@ -24,22 +25,40 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  // No arguments.
-  assert(argc == 1);
+  // One argument: input file path.
+  assert(argc == 2);
+  const std::string input_file = argv[1];
 
-  // Input parameters. TODO: read them from a file.
-  const size_t Nx_global = 32;
-  const size_t Ny_global = 32;
-  const size_t Nz_global = 32;
-  const Real dt = 1e-1;
-  const unsigned int num_time_steps = 100;
-  const int Pz = 3;
-  const int Py = 2;
-  const bool test_case_2 = true;
-
-  // Check processor consistency.
-  assert(Pz * Py == size);
-  assert(Pz > 0 && Py > 0);
+  // Input parameters from the file.
+  size_t Nx_global = 0;
+  size_t Ny_global = 0;
+  size_t Nz_global = 0;
+  Real dt = 0;
+  unsigned int num_time_steps = 0;
+  int Pz = 0;
+  int Py = 0;
+  bool test_case_2 = 0;
+  try {
+      // Parse the input file.
+      parse_input_file(input_file, Nx_global, Ny_global, Nz_global, 
+                       dt, num_time_steps, Py, Pz, test_case_2);
+      
+      // Check processor consistency.
+      if (Pz < 1 || Py < 1) {
+        if (rank == 0) std::cerr << "The number of processors in each direction must be at least 1." << std::endl;
+        MPI_Finalize();
+        return 0;
+      }
+      if (Pz * Py != size) {
+        if (rank == 0) std::cerr << "The number of precessors in the input file do not match with the ones provided to mpirun." << std::endl;
+        MPI_Finalize();
+        return 0;
+      }
+  } catch (const std::exception &ex) {
+      if (rank == 0) std::cerr << "Error parsing input file: " << ex.what() << std::endl;
+      MPI_Finalize();
+      return 0;
+  }
 
   // Set test case domain information.
   const Real min_x_global = test_case_2 ? -0.5 : 0.0;
@@ -50,17 +69,16 @@ int main(int argc, char *argv[]) {
   const Real z_size = test_case_2 ? 1.0 : 2.0;
   constexpr Real Re = 1e3;
   const std::array<bool, 3> periodic_bc{false, false, test_case_2};
-
+  // Create needed structures.
   // Note that the constants object is only constant within the scope of this
   // particular processor. All processors will have their own subdomain
   // on which they will compute the solution.
   const Constants constants(Nx_global, Ny_global, Nz_global,
-                            x_size, y_size, z_size,
-                            min_x_global, min_y_global, min_z_global,
-                            Re, dt*num_time_steps, num_time_steps, 
+                            1.0, 1.0, test_case_2 ? 1.0 : 2.0,
+                            test_case_2 ? -0.5 : 0.0, test_case_2 ? -0.5 : 0.0, test_case_2 ? -0.5 : -1.0,
+                            Re, dt * num_time_steps, num_time_steps,
                             Py, Pz, rank, periodic_bc);
   PressureSolverStructures structures(constants);
-
   Reynolds = Re;
 
   // Create the tensors.
@@ -76,14 +94,6 @@ int main(int argc, char *argv[]) {
   velocity.set(exact_velocity.set_time(0.0), true);
   pressure.set(test_case_2 ? exact_p_initial_t2 : exact_p_initial_t1, true);
 
-  // Compute and print convergence conditions.
-  Real highest_velocity = 1.0;
-  const Real space_step = std::min({constants.dx, constants.dy, constants.dz});
-  if (rank == 0) {
-    std::cout << "CFL: " << constants.dt / space_step * highest_velocity << std::endl;
-    std::cout << "Reynolds condition: " << constants.dt / (Re*space_step*space_step) << std::endl;
-  }
-
   // Compute the solution.
   for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
 
@@ -94,8 +104,10 @@ int main(int argc, char *argv[]) {
     timestep(velocity, velocity_buffer, velocity_buffer_2, exact_velocity, current_time, pressure, pressure_buffer, pressure_solver_buffer);
   }
 
-  // TODO: store the required parts of the solution as a vtk and some dat files.
+  // Store the requested slices as a VTK file.
   writeVTK("solution.vtk", velocity, pressure);
+  
+  // TODO: store the required parts of the solution as dat files.
 
   // Finalize MPI.
   MPI_Finalize();

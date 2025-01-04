@@ -99,6 +99,7 @@ add_library(
 	${SOURCE_DIR}/TimestepVelocity.cpp
 	${SOURCE_DIR}/VectorFunction.cpp
 	${SOURCE_DIR}/VelocityTensor.cpp
+	${SOURCE_DIR}/InputParser.cpp
 	${SOURCE_DIR}/VTKExport.cpp
 	${FORCING_TERM_ARTIFACT}
 	${PRESSURE_ARTIFACT}
