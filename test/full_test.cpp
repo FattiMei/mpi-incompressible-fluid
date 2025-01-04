@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   // Create the tensors.
   VelocityTensor velocity(constants);
   VelocityTensor velocity_buffer(constants);
-  VelocityTensor rhs_buffer(constants);
+  VelocityTensor velocity_buffer_2(constants);
   StaggeredTensor pressure(constants, StaggeringDirection::none);
   StaggeredTensor pressure_buffer(constants, StaggeringDirection::none);
   PressureTensor pressure_solver_buffer(structures);
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
     const Real current_time = time_step * constants.dt;
 
     // Update the solution inside the mesh.
-    timestep_nhn(velocity, velocity_buffer, rhs_buffer, exact_velocity, exact_pressure_gradient, current_time, pressure, pressure_buffer, pressure_solver_buffer);
+    timestep(velocity, velocity_buffer, velocity_buffer_2, exact_velocity, current_time, pressure, pressure_buffer, pressure_solver_buffer);
   }
 
   // Compute the pressure gradient.
