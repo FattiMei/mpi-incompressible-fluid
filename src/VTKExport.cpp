@@ -52,6 +52,23 @@ std::vector<int> compute_displacement(int n_local_points, int size) {
 }
 
 
+MPI_Offset write_ascii_part(
+	MPI_File fh,
+	MPI_Offset global_offset,
+	int strlen,
+	char *buf,
+	int rank
+) {
+	MPI_Status status;
+
+	if (rank == 0) {
+		MPI_File_write_at(fh, global_offset, buf, strlen, MPI_CHAR, &status);
+	}
+
+	return strlen;
+}
+
+
 void writeVTK(
 	const std::string&     filename,
 	const VelocityTensor&  velocity,
@@ -65,6 +82,7 @@ void writeVTK(
 	int bufsize = 0;
 	
         MPI_Offset my_offset;
+	MPI_Offset global_offset = 0;
         MPI_File fh;
         MPI_Status status;
         MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
@@ -152,7 +170,7 @@ void writeVTK(
         }
 
 
-	std::vector<int> displacements = compute_displacement(points_coordinate.size(), size);
+	std::vector<int> displacements = compute_displacement(point_data_u.size(), size);
 
 	if (rank == 0) {
 		for (int d : displacements) std::cout << d << ' ';
@@ -166,30 +184,27 @@ void writeVTK(
         vectorToBigEndian(point_data_w);
         vectorToBigEndian(point_data_p);
 
-	bufsize = sprintf(
+	global_offset += write_ascii_part(
+		fh,
+		global_offset,
+		sprintf(
+			buf,
+			"# vtk DataFile Version 2.0\nvtk output\nBINARY\nDATASET UNSTRUCTURED_GRID \nPOINTS %d %s\n",
+			displacements.back(),
+			typestr
+		),
 		buf,
-		"# vtk DataFile Version 2.0\nvtk output\nBINARY\nDATASET UNSTRUCTURED_GRID \nPOINTS %d %s\n",
-		(displacements.back()) / 3,
-		typestr
+		rank
 	);
 
-        if (rank == 0) {
-            MPI_File_write(fh, buf, strlen(buf), MPI_CHAR, &status);
-        }
-
-        my_offset = bufsize + displacements[rank] * sizeof(Real);
-        //write all arguments to console for debugging
-        // std::cout << "Rank: " << rank << " Displacement: " << displacements[rank] << " My offset: " << my_offset
-        //   << " Size of points_coordinate: " << points_coordinate.size() << " Size of point_data_u: "
-        //   << point_data_u.size() << " Size of point_data_v: " << point_data_v.size() << " Size of point_data_w: "
-        //   << point_data_w.size() << " Size of local_cells: " << local_cells << std::endl;
+        my_offset = global_offset + 3 * displacements[rank] * sizeof(Real);
 
         MPI_File_write_at(fh, my_offset, points_coordinate.data(),
                           points_coordinate.size() * sizeof(Real),
                           MPI_BYTE, &status);
 
         int num_elem = displacements.back();
-        int global_offset = num_elem * sizeof(Real) + bufsize;
+        global_offset += 3 * num_elem * sizeof(Real);
 
 	// write information about the cells, I cheat and make the processor 0 write all things
 	/*
@@ -258,74 +273,69 @@ void writeVTK(
 
 
         //now we write the u component of the velocity
-        {
-	    int local_u_header_size = sprintf(
-		buf,
-		"\nPOINT_DATA %d\nSCALARS u %s 1\nLOOKUP_TABLE default\n",
-		(num_elem) / 3,
-		typestr
-	    );
+	{
+		global_offset += write_ascii_part(fh, global_offset,
+			sprintf(
+				buf,
+				"\nPOINT_DATA %d\nSCALARS u %s 1\nLOOKUP_TABLE default\n",
+				num_elem,
+				typestr
+			),
+			buf, rank
+		);
 
-            if (rank == 0) {
-                MPI_File_write_at(fh, global_offset, buf, local_u_header_size, MPI_CHAR, &status);
-            }
+		my_offset = global_offset + displacements[rank] * sizeof(Real);
+		MPI_File_write_at(fh, my_offset, point_data_u.data(), point_data_u.size() * sizeof(Real), MPI_BYTE, &status);
+		global_offset += num_elem * sizeof(Real);
+	}
 
-            my_offset = global_offset + displacements[rank] / 3 * sizeof(Real) + local_u_header_size;
-            std::cout << "rank " << rank << " my_offset: " << my_offset << " size: " << size << std::endl;
-            MPI_File_write_at(fh, my_offset, point_data_u.data(), point_data_u.size() * sizeof(Real), MPI_BYTE,
-                              &status);
-            global_offset += (num_elem) / 3 * sizeof(Real) + local_u_header_size;
-        }
+	// v velocity component
+	{
+		global_offset += write_ascii_part(fh, global_offset,
+			sprintf(
+				buf,
+				"\nSCALARS v %s 1\nLOOKUP_TABLE default\n",
+				typestr
+			),
+			buf, rank
+		);
+
+		my_offset = global_offset + displacements[rank] * sizeof(Real);
+		MPI_File_write_at(fh, my_offset, point_data_v.data(), point_data_v.size() * sizeof(Real), MPI_BYTE, &status);
+		global_offset += num_elem * sizeof(Real);
+	}
+
+	// w velocity component
+	{
+		global_offset += write_ascii_part(fh, global_offset,
+			sprintf(
+				buf,
+				"\nSCALARS w %s 1\nLOOKUP_TABLE default\n",
+				typestr
+			),
+			buf, rank
+		);
+
+		my_offset = global_offset + displacements[rank] * sizeof(Real);
+		MPI_File_write_at(fh, my_offset, point_data_w.data(), point_data_w.size() * sizeof(Real), MPI_BYTE, &status);
+		global_offset += (num_elem) * sizeof(Real);
+	}
 
 
-        {
-	    int local_v_header_size = sprintf(
-		buf,
-		"\nSCALARS v %s 1\nLOOKUP_TABLE default\n",
-		typestr
-	    );
+	// p component
+	{
+		global_offset += write_ascii_part(fh, global_offset,
+			sprintf(
+				buf,
+				"\nSCALARS p %s 1\nLOOKUP_TABLE default\n",
+				typestr
+			),
+			buf, rank
+		);
 
-            if (rank == 0) {
-                MPI_File_write_at(fh, global_offset, buf, local_v_header_size, MPI_CHAR, &status);
-            }
-
-            my_offset = global_offset + displacements[rank] / 3 * sizeof(Real) + local_v_header_size;
-            MPI_File_write_at(fh, my_offset, point_data_v.data(), point_data_v.size() * sizeof(Real), MPI_BYTE,
-                              &status);
-            global_offset += (num_elem) / 3 * sizeof(Real) + local_v_header_size;
-        }
-
-        {
-	    int local_w_header_size = sprintf(
-		buf,
-		"\nSCALARS w %s 1\nLOOKUP_TABLE default\n",
-		typestr
-	    );
-
-            if (rank == 0) {
-                MPI_File_write_at(fh, global_offset, buf, local_w_header_size, MPI_CHAR, &status);
-            }
-
-            my_offset = global_offset + displacements[rank] / 3 * sizeof(Real) + local_w_header_size;
-            MPI_File_write_at(fh, my_offset, point_data_w.data(), point_data_w.size() * sizeof(Real), MPI_BYTE,
-                              &status);
-            global_offset += (num_elem) / 3 * sizeof(Real) + local_w_header_size;
-        }
-        {
-	    int local_p_header_size = sprintf(
-		buf,
-		"\nSCALARS p %s 1\nLOOKUP_TABLE default\n",
-		typestr
-	    );
-
-            if (rank == 0) {
-                MPI_File_write_at(fh, global_offset, buf, local_p_header_size, MPI_CHAR, &status);
-            }
-
-            my_offset = global_offset + displacements[rank] / 3 * sizeof(Real) + local_p_header_size;
-            MPI_File_write_at(fh, my_offset, point_data_p.data(), point_data_p.size() * sizeof(Real), MPI_BYTE,
-                              &status);
-        }
+		my_offset = global_offset + displacements[rank] * sizeof(Real);
+		MPI_File_write_at(fh, my_offset, point_data_p.data(), point_data_p.size() * sizeof(Real), MPI_BYTE, &status);
+	}
 
 
         // points offset and write data
