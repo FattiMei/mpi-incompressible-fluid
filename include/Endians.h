@@ -8,17 +8,18 @@
 
 // in case the cluster compiler is not so modern, we provide a fallback implementation
 #ifdef MIF_LEGACY_COMPILER
+#warning("We are now using the legacy endian conversion")
 #include <byteswap.h>
 
 namespace mif {
-constexpr float correct_endianness(float x) {
+float correct_endianness(float x) {
 	uint32_t trasmute = *reinterpret_cast<uint32_t*>(&x);
 	uint32_t swapped = bswap_32(trasmute);
 
 	return *reinterpret_cast<float*>(&swapped);
 }
 
-constexpr double correct_endianness(double x) {
+double correct_endianness(double x) {
 	uint64_t trasmute = *reinterpret_cast<uint64_t*>(&x);
 	uint64_t swapped = bswap_64(trasmute);
 
