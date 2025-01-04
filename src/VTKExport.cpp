@@ -105,6 +105,7 @@ namespace mif{
         int base_k = constants.base_k + 1;
         if (base_k == 1) base_k = 0; //TODO: check if this is correct
         if (base_j == 1) base_j = 0;
+
         std::vector<Real> points_coordinate;
         std::vector<Real> point_data_u, point_data_v, point_data_w, point_data_p;
         //reserve space
@@ -163,14 +164,8 @@ namespace mif{
                 }
         }
 
-
         std::vector<int> displacements = compute_displacement(point_data_u.size(), size);
-        std::vector<int> cell_displacements = compute_displacement((Ny_owner - 1) * (Nz_owner - 1), size);
-
-        if (rank == 0){
-            for (int d : displacements) std::cout << d << ' ';
-            std::cout << std::endl;
-        }
+        const int num_elem = displacements.back();
 
         // Convert points_coordinate to big-endian format
         vectorToBigEndian(points_coordinate);
@@ -198,64 +193,7 @@ namespace mif{
                           points_coordinate.size() * sizeof(Real),
                           MPI_BYTE, &status);
 
-        int num_elem = displacements.back();
         global_offset += 3 * num_elem * sizeof(Real);
-
-        // write information about the cells, I cheat and make the processor 0 write all things
-        int n_cells_x_plane = (Ny_owner - 1) * (Nz_owner - 1);
-        {
-            global_offset += write_ascii_part(fh, global_offset,
-                                              sprintf(
-                                                  buf,
-                                                  "\nCELLS %d %d\n",
-                                                  cell_displacements.back(),
-                                                  5 * cell_displacements.back()
-                                              ),
-                                              buf, rank
-            );
-
-            std::vector<int> cell_data(5 * n_cells_x_plane, 4);
-            int cell_count = 0;
-            for (int y = 0; y < Ny_owner - 1; ++y){
-                for (int z = 0; z < Nz_owner - 1; ++z){
-                    const int cell_offset = displacements[rank] + Nz_owner * y + z;
-
-                    cell_data[5 * cell_count + 0] = 4;
-                    cell_data[5 * cell_count + 1] = cell_offset;
-                    cell_data[5 * cell_count + 2] = cell_offset + 1;
-                    cell_data[5 * cell_count + 3] = cell_offset + 1 + Nz_owner;
-                    cell_data[5 * cell_count + 4] = cell_offset + Nz_owner;
-
-                    ++cell_count;
-                }
-            }
-            vectorToBigEndian(cell_data);
-
-            my_offset = global_offset + 5 * sizeof(int) * cell_displacements[rank];
-            MPI_File_write_at(fh, my_offset, cell_data.data(), cell_data.size(), MPI_INT, &status);
-
-            global_offset += 5 * cell_displacements.back() * sizeof(int);
-        }
-        {
-            global_offset += write_ascii_part(
-                fh,
-                global_offset,
-                sprintf(
-                    buf,
-                    "\nCELL_TYPES %d\n",
-                    cell_displacements.back()
-                ),
-                buf, rank
-            );
-
-            std::vector<int> cell_type(n_cells_x_plane, 9);
-            vectorToBigEndian(cell_type);
-
-            my_offset = global_offset + sizeof(int) * cell_displacements[rank];
-            MPI_File_write_at(fh, my_offset, cell_type.data(), cell_type.size(), MPI_INT, &status);
-
-            global_offset += cell_displacements.back() * sizeof(int);
-        }
 
 
         //now we write the u component of the velocity
@@ -307,7 +245,7 @@ namespace mif{
             my_offset = global_offset + displacements[rank] * sizeof(Real);
             MPI_File_write_at(fh, my_offset, point_data_w.data(), point_data_w.size() * sizeof(Real), MPI_BYTE,
                               &status);
-            global_offset += (num_elem) * sizeof(Real);
+            global_offset += num_elem * sizeof(Real);
         }
 
 
@@ -325,6 +263,7 @@ namespace mif{
             my_offset = global_offset + displacements[rank] * sizeof(Real);
             MPI_File_write_at(fh, my_offset, point_data_p.data(), point_data_p.size() * sizeof(Real), MPI_BYTE,
                               &status);
+            global_offset += num_elem * sizeof(Real);
         }
 
 
