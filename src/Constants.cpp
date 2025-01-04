@@ -81,8 +81,8 @@ Constants::Constants(size_t Nx_global, size_t Ny_global, size_t Nz_global,
       Ny((Py == 1) ? (periodic_bc[1] ? Ny_global+1 : Ny_global) : (((y_rank == (Py-1) && !periodic_bc[1]) || (y_rank == 0 && !periodic_bc[1])) ? Ny_owner+1 : Ny_owner+2)),
       Nz((Pz == 1) ? (periodic_bc[2] ? Nz_global+1 : Nz_global) : (((z_rank == (Pz-1) && !periodic_bc[2]) || (z_rank == 0 && !periodic_bc[2])) ? Nz_owner+1 : Nz_owner+2)),
       Nx_staggered(periodic_bc[0] ? Nx : Nx + 1), 
-      Ny_staggered((y_rank == (Py-1) && !periodic_bc[1]) ? Ny + 1 : Ny), 
-      Nz_staggered((z_rank == (Pz-1) && !periodic_bc[2]) ? Nz + 1 : Nz),
+      Ny_staggered((y_rank == (Py-1)) ? Ny + 1 : Ny), 
+      Nz_staggered((z_rank == (Pz-1)) ? Nz + 1 : Nz),
 
       // Each processor will have a different subset of the domain.
       // If the domain cannot be split evenly, bonus points go to the first processors

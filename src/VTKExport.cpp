@@ -41,8 +41,8 @@ namespace mif {
     // data at the index returned by this function and at the index + 1, using the value
     // returned by this function as weight for the first value, and 1 - that weight for the
     // second value.
-    std::tuple<size_t, float> pos_to_index(Real pos, Real min_pos_global, Real delta) {
-        const Real offset = pos - min_pos_global;
+    std::tuple<size_t, float> pos_to_index(Real pos, Real min_pos_global, Real delta, bool periodic) {
+        const Real offset = pos - min_pos_global + periodic * delta;
         const Real float_index = offset / delta;
         const Real int_index_1 = std::floor(float_index);
         const Real index_1_importance = 1.0 - (float_index - int_index_1);
@@ -107,8 +107,8 @@ namespace mif {
         // Get indices in the unstaggered tensors for start and end of the local domain (start/end_*_write_local)
         // and the global one (start/end_*_write_global), inclusive on the left and exclusive on the right.
         const size_t Nx = constants.Nx_global;
-        const size_t Ny = (constants.y_rank == 0 && constants.periodic_bc[1]) ? constants.Ny_owner+1 : constants.Ny_owner;
-        const size_t Nz = (constants.z_rank == 0 && constants.periodic_bc[2]) ? constants.Nz_owner+1 : constants.Nz_owner;
+        const size_t Ny = (constants.y_rank == constants.Py-1 && constants.periodic_bc[1]) ? constants.Ny_owner+1 : constants.Ny_owner;
+        const size_t Nz = (constants.z_rank == constants.Pz-1 && constants.periodic_bc[2]) ? constants.Nz_owner+1 : constants.Nz_owner;
         const int start_i_write_local = constants.periodic_bc[0] ? 1 : 0;
         const int start_j_write_local = (constants.prev_proc_y == -1) ? 0 : 1;
         const int start_k_write_local = (constants.prev_proc_z == -1) ? 0 : 1;
@@ -154,7 +154,7 @@ namespace mif {
         // x = 0 plane.
         {
             assert(constants.min_x_global <= 0.0 && (constants.min_x_global + constants.x_size) >= 0.0);
-            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_x_global, constants.dx);
+            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_x_global, constants.dx, constants.periodic_bc[0]);
             const int i = std::get<0>(index);
             assert(i >= start_i_write_global && i < end_i_write_global);
             for (int j = start_j_write_local; j < end_j_write_local; j++) {
@@ -167,7 +167,7 @@ namespace mif {
         // y = 0 plane.
         {
             assert(constants.min_y_global <= 0.0 && (constants.min_y_global + constants.y_size_global) >= 0.0);
-            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_y_global, constants.dy);
+            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_y_global, constants.dy, constants.periodic_bc[1]);
             const int j_global = std::get<0>(index);
             if (j_global >= start_j_write_global && j_global < end_j_write_global) {
                 const int j = j_global - start_j_write_global;
@@ -182,7 +182,7 @@ namespace mif {
         // z = 0 plane.
         {
             assert(constants.min_z_global <= 0.0 && (constants.min_z_global + constants.z_size_global) >= 0.0);
-            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_z_global, constants.dz);
+            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_z_global, constants.dz, constants.periodic_bc[2]);
             const int k_global = std::get<0>(index);
             if (k_global >= start_k_write_global && k_global < end_k_write_global) {
                 const int k = k_global - start_k_write_global;

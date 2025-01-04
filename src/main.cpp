@@ -31,11 +31,11 @@ int main(int argc, char *argv[]) {
   const size_t Nx_global = 32;
   const size_t Ny_global = 32;
   const size_t Nz_global = 32;
-  const Real dt = 1e-4;
-  const unsigned int num_time_steps = 1;
+  const Real dt = 1e-1;
+  const unsigned int num_time_steps = 100;
   const int Pz = 3;
   const int Py = 2;
-  const bool test_case_2 = false;
+  const bool test_case_2 = true;
 
   // Check processor consistency.
   assert(Pz * Py == size);
@@ -96,6 +96,7 @@ int main(int argc, char *argv[]) {
 
   // TODO: store the required parts of the solution as a vtk and some dat files.
   writeVTK("solution.vtk", velocity, pressure);
+
   // Finalize MPI.
   MPI_Finalize();
 }
