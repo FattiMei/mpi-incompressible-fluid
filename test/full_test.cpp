@@ -160,6 +160,8 @@ int main(int argc, char *argv[]) {
 
   writeVTK("full.vtk", velocity, constants, pressure, rank, size);
 
+  writeDat("line1.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0.0);
+
   // Finalize MPI.
   MPI_Finalize();
 }

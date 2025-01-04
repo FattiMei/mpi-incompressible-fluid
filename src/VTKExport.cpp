@@ -310,12 +310,8 @@ namespace mif{
         const int direction,
         const Real x, const Real y, const Real z
     ){
-
-
-
         //get the index of the point
-        int i = (int)((x - constants.min_x_global
-        ) / constants.dx);
+        int i = (int)((x - constants.min_x_global) / constants.dx);
         int j = (int)((y - constants.min_y_global) / constants.dy);
         int k = (int)((z - constants.min_z_global) / constants.dz);
 
@@ -345,7 +341,7 @@ namespace mif{
                         (velocity.v(i, j - base_j, k - base_k) + velocity.v(i, j - base_j + 1, k - base_k)) / 2);
                     point_data_w.push_back(
                         (velocity.w(i, j - base_j, k - base_k) + velocity.w(i, j - base_j, k - base_k + 1)) / 2);
-                    point_data_w.push_back(pressure(i, j - base_j, k - base_k));
+                    point_data_p.push_back(pressure(i, j - base_j, k - base_k));
                 }
             }
         }
@@ -359,7 +355,7 @@ namespace mif{
                         (velocity.v(i, j, k - base_k) + velocity.v(i, j + 1, k - base_k)) / 2);
                     point_data_w.push_back(
                         (velocity.w(i, j, k - base_k) + velocity.w(i, j, k - base_k + 1)) / 2);
-                    point_data_w.push_back(pressure(i, j, k - base_k));
+                    point_data_p.push_back(pressure(i, j, k - base_k));
                 }
             }
         }
@@ -373,7 +369,7 @@ namespace mif{
                         (velocity.v(i , j - base_j, z) + velocity.v(i , j - base_j + 1, z)) / 2);
                     point_data_w.push_back(
                         (velocity.w(i , j - base_j, z) + velocity.w(i , j - base_j, z + 1)) / 2);
-                    point_data_w.push_back(pressure(i , j - base_j, z));
+                    point_data_p.push_back(pressure(i , j - base_j, z));
                 }
             }
         }
