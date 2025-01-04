@@ -128,12 +128,14 @@ namespace mif {
         // "local_cells" is the number of points the local processor will have to write results for.
         size_t local_cells = (Nx * Ny + Nx * Nz + Nx * Ny);
         std::vector<Real> points_coordinates;
-        std::vector<Real> point_data_u, point_data_v, point_data_w, point_data_p;
+        std::vector<Real> point_data_u, point_data_v, point_data_w, point_data_p, point_data_mag;
         points_coordinates.reserve(local_cells * 3);
         point_data_u.reserve(local_cells);
         point_data_v.reserve(local_cells);
         point_data_w.reserve(local_cells);
         point_data_p.reserve(local_cells);
+        point_data_mag.reserve(local_cells);
+
 
         // TODO: for now, data is returned on the pressure point closest to the left to the requested plane.
         // Find out if we should interpolate the data.
@@ -141,7 +143,7 @@ namespace mif {
 
         // Write data in a point given its indices.
         auto write_point = [&constants, &velocity, &pressure, &points_coordinates, 
-                            &point_data_u, &point_data_v, &point_data_w, &point_data_p]
+                            &point_data_u, &point_data_v, &point_data_w, &point_data_p, &point_data_mag]
                             (int i, int j, int k) {
             points_coordinates.push_back(constants.min_x_global + (constants.base_i + i) * constants.dx);
             points_coordinates.push_back(constants.min_y_global + (constants.base_j + j) * constants.dy);
@@ -150,6 +152,14 @@ namespace mif {
             point_data_v.push_back((velocity.v(i, j, k) + velocity.v(i, j + 1, k)) / 2);                
             point_data_w.push_back((velocity.w(i, j, k) + velocity.w(i, j, k + 1)) / 2);                
             point_data_p.push_back(pressure(i, j, k));                                                  
+
+	    point_data_mag.push_back(
+	        std::sqrt(
+		      point_data_u.back()*point_data_u.back()
+		    + point_data_v.back()*point_data_v.back()
+		    + point_data_w.back()*point_data_w.back()
+		)
+	    );
         };
 
         // x = 0 plane.
@@ -205,6 +215,7 @@ namespace mif {
         vectorToBigEndian(point_data_v);
         vectorToBigEndian(point_data_w);
         vectorToBigEndian(point_data_p);
+        vectorToBigEndian(point_data_mag);
 
         // Write the coordinates.
         MPI_Offset my_offset;
@@ -294,6 +305,23 @@ namespace mif {
 
             my_offset = global_offset + displacements[rank] * sizeof(Real);
             MPI_File_write_at(fh, my_offset, point_data_p.data(), point_data_p.size() * sizeof(Real), MPI_BYTE,
+                              &status);
+            global_offset += num_elem * sizeof(Real);
+        }
+
+        // Write the velocity magnitude, pretty useful
+        {
+            global_offset += write_ascii_part(fh, global_offset,
+                                              sprintf(
+                                                  buf,
+                                                  "\nSCALARS |u| %s 1\nLOOKUP_TABLE default\n",
+                                                  typestr
+                                              ),
+                                              buf, rank
+            );
+
+            my_offset = global_offset + displacements[rank] * sizeof(Real);
+            MPI_File_write_at(fh, my_offset, point_data_mag.data(), point_data_mag.size() * sizeof(Real), MPI_BYTE,
                               &status);
             global_offset += num_elem * sizeof(Real);
         }
