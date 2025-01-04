@@ -84,7 +84,7 @@ namespace mif{
         MPI_Status status;
         MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
                       MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
-        int local_cells = 3 * (1 * constants.Ny_owner * constants.Nz_owner +
+        int local_cells = (1 * constants.Ny_owner * constants.Nz_owner +
             constants.Nx * 1 * constants.Nz_owner +
             constants.Nx * constants.Ny_owner * 1);
         std::vector<Real> global_points;
@@ -275,7 +275,6 @@ namespace mif{
 
     void insertionSort(std::vector<Real>& coordinates, std::vector<Real>& u, std::vector<Real>& v, std::vector<Real>& w,
                        std::vector<Real>& p){
-        //TODO: does it works, not sure I'm tired
         int n = coordinates.size();
         for (int i = 1; i < n; i++){
             Real key = coordinates[i];
@@ -311,15 +310,7 @@ namespace mif{
         const int direction,
         const Real x, const Real y, const Real z
     ){
-        //this will be serial ascii file
-        /*
-         *
 
-            0 -0.5 0 u v w p . . . . . . .
-            0 -0.495 0 . . . . . . . . . . . .
-            . . .
-            0 0.5 0 . . . . . . . . . . . .
-         */
 
 
         //get the index of the point
@@ -344,6 +335,7 @@ namespace mif{
         if (direction == 0){
             //x axis
             //check if the point is in the domain using base_j and base_k
+
             for (int i = 0; i < constants.Nx; i++){
                 if (base_j + constants.Ny_owner > j && base_j <= j && base_k + constants.Nz_owner > k && base_k <= k){
                     points_coordinate.push_back(i * constants.dx + constants.min_x_global);
@@ -360,32 +352,30 @@ namespace mif{
         else if (direction == 1){
             for (int j = 0; j < constants.Ny_owner; j++){
                 if (base_k + constants.Nz_owner > k && base_k <= k){
-                    points_coordinate.push_back(j * constants.dy + constants.min_y_global);
+                    points_coordinate.push_back((j + base_j) * constants.dy + constants.min_y_global);
                     point_data_u.push_back(
-                        (velocity.u(i - base_j, j, k - base_k) + velocity.u(i - base_j + 1, j, k - base_k)) / 2);
+                        (velocity.u(i, j, k - base_k) + velocity.u(i + 1, j, k - base_k)) / 2);
                     point_data_v.push_back(
-                        (velocity.v(i - base_j, j, k - base_k) + velocity.v(i - base_j, j + 1, k - base_k)) / 2);
+                        (velocity.v(i, j, k - base_k) + velocity.v(i, j + 1, k - base_k)) / 2);
                     point_data_w.push_back(
-                        (velocity.w(i - base_j, j, k - base_k) + velocity.w(i - base_j, j, k - base_k + 1)) / 2);
-                    point_data_w.push_back(pressure(i - base_j, j, k - base_k));
+                        (velocity.w(i, j, k - base_k) + velocity.w(i, j, k - base_k + 1)) / 2);
+                    point_data_w.push_back(pressure(i, j, k - base_k));
                 }
             }
         }
         else if (direction == 2){
-            for (int z= 0 ; z < constants.Nz_owner; z++){
+            for (int z = 0; z < constants.Nz_owner; z++){
                 if (base_j + constants.Ny_owner > j && base_j <= j){
-                    points_coordinate.push_back(z * constants.dz + constants.min_z_global);
+                    points_coordinate.push_back((z+base_k) * constants.dz + constants.min_z_global);
                     point_data_u.push_back(
-                        (velocity.u(i - base_j, j - base_j, z) + velocity.u(i - base_j + 1, j - base_j, z)) / 2);
+                        (velocity.u(i , j - base_j, z) + velocity.u(i  + 1, j - base_j, z)) / 2);
                     point_data_v.push_back(
-                        (velocity.v(i - base_j, j - base_j, z) + velocity.v(i - base_j, j - base_j + 1, z)) / 2);
+                        (velocity.v(i , j - base_j, z) + velocity.v(i , j - base_j + 1, z)) / 2);
                     point_data_w.push_back(
-                        (velocity.w(i - base_j, j - base_j, z) + velocity.w(i - base_j, j - base_j, z + 1)) / 2);
-                    point_data_w.push_back(pressure(i - base_j, j - base_j, z));
+                        (velocity.w(i , j - base_j, z) + velocity.w(i , j - base_j, z + 1)) / 2);
+                    point_data_w.push_back(pressure(i , j - base_j, z));
                 }
             }
-
-
         }
         size_t local_size = point_data_u.size();
         //send all the data to the first processor
@@ -439,9 +429,14 @@ namespace mif{
             MPI_Gatherv(points_coordinate.data(), local_size * sizeof(Real), MPI_BYTE, points_coordinate_global.data(),
                         counts.data(), displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
         }
-
         //sort the data based on the coordinates and write it to the file
         if (rank == 0){
+            std::cout << "print pressure data" << std::endl;
+
+            for (int i = 0; i < points_coordinate_global.size(); i++){
+                std::cout << points_coordinate_global[i] << " " << point_data_u_global[i] << " " << point_data_v_global[i]
+                          << " " << point_data_w_global[i] << " " << point_data_p_global[i] << std::endl;
+            }
             insertionSort(points_coordinate_global, point_data_u_global, point_data_v_global, point_data_w_global,
                           point_data_p_global);
             std::cout << "Writing to file" << std::endl;
