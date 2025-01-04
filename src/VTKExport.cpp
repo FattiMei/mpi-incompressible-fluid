@@ -1,4 +1,6 @@
+#include <tuple>
 #include <cstdio>
+#include <numeric>
 #include "Endian.h"
 #include "VTKExport.h"
 
@@ -33,6 +35,23 @@
 
 namespace mif {
 
+// computes the file cell offset as each processor writes data about its local points, the other need to know how much space he has occupied
+// gives a number of cells, the caller knows how many data per cell
+std::vector<int> compute_displacement(int n_local_points, int size) {
+	std::vector<int> count(size);
+	std::vector<int> displacements(size+1);
+
+	MPI_Allgather(&n_local_points, 1, MPI_INT, count.data(), 1, MPI_INT, MPI_COMM_WORLD);
+
+	displacements[0] = 0;
+	for (int i = 0; i < size; ++i) {
+		displacements[i+1] = displacements[i] + count[i];
+	}
+
+	return displacements;
+}
+
+
 void writeVTK(
 	const std::string&     filename,
 	const VelocityTensor&  velocity,
@@ -45,12 +64,12 @@ void writeVTK(
 	char buf[1024];
 	int bufsize = 0;
 	
-        MPI_Offset my_offset, my_current_offset;
+        MPI_Offset my_offset;
         MPI_File fh;
         MPI_Status status;
         MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
                       MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
-        int number_of_cells = constants.Nx * constants.Ny * constants.Nz * 3;
+        // int number_of_cells = constants.Nx * constants.Ny * constants.Nz * 3;
         int local_cells = 3 * (1 * constants.Ny_owner * constants.Nz_owner +
             constants.Nx * 1 * constants.Nz_owner +
             constants.Nx * constants.Ny_owner * 1);
@@ -83,16 +102,18 @@ void writeVTK(
         point_data_v.reserve(local_cells);
         point_data_w.reserve(local_cells);
         point_data_p.reserve(local_cells);
-        //my_offset = header_size + (base_j * Ny + base_k)
+
         {
             int x = 0; //x=0 plane
+	    int index = 0;
             for (int y = 0; y < Ny_owner; y++){
                 for (int z = 0; z < Nz_owner; z++){
                     points_coordinate.push_back(x * constants.dx);
                     points_coordinate.push_back((y + base_j) * constants.dy);
                     points_coordinate.push_back((z + base_k) * constants.dz);
 
-                    point_data_u.push_back(velocity.u(x, y, z));
+                    // point_data_u.push_back(velocity.u(x, y, z));
+                    point_data_u.push_back(index++);
                     point_data_v.push_back(velocity.v(x, y, z));
                     point_data_w.push_back(velocity.w(x, y, z));
                     point_data_p.push_back(pressure(x, y, z));
@@ -131,27 +152,12 @@ void writeVTK(
         }
 
 
-        std::vector<int> counts(size), displacements(size);
-        int local_size = points_coordinate.size();
-        MPI_Gather(&local_size, 1, MPI_INT, counts.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+	std::vector<int> displacements = compute_displacement(points_coordinate.size(), size);
 
-
-        if (rank == 0){
-            displacements[0] = 0;
-            for (int i = 1; i < size; ++i){
-                displacements[i] = displacements[i - 1] + counts[i - 1];
-            }
-            std::cout << "Displacements: ";
-            for (int i = 0; i < size; i++){
-                std::cout << displacements[i] << " ";
-            }
-            std::cout << std::endl;
-        }
-        MPI_Request request[2];
-
-        // Initiate non-blocking broadcast for displacements and counts
-        MPI_Ibcast(displacements.data(), size, MPI_INT, 0, MPI_COMM_WORLD, &request[0]);
-        MPI_Ibcast(counts.data(), size, MPI_INT, 0, MPI_COMM_WORLD, &request[1]);
+	if (rank == 0) {
+		for (int d : displacements) std::cout << d << ' ';
+		std::cout << std::endl;
+	}
 
         // Convert points_coordinate to big-endian format
         vectorToBigEndian(points_coordinate);
@@ -160,16 +166,10 @@ void writeVTK(
         vectorToBigEndian(point_data_w);
         vectorToBigEndian(point_data_p);
 
-        // Wait for the non-blocking broadcasts to complete
-        MPI_Wait(&request[0], MPI_STATUS_IGNORE);
-        MPI_Wait(&request[1], MPI_STATUS_IGNORE);
-        MPI_Barrier(MPI_COMM_WORLD);
-        //BAD, I'dont know if I need this or not, shouldn't be too bad though, but I should check TODO check this
-
 	bufsize = sprintf(
 		buf,
 		"# vtk DataFile Version 2.0\nvtk output\nBINARY\nDATASET UNSTRUCTURED_GRID \nPOINTS %d %s\n",
-		(displacements[size - 1] + counts[size - 1]) / 3,
+		(displacements.back()) / 3,
 		typestr
 	);
 
@@ -187,15 +187,14 @@ void writeVTK(
         MPI_File_write_at(fh, my_offset, points_coordinate.data(),
                           points_coordinate.size() * sizeof(Real),
                           MPI_BYTE, &status);
-        //maybe I could use a non-blocking write here and then wait for all to finish at the end of the function TODO check this
 
-        int num_elem = displacements[size - 1] + counts[size - 1];
+        int num_elem = displacements.back();
         int global_offset = num_elem * sizeof(Real) + bufsize;
 
 	// write information about the cells, I cheat and make the processor 0 write all things
-	const int n_cells_x_plane = 1;
+	/*
+	const int n_cells_x_plane = (Ny_owner-1) * (Nz_owner-1);
 	{
-
 	    int local_cell_header_size = sprintf(
 		buf,
 		"\nCELLS %d %d\n",
@@ -209,7 +208,22 @@ void writeVTK(
 
 	    global_offset += local_cell_header_size;
 
-	    std::vector<int> cell_data{4, 0, 1, 2, 3};
+	    std::vector<int> cell_data(5 * n_cells_x_plane);
+	    int cell_count = 0;
+	    for (int y = 0; y < Ny_owner-1; ++y) {
+		for (int z = 0; z < Nz_owner-1; ++z) {
+		    const int cell_offset = Nz_owner*y + z;
+
+		    cell_data[5*cell_count + 0] = 4;
+		    cell_data[5*cell_count + 1] = cell_offset;
+		    cell_data[5*cell_count + 2] = cell_offset + 1;
+		    cell_data[5*cell_count + 3] = cell_offset + 1 + Nz_owner;
+		    cell_data[5*cell_count + 4] = cell_offset + Nz_owner;
+
+		    ++cell_count;
+		}
+	    }
+
 	    vectorToBigEndian(cell_data);
 
 	    if (rank == 0) {
@@ -240,6 +254,7 @@ void writeVTK(
 
 	    global_offset += cell_type.size() * sizeof(int);
 	}
+	*/
 
 
         //now we write the u component of the velocity
@@ -247,7 +262,7 @@ void writeVTK(
 	    int local_u_header_size = sprintf(
 		buf,
 		"\nPOINT_DATA %d\nSCALARS u %s 1\nLOOKUP_TABLE default\n",
-		(displacements[size - 1] + counts[size - 1]) / 3,
+		(num_elem) / 3,
 		typestr
 	    );
 
@@ -259,7 +274,7 @@ void writeVTK(
             std::cout << "rank " << rank << " my_offset: " << my_offset << " size: " << size << std::endl;
             MPI_File_write_at(fh, my_offset, point_data_u.data(), point_data_u.size() * sizeof(Real), MPI_BYTE,
                               &status);
-            global_offset += (displacements[size - 1] + counts[size - 1]) / 3 * sizeof(Real) + local_u_header_size;
+            global_offset += (num_elem) / 3 * sizeof(Real) + local_u_header_size;
         }
 
 
@@ -277,7 +292,7 @@ void writeVTK(
             my_offset = global_offset + displacements[rank] / 3 * sizeof(Real) + local_v_header_size;
             MPI_File_write_at(fh, my_offset, point_data_v.data(), point_data_v.size() * sizeof(Real), MPI_BYTE,
                               &status);
-            global_offset += (displacements[size - 1] + counts[size - 1]) / 3 * sizeof(Real) + local_v_header_size;
+            global_offset += (num_elem) / 3 * sizeof(Real) + local_v_header_size;
         }
 
         {
@@ -294,7 +309,7 @@ void writeVTK(
             my_offset = global_offset + displacements[rank] / 3 * sizeof(Real) + local_w_header_size;
             MPI_File_write_at(fh, my_offset, point_data_w.data(), point_data_w.size() * sizeof(Real), MPI_BYTE,
                               &status);
-            global_offset += (displacements[size - 1] + counts[size - 1]) / 3 * sizeof(Real) + local_w_header_size;
+            global_offset += (num_elem) / 3 * sizeof(Real) + local_w_header_size;
         }
         {
 	    int local_p_header_size = sprintf(
