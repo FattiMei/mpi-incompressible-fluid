@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
   }
 
   // TODO: store the required parts of the solution as a vtk and some dat files.
-  writeVTK("output.vtk", velocity, constants, pressure, rank, size);
+  writeVTK("solution.vtk", velocity, pressure);
   // Finalize MPI.
   MPI_Finalize();
 }

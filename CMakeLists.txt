@@ -44,6 +44,11 @@ endif ()
 #add_definitions(-DOPT_CPU_CACHE)
 add_definitions(-DMIF_LEGACY_COMPILER)
 
+get_directory_property(MYDEFS COMPILE_DEFINITIONS)
+if (MYDEFS MATCHES "MIF_LEGACY_COMPILER")
+	MESSAGE(WARNING "Using legacy endian conversion")
+endif()
+
 set(EXE_NAME "mif")
 set(CONVERGENCE_TEST_EXE_NAME "convergence_test")
 set(BENCHMARK_EXE_NAME "benchmark")

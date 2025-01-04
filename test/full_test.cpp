@@ -157,8 +157,7 @@ int main(int argc, char *argv[]) {
     " " << error_l1_global_pg << " " << error_l2_global_pg << " " << error_lInf_global_pg << std::endl;
   }
 
-
-  writeVTK("full.vtk", velocity, constants, pressure, rank, size);
+  writeVTK("solution.vtk", velocity, pressure);
 
   // Finalize MPI.
   MPI_Finalize();
