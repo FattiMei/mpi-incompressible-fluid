@@ -101,6 +101,7 @@ namespace mif{
 
 
         // Start indices (base_j, base_k) based on rank
+	int base_i = 0;
         int base_j = constants.base_j + 1;
         int base_k = constants.base_k + 1;
         if (base_k == 1) base_k = 0; //TODO: check if this is correct
@@ -120,12 +121,10 @@ namespace mif{
             int index = 0;
             for (int y = 0; y < Ny_owner; y++){
                 for (int z = 0; z < Nz_owner; z++){
-                    points_coordinate.push_back(x * constants.dx);
-                    points_coordinate.push_back((y + base_j) * constants.dy);
-                    points_coordinate.push_back(((z + base_k) * constants.dz));
-                    //TODO: check from the requirements if we need to offset the z coordinate by domain size/2 or not (I think we need to since the domain z is (-h,h ) and the vtk z is (0,2h))
+                    points_coordinate.push_back(constants.min_x_global + (x + base_i) * constants.dx);
+                    points_coordinate.push_back(constants.min_y_global + (y + base_j) * constants.dy);
+                    points_coordinate.push_back(constants.min_z_global + (z + base_k) * constants.dz);
 
-                    // point_data_u.push_back(velocity.u(x, y, z));
                     point_data_u.push_back((velocity.u(x, y, z) + velocity.u(x + 1, y, z)) / 2);
                     point_data_v.push_back((velocity.v(x, y, z) + velocity.v(x, y + 1, z)) / 2);
                     point_data_w.push_back((velocity.w(x, y, z) + velocity.w(x, y, z + 1)) / 2);
@@ -138,9 +137,9 @@ namespace mif{
             int y = 0; //y=0 plane
             for (int x = 0; x < Nx; x++)
                 for (int z = 0; z < Nz_owner; z++){
-                    points_coordinate.push_back(x * constants.dx);
-                    points_coordinate.push_back((y + base_j) * constants.dy);
-                    points_coordinate.push_back((z + base_k) * constants.dz);
+                    points_coordinate.push_back(constants.min_x_global + (x + base_i) * constants.dx);
+                    points_coordinate.push_back(constants.min_y_global + (y + base_j) * constants.dy);
+                    points_coordinate.push_back(constants.min_z_global + (z + base_k) * constants.dz);
 
                     point_data_u.push_back((velocity.u(x, y, z) + velocity.u(x + 1, y, z)) / 2);
                     point_data_v.push_back((velocity.v(x, y, z) + velocity.v(x, y + 1, z)) / 2);
@@ -149,13 +148,14 @@ namespace mif{
                 }
         }
         if (base_k == 0){
+	    // TODO: this is important: we need the slice at z = 0, which is internal!! Fix this
             int z = 0;
             for (int x = 0; x < Nx; x++)
                 for (int y = 0; y < Ny_owner; y++){
                     if (base_j == 0 && y == 0) continue; //if you want the repeated points, remove this line
-                    points_coordinate.push_back(x * constants.dx);
-                    points_coordinate.push_back((y + base_j) * constants.dy);
-                    points_coordinate.push_back((z + base_k) * constants.dz);
+                    points_coordinate.push_back(constants.min_x_global + (x + base_i) * constants.dx);
+                    points_coordinate.push_back(constants.min_y_global + (y + base_j) * constants.dy);
+                    points_coordinate.push_back(constants.min_z_global + (z + base_k) * constants.dz);
 
                     point_data_u.push_back((velocity.u(x, y, z) + velocity.u(x + 1, y, z)) / 2);
                     point_data_v.push_back((velocity.v(x, y, z) + velocity.v(x, y + 1, z)) / 2);
