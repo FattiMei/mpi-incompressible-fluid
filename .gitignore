@@ -20,3 +20,5 @@ source_openfoam.sh
 
 mif
 
+*dat
+*vtk

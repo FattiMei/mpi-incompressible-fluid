@@ -1,10 +1,19 @@
-# Istruzioni per la giuria: questo è il makefile che presentiamo in alternativa alla build cmake, è preferibile che si usi quest'ultima perchè CMake is so nice :)
-#
-# Nella prima sezione ci sono le variabili da editare a mano:
-#   CXX è il compilatore, deve essere mpixx perché nel programma usiamo le funzionalità di MPI.
-#   Preferiremmo usare la versione più aggiornata del compilatore perché usiamo funzionalità di C++23
-#
-# Questa build non sarà delle più robuste in termini di incremental build, ma va bene per fare una full build del progetto
+# Instructions:
+# This is a second build option in case CMake does non work on the cluster. If it works, please use CMake, as it 
+# was more thoroughly tested.
+# Depending on what is available on the cluster, you may have to change some parts of this file.
+# CXX is the compiler used. It is mpicxx because we use MPI features.
+# If available, use a modern compiler, as C++23 features are used. For example, g++11.4 does not compile natively.
+# If the compiler is too old, you may need to uncomment a flag, as stated in another comment in this file.
+# In the case of g++11.4, this fix allows it to compile.
+# If you want to use single precision floats instead of doubles (which are the default), change
+# -DUSE_DOUBLE=1 to -DUSE_DOUBLE=0.
+# The environmenta variables FFTW_INC and FFTW_LIB should be defined. If not, a default path will be searched, but may 
+# result in errors if the libraries are not available.
+# Finally, the clean and resclean rules are defined. The first removes the executable and compiling folder. The latter
+# removes the vtk and dat files. It is suggested to class `make resclean` before each run, to avoid potential errors
+# when overwriting files. 
+
 CXX = mpicxx -std=c++23
 
 CXX_FLAGS = -Wall -Wextra -Ofast -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto
@@ -31,14 +40,15 @@ MIF_OBJ = $(patsubst $(MIF_DIR)/%.cpp, mbuild/mif/%.o, $(MIF_SRC))
 
 INCLUDE = -I ./include -I $(DECOMP_DIR)
 
-# those variables need to be defined from the outside, else fallback to those
+# These environmental variables should be defined.
+# Otherwise, using fallback paths.
 FFTW_INC ?= /usr/include/
 FFTW_LIB ?= /usr/lib/x86_64-linux-gnu/
 
 INCLUDE += -I $(FFTW_INC)
 LIBS += -lfftw3 -lfftw3f -L $(FFTW_LIB)
 
-# decommentare questa riga nel caso si abbiano problemi di compilazione (in particolare riferimento alle funzionalità di std::byteswap
+# Uncomment this line if the compiler is old and cannot compile due to the std::byteswap function.
 # DEFINES += -DMIF_LEGACY_COMPILER
 
 
@@ -67,12 +77,12 @@ mbuild:
 	mkdir -p mbuild/mif
 
 
+# Clean the build artifacts.
 .PHONY: clean
 clean:
 	rm mif mbuild/decomp/* mbuild/mif/*
 
 
-# sometimes if `solution.vtk` is already present in the root folder, the file will be badly overwritten
-# when in doubt of the consistency of the results, just call this rule
+# Remove vtk and dat files.
 resclean:
 	rm -f *.vtk *.dat
