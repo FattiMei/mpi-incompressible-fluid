@@ -2,11 +2,11 @@
 #include <cassert>
 
 namespace mif{
-    inline Real compute_eigenvalue_neumann(size_t index, Real delta, size_t N){
+    inline Real compute_eigenvalue_neumann(size_t index, Real delta, size_t N) {
         return 2.0 * (std::cos(M_PI * index / (N - 1)) - 1.0) / (delta * delta);
     }
 
-    inline Real compute_eigenvalue_periodic(size_t index, Real delta, size_t N){
+    inline Real compute_eigenvalue_periodic(size_t index, Real delta, size_t N) {
         return 2.0 * (std::cos(2.0 * M_PI * index / N) - 1.0) / (delta * delta);
     }
 
@@ -41,7 +41,7 @@ namespace mif{
                                       FFTW_ESTIMATE)),
 #endif
 
-        eigenvalues({c2d.zSize[1], c2d.zSize[0], c2d.zSize[2]}){
+        eigenvalues({c2d.zSize[1], c2d.zSize[0], c2d.zSize[2]}) {
         // Check decomposition validity.
         assert(c2d.xSize[0] == Nx_points);
         assert(c2d.ySize[1] == Ny_points);
@@ -69,7 +69,7 @@ namespace mif{
         }
     }
 
-    PressureSolverStructures::~PressureSolverStructures(){
+    PressureSolverStructures::~PressureSolverStructures() {
 #if USE_DOUBLE
         fftw_free(buffer_x);
         fftw_free(buffer_y);
@@ -92,8 +92,7 @@ namespace mif{
         fftwf_destroy_plan(ifft_plan_y);
         fftwf_destroy_plan(ifft_plan_z);
         fftwf_cleanup();
-
-
 #endif
+
     }
 }

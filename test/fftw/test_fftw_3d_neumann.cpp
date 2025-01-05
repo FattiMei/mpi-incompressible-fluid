@@ -14,17 +14,18 @@
 #include <mpi.h>
 #include "../deps/2Decomp_C/C2Decomp.hpp"
 #pragma GCC diagnostic pop
+#include "Real.h"
 
-constexpr double PI = 3.141592653589793;
+constexpr Real PI = 3.141592653589793;
 
 using namespace std;
 
-inline double compute_eigenvalue_neumann(int index, int N) {
+inline Real compute_eigenvalue_neumann(int index, int N) {
     return (2.0 *cos( PI * index / (N-1)) - 2.0);
 }
 
 
-void extract_array(double arr[], int size, int start, double subarray[]){
+void extract_array(Real arr[], int size, int start, Real subarray[]){
     // Copy the elements manually
     for (int i = 0; i < size; ++i) {
         subarray[i] = arr[start + i];
@@ -74,8 +75,8 @@ int main(int argc, char *argv[]) {
     int Globsize = Nx * Ny * Nz;
     int size = NxLoc * NyLoc * NzLoc;
 
-    double *Uex   ;
-    double *b     ;
+    Real *Uex   ;
+    Real *b     ;
     // Vectors with local informations
     c2d->allocX( Uex );
     c2d->allocX( b );
@@ -83,9 +84,9 @@ int main(int argc, char *argv[]) {
 
 
     // Create forcing term manufactured from manufactured sulotion (u =-3cx*cy*cz, x, y, z = [0, 2pi])
-    double hx = 2*PI/(Nx-1) ;
-    double hy = 2*PI/(Ny-1) ;
-    double hz = 2*PI/(Nz-1) ;
+    Real hx = 2*PI/(Nx-1) ;
+    Real hy = 2*PI/(Ny-1) ;
+    Real hz = 2*PI/(Nz-1) ;
 
     //Riempimento
     for (int i = 0; i <= c2d->xEnd[0]; i++) {
@@ -122,16 +123,20 @@ int main(int argc, char *argv[]) {
     }
     */
 
-    double *x      = (double*) fftw_malloc(sizeof(double) * size);
+    Real *x      = (Real*) fftw_malloc(sizeof(Real) * size);
     //  Not needed, we do them in place
-    double *btilde = (double*) fftw_malloc(sizeof(double) * size);	
-    double *xtilde = (double*) fftw_malloc(sizeof(double) * size);
+    Real *btilde = (Real*) fftw_malloc(sizeof(Real) * size);	
+    Real *xtilde = (Real*) fftw_malloc(sizeof(Real) * size);
 
 
-    double *temp1 = (double*) fftw_malloc(sizeof(double) * N);
-    double *temp2 = (double*) fftw_malloc(sizeof(double) * N);
+    Real *temp1 = (Real*) fftw_malloc(sizeof(Real) * N);
+    Real *temp2 = (Real*) fftw_malloc(sizeof(Real) * N);
     // Exucute dct type 1 along all 3 directions
+#if USE_DOUBLE
     fftw_plan b_to_btilde_plan = fftw_plan_r2r_1d(N, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
+#else
+    fftwf_plan b_to_btilde_plan = fftwf_plan_r2r_1d(N, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
+#endif
 
     /* OLD VERSION !!
     for (int kk = 0; kk < 3; kk++){
@@ -151,11 +156,11 @@ int main(int argc, char *argv[]) {
     // Rename btilde
     xtilde = btilde;
 
-    double h = 1.0;
+    Real h = 1.0;
     for (int i = 0; i < N; i++) {
-        // double t1= compute_eigenvalue_neumann(i, N);
+        // Real t1= compute_eigenvalue_neumann(i, N);
         for (int j = 0; j < N; j++){
-            double t2= compute_eigenvalue_neumann(j, N);
+            Real t2= compute_eigenvalue_neumann(j, N);
             for (int k = 0; k < N; k++){
                 xtilde[index3dLocal(i, j, k)] /= (t1 + t2 + compute_eigenvalue_neumann(k, N) )/std::pow(h, 2);
             }
@@ -190,7 +195,11 @@ int main(int argc, char *argv[]) {
                 temp1[i] = b[index3dLocal(i, j, k)];
             }
             // Actual fft (from temp1 to temp2)
+#if USE_DOUBLE
             fftw_execute(b_to_btilde_plan);
+#else
+            fftwf_execute(b_to_btilde_plan);
+#endif
             // Store in btilde
             for (int i = 0; i < NxLoc; i++) {
                 btilde[index3dLocal(i, j, k)] = temp2[i];
@@ -211,7 +220,11 @@ int main(int argc, char *argv[]) {
                 temp1[j] = b[index3dLocal(i, j, k)];
             }
             // Actual fft (from temp1 to temp2)
+#if USE_DOUBLE
             fftw_execute(b_to_btilde_plan);
+#else
+            fftwf_execute(b_to_btilde_plan);
+#endif
             // Store in btilde
             for (int j = 0; j < NyLoc; j++) {
                 btilde[index3dLocal(i, j, k)] = temp2[j];
@@ -233,7 +246,11 @@ int main(int argc, char *argv[]) {
                 temp1[k] = b[index3dLocal(i, j, k)];
             }
             // Actual fft (from temp1 to temp2)
+#if USE_DOUBLE
             fftw_execute(b_to_btilde_plan);
+#else
+            fftwf_execute(b_to_btilde_plan);
+#endif
             // Store in btilde
             for (int k = 0; k < NzLoc; k++) {
                 btilde[index3dLocal(i, j, k)] = temp2[k];
@@ -249,13 +266,13 @@ int main(int argc, char *argv[]) {
     // !! Datas are still stored in Z mayor axes !!
     for (int i = 0; i < NxLoc; i++) {
         int iGlob = c2d->zStart[0] + i;
-        double t1 = (2.0 *cos( PI * iGlob/ (N-1)) - 2.0)/(hx*hx);
+        Real t1 = (2.0 *cos( PI * iGlob/ (N-1)) - 2.0)/(hx*hx);
         for (int j = 0; j < NyLoc; j++) {
             int jGlob = c2d->zStart[1] + j;
-            double t2 = (2.0 *cos( PI * jGlob/ (N-1)) - 2.0)/(hy*hy);
+            Real t2 = (2.0 *cos( PI * jGlob/ (N-1)) - 2.0)/(hy*hy);
             for (int k = 0; k < NzLoc; k++) {
                 int kGlob = c2d->zStart[2] + k;
-                double t3 = (2.0 *cos( PI * kGlob/ (N-1)) - 2.0)/(hz*hz);
+                Real t3 = (2.0 *cos( PI * kGlob/ (N-1)) - 2.0)/(hz*hz);
                 xtilde[index3dLocal(i, j, k)] /= (t1 + t2 + t3); 
             }
         }
@@ -266,7 +283,12 @@ int main(int argc, char *argv[]) {
         xtilde[0] = 0;
     }
 
-    fftw_plan xtilde_to_x_plan= fftw_plan_r2r_1d(N, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
+#if USE_DOUBLE
+    fftw_plan xtilde_to_x_plan = fftw_plan_r2r_1d(N, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
+#else
+    fftwf_plan xtilde_to_x_plan = fftwf_plan_r2r_1d(N, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
+#endif
+
     // !! Datas are still stored in Z mayor axes !!
     // idct along z
     for (int i = 0; i < NxLoc; i++) {
@@ -277,7 +299,11 @@ int main(int argc, char *argv[]) {
                 temp1[k] = xtilde[index3dLocal(i, j, k)];
             }
             // Actual fft (from temp1 to temp2)
+#if USE_DOUBLE
             fftw_execute(xtilde_to_x_plan);
+#else
+            fftwf_execute(xtilde_to_x_plan);
+#endif
             // Store in btilde
             for (int k = 0; k < NzLoc; k++) {
                 btilde[index3dLocal(i, j, k)] = temp2[k];
@@ -299,7 +325,11 @@ int main(int argc, char *argv[]) {
                 temp1[j] = xtilde[index3dLocal(i, j, k)];
             }
             // Actual fft (from temp1 to temp2)
+#if USE_DOUBLE
             fftw_execute(xtilde_to_x_plan);
+#else
+            fftwf_execute(xtilde_to_x_plan);
+#endif
             // Store in btilde
             for (int j = 0; j < NyLoc; j++) {
                 btilde[index3dLocal(i, j, k)] = temp2[k];
@@ -322,7 +352,11 @@ int main(int argc, char *argv[]) {
                 temp1[i] = xtilde[index3dLocal(i, j, k)];
             }
             // Actual fft (from temp1 to temp2)
+#if USE_DOUBLE
             fftw_execute(xtilde_to_x_plan);
+#else
+            fftwf_execute(xtilde_to_x_plan);
+#endif
             // Store in btilde
             for (int i = 0; i < NxLoc; i++) {
                 btilde[index3dLocal(i, j, k)] = temp2[i];
@@ -337,8 +371,8 @@ int main(int argc, char *argv[]) {
 
     // BLOCK ALL PROCS AT THIS POINT
     int MPI_Barrier( MPI_Comm comm );
-    double difference = 0;
-    double diffGlob;
+    Real difference = 0;
+    Real diffGlob;
     if (mpiRank==0) {
         // Of course only rank 0 has x(0) and Uex(0) GLOBALS
         difference = x[0] - Uex[0];
@@ -346,19 +380,25 @@ int main(int argc, char *argv[]) {
     diffGlob = difference;
     int MPI_Barrier( MPI_Comm comm );
     //  GET MAX in each processor, CAN'T DO  IT PROPERLY, seems like it  takes values from random points in memory...
-    double mazx = -2.0;
+    Real mazx = -2.0;
     for(int i=0; i<size; ++i)
     {
         // assert(x[i] - Uex[i] -difference  <= 1e-15 );
-        double temp = std::abs(x[i] - Uex[i] - diffGlob );
+        Real temp = std::abs(x[i] - Uex[i] - diffGlob );
         if (mazx < temp) mazx = temp;
     }
     cout<< mazx << endl;
 
     //Now lets kill MPI
+#if USE_DOUBLE
     fftw_destroy_plan(b_to_btilde_plan);
     fftw_destroy_plan(xtilde_to_x_plan);
     fftw_cleanup();
+#else
+    fftwf_destroy_plan(b_to_btilde_plan);
+    fftwf_destroy_plan(xtilde_to_x_plan);
+    fftwf_cleanup();
+#endif
     MPI_Finalize();
     return 0;
 }

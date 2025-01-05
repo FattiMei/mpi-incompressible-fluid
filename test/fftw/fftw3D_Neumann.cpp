@@ -9,12 +9,13 @@
 #include <mpi.h>
 #include "../deps/2Decomp_C/C2Decomp.hpp"
 #pragma GCC diagnostic pop
+#include "Real.h"
 
-constexpr double PI = 3.141592653589793;
+constexpr Real PI = 3.141592653589793;
 
 using namespace std;
 
-inline double compute_eigenvalue_neumann(int index, int N) {
+inline Real compute_eigenvalue_neumann(int index, int N) {
 	return (2.0 *cos( PI * index / (N-1)) - 2.0);
 }
 
@@ -22,7 +23,7 @@ inline int index3D(int i, int j, int k, int N) {
     return (i * N * N) + (j * N) + k;
 }
 
-void extract_array(double arr[], int size, int start, double subarray[]){
+void extract_array(Real arr[], int size, int start, Real subarray[]){
     // Copy the elements manually
     for (int i = 0; i < size; ++i) {
         subarray[i] = arr[start + i];
@@ -61,10 +62,10 @@ int main(int argc, char *argv[]) {
 
 	int size = Nx * Ny * Nz;
 
-	double *Uex    = (double*) fftw_malloc(sizeof(double) * size);
-    double *b      = (double*) fftw_malloc(sizeof(double) * size);
+	Real *Uex    = (Real*) fftw_malloc(sizeof(Real) * size);
+    Real *b      = (Real*) fftw_malloc(sizeof(Real) * size);
     // Create forcing term manufactured from manufactured sulotion (u =-3cx*cy*cz, x, y, z = [0, 2pi])
-    double h = 2*PI/(N-1) ;
+    Real h = 2*PI/(N-1) ;
     for (int i = 0; i < Nx; i++) {
         for (int j = 0; j < Ny; j++) {
             for (int k = 0; k < Nz; k++) {
@@ -82,21 +83,30 @@ int main(int argc, char *argv[]) {
     C2Decomp *c2d = new C2Decomp(N, N, N, pRow, pCol, neumannBC);
     //if(!mpiRank) cout << "done initializing " << endl;
 
-    double *x      = (double*) fftw_malloc(sizeof(double) * size);
-	double *btilde = (double*) fftw_malloc(sizeof(double) * size);	
-	double *xtilde = (double*) fftw_malloc(sizeof(double) * size);
+    Real *x      = (Real*) fftw_malloc(sizeof(Real) * size);
+	Real *btilde = (Real*) fftw_malloc(sizeof(Real) * size);	
+	Real *xtilde = (Real*) fftw_malloc(sizeof(Real) * size);
 
 
-    double *temp1 = (double*) fftw_malloc(sizeof(double) * N);
-    double *temp2 = (double*) fftw_malloc(sizeof(double) * N);
+    Real *temp1 = (Real*) fftw_malloc(sizeof(Real) * N);
+    Real *temp2 = (Real*) fftw_malloc(sizeof(Real) * N);
     // Exucute dct type 1 along all 3 directions
+
+#if USE_DOUBLE
     fftw_plan b_to_btilde_plan = fftw_plan_r2r_1d(N, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
+#else
+    fftwf_plan b_to_btilde_plan = fftwf_plan_r2r_1d(N, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
+#endif
 
     for (int kk = 0; kk < 3; kk++){
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++){
                 extract_array(b, N, i*N*N + j*N, temp1);
+#if USE_DOUBLE
                 fftw_execute(b_to_btilde_plan);
+#else
+                fftwf_execute(b_to_btilde_plan);
+#endif
                 for (int k = 0; k < N; k++) {
                     btilde[index3D(i, j, k, N)] = temp2[k];
                 }
@@ -110,9 +120,9 @@ int main(int argc, char *argv[]) {
     xtilde = btilde;
 
     for (int i = 0; i < N; i++) {
-        double t1= compute_eigenvalue_neumann(i, N);
+        Real t1= compute_eigenvalue_neumann(i, N);
         for (int j = 0; j < N; j++){
-            double t2= compute_eigenvalue_neumann(j, N);
+            Real t2= compute_eigenvalue_neumann(j, N);
             for (int k = 0; k < N; k++){
                 xtilde[index3D(i, j, k, N)] /= (t1 + t2 + compute_eigenvalue_neumann(k, N) )/std::pow(h, 2);
             }
@@ -121,13 +131,21 @@ int main(int argc, char *argv[]) {
     xtilde[0] = 0;
 
     // inverse transform
+#if USE_DOUBLE
     fftw_plan xtilde_to_x_plan= fftw_plan_r2r_1d(N, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
+#else
+    fftwf_plan xtilde_to_x_plan= fftwf_plan_r2r_1d(N, temp1, temp2, FFTW_REDFT00, FFTW_ESTIMATE);
+#endif
     for (int kk = 0; kk < 3; kk++){
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++){
                 extract_array(xtilde, N, i*N*N + j*N, temp1);
                
+#if USE_DOUBLE
                 fftw_execute(xtilde_to_x_plan);
+#else
+                fftwf_execute(xtilde_to_x_plan);
+#endif
                 for (int k = 0; k < N; k++){
                     x[index3D(i, j, k, N)] = ( temp2[k] )/( 2.0 * (N-1) ); // 
                 }
@@ -137,21 +155,27 @@ int main(int argc, char *argv[]) {
         xtilde = x;
     }
 
-    double difference = x[0] - Uex[0];
-    double mazx = -2.0;
+    Real difference = x[0] - Uex[0];
+    Real mazx = -2.0;
     for(int i=0; i<size; ++i)
     {
         // assert(x[i] - Uex[i] -difference  <= 1e-15 );
-        double temp = std::abs(x[i] - Uex[i] - difference );
+        Real temp = std::abs(x[i] - Uex[i] - difference );
         if (mazx < temp) mazx = temp;
     }
     cout<< mazx << endl;
 
     //Now lets kill MPI
 
+#if USE_DOUBLE
     fftw_destroy_plan(b_to_btilde_plan);
     fftw_destroy_plan(xtilde_to_x_plan);
     fftw_cleanup();
+#else
+    fftwf_destroy_plan(b_to_btilde_plan);
+    fftwf_destroy_plan(xtilde_to_x_plan);
+    fftwf_cleanup();
+#endif
     MPI_Finalize();
 
 	return 0;

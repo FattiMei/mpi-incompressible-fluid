@@ -24,7 +24,7 @@ set(CMAKE_CXX_COMPILER "mpicxx")
 
 # Choose build type.
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_BUILD_TYPE Release)
 endif()
 
 set(CMAKE_CXX_STANDARD 23)
@@ -131,7 +131,7 @@ foreach(TEST_SOURCE ${TEST_SRC})
 	get_filename_component(EXE_NAME ${TEST_SOURCE} NAME_WE)
 
 	add_executable(${EXE_NAME} ${TEST_SOURCE})
-	target_link_libraries(${EXE_NAME} PRIVATE miflib decomp)
+	target_link_libraries(${EXE_NAME} PRIVATE miflib decomp ${MPI_C_LIBRARIES})
 endforeach()
 
 

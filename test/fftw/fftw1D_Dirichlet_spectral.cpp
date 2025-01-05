@@ -3,9 +3,10 @@
 #include <vector>
 #include <cassert>
 #include <fftw3.h>
+#include "Real.h"
 
 
-constexpr double PI = 3.141592653589793;
+constexpr Real PI = 3.141592653589793;
 
 
 using namespace std;
@@ -16,45 +17,57 @@ using namespace std;
 int main(int argc, char *argv[]) {
 	const int N = std::atoi(argv[1]);
 
-	double *x      = (double*) fftw_malloc(sizeof(double) * N);
-	double *xex    = (double*) fftw_malloc(sizeof(double) * N);
-	double *b      = (double*) fftw_malloc(sizeof(double) * N);
-	double *btilde = (double*) fftw_malloc(sizeof(double) * N);
-	double *xtilde = (double*) fftw_malloc(sizeof(double) * N);
+	Real *x      = (Real*) fftw_malloc(sizeof(Real) * N);
+	Real *xex    = (Real*) fftw_malloc(sizeof(Real) * N);
+	Real *b      = (Real*) fftw_malloc(sizeof(Real) * N);
+	Real *btilde = (Real*) fftw_malloc(sizeof(Real) * N);
+	Real *xtilde = (Real*) fftw_malloc(sizeof(Real) * N);
 
+#if USE_DOUBLE
 	fftw_plan b_to_btilde_plan = fftw_plan_r2r_1d(N, b, btilde, FFTW_R2HC,  FFTW_ESTIMATE);
 	fftw_plan xtilde_to_x_plan = fftw_plan_r2r_1d(N, xtilde, x, FFTW_HC2R, FFTW_ESTIMATE);
+#else
+	fftwf_plan b_to_btilde_plan = fftwf_plan_r2r_1d(N, b, btilde, FFTW_R2HC,  FFTW_ESTIMATE);
+	fftwf_plan xtilde_to_x_plan = fftwf_plan_r2r_1d(N, xtilde, x, FFTW_HC2R, FFTW_ESTIMATE);
+#endif
 
-	const double h = 2.0*PI/(N-1);
+	const Real h = 2.0*PI/(N-1);
 	for (int i = 0; i < N; ++i) {
 		xex[i] = std::cos(h*i);
 		b[i]   = -xex[i];
 	}
 
+#if USE_DOUBLE
 	fftw_execute(b_to_btilde_plan);
+#else
+	fftwf_execute(b_to_btilde_plan);
+#endif
 
 	xtilde[0] = 0.0;
 
 	for (int i = 1; i < N; ++i) {
 		// ?
-		const double eig = 2*std::cos(2 * M_PI * i / N) - 2.0;
+		const Real eig = 2*std::cos(2 * M_PI * i / N) - 2.0;
 
 		xtilde[i] = (btilde[i] / eig) * (h * h);
 	}
 
-
+#if USE_DOUBLE
 	fftw_execute(xtilde_to_x_plan);
+#else
+	fftwf_execute(xtilde_to_x_plan);
+#endif
 
 	// ATTENTION! Renormalization is necessary such that IFFT . FFT == Identity
 	for (int i = 0; i < N; ++i) {
 		x[i] /= (N-1);
 	}
 
-	const double constant = xex[0] - x[0];
-	double maxerr = 0.0;
+	const Real constant = xex[0] - x[0];
+	Real maxerr = 0.0;
 
 	for (int i = 0; i < N; ++i) {
-		const double err = std::abs(xex[i] - x[i]);
+		const Real err = std::abs(xex[i] - x[i]);
 
 		if (err > maxerr) {
 			maxerr = err;
@@ -65,14 +78,23 @@ int main(int argc, char *argv[]) {
 	}
 	std::cout << maxerr << std::endl;
 
+#if USE_DOUBLE
 	fftw_destroy_plan(b_to_btilde_plan);
 	fftw_destroy_plan(xtilde_to_x_plan);
-
 	fftw_free(x);
 	fftw_free(xex);
 	fftw_free(b);
 	fftw_free(btilde);
 	fftw_free(xtilde);
+#else
+	fftwf_destroy_plan(b_to_btilde_plan);
+	fftwf_destroy_plan(xtilde_to_x_plan);
+	fftwf_free(x);
+	fftwf_free(xex);
+	fftwf_free(b);
+	fftwf_free(btilde);
+	fftwf_free(xtilde);
+#endif
 
 	return 0;
 }
