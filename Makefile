@@ -4,7 +4,7 @@
 # Depending on what is available on the cluster, you may have to change some parts of this file.
 # CXX is the compiler used. It is mpicxx because we use MPI features.
 # If available, use a modern compiler, as C++23 features are used. For example, g++11.4 does not compile natively.
-# If the compiler is too old, you may need to uncomment a flag, as stated in another comment in this file.
+# If the compiler is too old, set the `LEGACY_COMPILER` variable to 1
 # In the case of g++11.4, this fix allows it to compile.
 # If you want to use single precision floats instead of doubles (which are the default), change
 # -DUSE_DOUBLE=1 to -DUSE_DOUBLE=0.
@@ -14,12 +14,21 @@
 # removes the vtk and dat files. It is suggested to class `make resclean` before each run, to avoid potential Paraview
 # warning that arise when the files have been overwritten.
 
-CXX = mpicxx -std=c++23
+
+ifeq ($(LEGACY_COMPILER),1)
+	STD = -std=c++17
+	DEFINES += -DMIF_LEGACY_COMPILER
+else
+	STD = -std=c++23
+endif
+
+
+CXX = mpicxx $(STD)
 
 CXX_FLAGS = -Ofast -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto
 WARNINGS = -Wall -Wextra 
 
-DEFINES = -DNDEBUG -DUSE_DOUBLE=1
+DEFINES += -DNDEBUG -DUSE_DOUBLE=1
 
 DECOMP_DIR = ./deps/2Decomp_C
 DECOMP_SRC = $(DECOMP_DIR)/Alloc.cpp         \
@@ -48,9 +57,6 @@ FFTW_LIB ?= /usr/lib/x86_64-linux-gnu/
 
 INCLUDE += -I $(FFTW_INC)
 LIBS += -lfftw3 -lfftw3f -L $(FFTW_LIB)
-
-# Uncomment this line if the compiler is old and cannot compile due to the std::byteswap function.
-# DEFINES += -DMIF_LEGACY_COMPILER
 
 
 all: mbuild mif
@@ -81,7 +87,7 @@ mbuild:
 # Clean the build artifacts.
 .PHONY: clean
 clean:
-	rm mif mbuild/decomp/* mbuild/mif/*
+	rm -f mif mbuild/decomp/* mbuild/mif/*
 
 
 # Remove vtk and dat files.
