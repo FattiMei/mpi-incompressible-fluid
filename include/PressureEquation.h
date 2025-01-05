@@ -10,7 +10,7 @@ namespace mif {
     void solve_pressure_equation_homogeneous_periodic(StaggeredTensor &pressure, 
                                                       PressureTensor &pressure_buffer,
                                                       const VelocityTensor &velocity,
-                                                      Real dt);
+                                                      Real dt) noexcept;
     
     // Solve the pressure equation with non-homogeneous Neumann BC. The function will use
     // tags [100, 103] for MPI communication.
@@ -23,7 +23,7 @@ namespace mif {
     // Remove a constant from the pressure to obtain the exact solution.
     // If needed, this will use MPI communication with tag 0.
     void adjust_pressure(StaggeredTensor &pressure,
-                         const std::function<Real(Real, Real, Real)> &exact_pressure) noexcept;
+                         const std::function<Real(Real, Real, Real)>& exact_pressure) noexcept;
 }
 
 #endif // PRESSURE_EQUATION_H

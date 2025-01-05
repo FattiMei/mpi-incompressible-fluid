@@ -195,7 +195,7 @@ void solve_pressure_equation(PressureTensor &pressure,
 void solve_pressure_equation_homogeneous_periodic(StaggeredTensor &pressure, 
                                                   PressureTensor &pressure_buffer,
                                                   const VelocityTensor &velocity,
-                                                  Real dt) {
+                                                  Real dt) noexcept {
     compute_rhs_homogeneous_periodic(pressure, velocity, dt);
     pressure_buffer.copy_from_staggered(pressure);
     solve_pressure_equation(pressure_buffer, velocity);
@@ -214,8 +214,8 @@ void solve_pressure_equation_non_homogeneous_neumann(StaggeredTensor &pressure,
     pressure_buffer.copy_to_staggered(pressure, 100);
 }
 
-    void adjust_pressure(StaggeredTensor &pressure,
-                         const std::function<Real(Real, Real, Real)>& exact_pressure) noexcept{
+void adjust_pressure(StaggeredTensor& pressure,
+                     const std::function<Real(Real, Real, Real)>& exact_pressure) noexcept{
     const Constants &constants = pressure.constants;
 
     // Compute the sum of differences on each processor.
