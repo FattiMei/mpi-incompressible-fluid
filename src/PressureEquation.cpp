@@ -214,57 +214,36 @@ void solve_pressure_equation_non_homogeneous_neumann(StaggeredTensor &pressure,
     pressure_buffer.copy_to_staggered(pressure, 100);
 }
 
-void adjust_pressure(StaggeredTensor &pressure,
-                     const std::function<Real(Real, Real, Real)> &exact_pressure) {
+    void adjust_pressure(StaggeredTensor &pressure,
+                         const std::function<Real(Real, Real, Real)>& exact_pressure) noexcept{
     const Constants &constants = pressure.constants;
 
     // Compute the sum of differences on each processor.
     Real local_difference = 0;
     STAGGERED_TENSOR_ITERATE_OVER_ALL_OWNER_POINTS(pressure, local_difference += pressure.evaluate_function_at_index(i, j, k, exact_pressure) - pressure(i, j, k);)
-    
+
     // Send the differences to the first processor. The first processor accumulates the differences and
     // sends back the result.
-    Real difference = local_difference;
+    Real global_difference = 0;
+    MPI_Reduce(&local_difference, &global_difference, 1, MPI_MIF_REAL, MPI_SUM, 0, MPI_COMM_WORLD);
+
     if (constants.rank == 0) {
-        // Receive the differences.
-        for (int rank = 1; rank < constants.P; ++rank) {
-            Real new_difference;
-            MPI_Status status;
-            int outcome = MPI_Recv(&new_difference, 1, MPI_MIF_REAL, rank, 0, MPI_COMM_WORLD, &status);
-            assert(outcome == MPI_SUCCESS);
-            (void) outcome;
-            difference += new_difference;
-        }
-
         // Compute the average difference.
-        const size_t Nx = constants.periodic_bc[0] ? constants.Nx_global-1 : constants.Nx_global;
-        const size_t Ny = constants.periodic_bc[1] ? constants.Ny_global-1 : constants.Ny_global;
-        const size_t Nz = constants.periodic_bc[2] ? constants.Nz_global-1 : constants.Nz_global;
-        difference /= (Nx * Ny * Nz);
-
-        // Send the average difference to each processor.
-        for (int rank = 1; rank < constants.P; ++rank) {
-            int outcome = MPI_Send(&difference, 1, MPI_MIF_REAL, rank, 0, MPI_COMM_WORLD);
-            assert(outcome == MPI_SUCCESS);
-            (void) outcome;
-        }
-    } else {
-        // Send the local difference to processor 0.
-        int outcome = MPI_Send(&local_difference, 1, MPI_MIF_REAL, 0, 0, MPI_COMM_WORLD);
-        assert(outcome == MPI_SUCCESS);
-
-        // Receive the average difference from processor 0.
-        MPI_Status status;
-        outcome = MPI_Recv(&difference, 1, MPI_MIF_REAL, 0, 0, MPI_COMM_WORLD, &status);
-        assert(outcome == MPI_SUCCESS);
-        (void) outcome;
+        const size_t Nx = constants.periodic_bc[0] ? constants.Nx_global - 1 : constants.Nx_global;
+        const size_t Ny = constants.periodic_bc[1] ? constants.Ny_global - 1 : constants.Ny_global;
+        const size_t Nz = constants.periodic_bc[2] ? constants.Nz_global - 1 : constants.Nz_global;
+        global_difference /= (Nx * Ny * Nz);
     }
+
+    // Broadcast the average difference to all processes.
+    MPI_Bcast(&global_difference, 1, MPI_MIF_REAL, 0, MPI_COMM_WORLD);
+
 
     // Remove the difference from all points.
     for (size_t k = 0; k < constants.Nz; k++) {
         for (size_t j = 0; j < constants.Ny; j++) {
             for (size_t i = 0; i < constants.Nx; i++) {
-                pressure(i,j,k) += difference;
+                pressure(i, j, k) += global_difference;
             }
         }
     }
