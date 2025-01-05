@@ -11,8 +11,8 @@ using namespace std;
 
 #include "C2Decomp.hpp"
 
-double fRand(double fMin, double fMax) {
-  double f = (double)rand() / RAND_MAX;
+Real fRand(Real fMin, Real fMax) {
+  Real f = (Real)rand() / RAND_MAX;
   return fMin + f * (fMax - fMin);
 }
 
@@ -52,15 +52,15 @@ int main(int argc, char *argv[]) {
   int ySize[3] = {c2d->ySize[0], c2d->ySize[1], c2d->ySize[2]};
   int zSize[3] = {c2d->zSize[0], c2d->zSize[1], c2d->zSize[2]};
 
-  double *u1 = NULL, *u2 = NULL, *u3 = NULL;
-  double *v1 = NULL, *v2 = NULL, *v3 = NULL;
-  double *w1 = NULL, *w2 = NULL, *w3 = NULL;
+  Real *u1 = NULL, *u2 = NULL, *u3 = NULL;
+  Real *v1 = NULL, *v2 = NULL, *v3 = NULL;
+  Real *w1 = NULL, *w2 = NULL, *w3 = NULL;
 
-  double *wk2 = NULL, *wk3 = NULL;
-  double *uh1 = NULL, *vh1 = NULL, *wh1 = NULL;
-  double *uh2 = NULL, *vh2 = NULL, *wh2 = NULL;
-  double *uh3 = NULL, *vh3 = NULL, *wh3 = NULL;
-  double *div1 = NULL, *div2 = NULL, *div3 = NULL, *div4 = NULL;
+  Real *wk2 = NULL, *wk3 = NULL;
+  Real *uh1 = NULL, *vh1 = NULL, *wh1 = NULL;
+  Real *uh2 = NULL, *vh2 = NULL, *wh2 = NULL;
+  Real *uh3 = NULL, *vh3 = NULL, *wh3 = NULL;
+  Real *div1 = NULL, *div2 = NULL, *div3 = NULL, *div4 = NULL;
 
   c2d->allocX(u1);
   c2d->allocX(v1);

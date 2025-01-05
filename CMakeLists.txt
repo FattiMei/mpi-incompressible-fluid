@@ -6,9 +6,12 @@ find_package(Python3 REQUIRED)
 find_package(benchmark)
 
 find_package(PkgConfig REQUIRED)
-pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
+pkg_search_module(FFTW  REQUIRED fftw3  IMPORTED_TARGET)
+pkg_search_module(FFTWF REQUIRED fftw3f IMPORTED_TARGET)
 include_directories(PkgConfig::FFTW)
+include_directories(PkgConfig::FFTWF)
 link_libraries(PkgConfig::FFTW)
+link_libraries(PkgConfig::FFTWF)
 
 find_package(MPI REQUIRED)
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
@@ -17,20 +20,21 @@ if (benchmark_FOUND)
 	set(BENCH_OK TRUE)
 endif()
 
+add_compile_definitions(USE_DOUBLE=1)
 # Set the compiler.
 set(CMAKE_C_COMPILER "mpicc")
 set(CMAKE_CXX_COMPILER "mpicxx")
 
 # Choose build type.
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_BUILD_TYPE Release)
 endif()
 
 set(CMAKE_CXX_STANDARD 23)
 
 # Set custom flags for Debug build.
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -O3 -march=native -mtune=native \
-     -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast  -march=native -mtune=native \
+     -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto -lfftw3 -lfftw3f")
 
 # Set custom flags for Release build.
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG} -DNDEBUG")
@@ -43,6 +47,7 @@ endif ()
 
 add_definitions(-DOPT_CPU_CACHE)
 add_definitions(-DMIF_LEGACY_COMPILER)
+add_definitions(-DMIF_NO_DISTRIBUTED_FS)
 
 get_directory_property(MYDEFS COMPILE_DEFINITIONS)
 if (MYDEFS MATCHES "MIF_LEGACY_COMPILER")
@@ -56,6 +61,9 @@ set(BENCHMARK_EXE_NAME "benchmark")
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(SOURCE_DIR  "${CMAKE_SOURCE_DIR}/src")
 set(TEST_DIR    "${CMAKE_SOURCE_DIR}/test")
+
+file(GLOB_RECURSE TEST_SRC ${TEST_DIR}/*.cpp)
+remove(TEST_SRC ${TEST_DIR}/benchmark.cpp)
 
 set(DECOMP_DIR "${CMAKE_SOURCE_DIR}/deps/2Decomp_C")
 
@@ -100,7 +108,7 @@ add_library(
 	${SOURCE_DIR}/VectorFunction.cpp
 	${SOURCE_DIR}/VelocityTensor.cpp
 	${SOURCE_DIR}/InputParser.cpp
-	${SOURCE_DIR}/VTKExport.cpp
+	${SOURCE_DIR}/VTKDatExport.cpp
 	${FORCING_TERM_ARTIFACT}
 	${PRESSURE_ARTIFACT}
 	${EXACT_SOLUTION_ARTIFACT}
@@ -109,9 +117,6 @@ add_library(
 # Add all executables.
 add_executable(${EXE_NAME} "${SOURCE_DIR}/main.cpp")
 target_link_libraries(${EXE_NAME} PRIVATE miflib decomp ${MPI_C_LIBRARIES})
-
-add_executable(${CONVERGENCE_TEST_EXE_NAME} "${TEST_DIR}/convergence.cpp")
-target_link_libraries(${CONVERGENCE_TEST_EXE_NAME} PRIVATE miflib ${MPI_C_LIBRARIES})
 
 if (${BENCH_OK})
 	add_executable(${BENCHMARK_EXE_NAME} "${TEST_DIR}/benchmark.cpp")
@@ -124,58 +129,14 @@ if (${BENCH_OK})
 	)
 endif()
 
-add_executable(tensor_usage_test test/tensor_usage_test.cpp)
 
-add_executable(velocity_test test/velocity_test.cpp)
-add_executable(velocity_test_mixed test/velocity_test_mixed.cpp)
+foreach(TEST_SOURCE ${TEST_SRC})
+	get_filename_component(EXE_NAME ${TEST_SOURCE} NAME_WE)
 
-add_executable(mpi_test test/mpi_test.cpp)
+	add_executable(${EXE_NAME} ${TEST_SOURCE})
+	target_link_libraries(${EXE_NAME} PRIVATE miflib decomp ${MPI_C_LIBRARIES})
+endforeach()
 
-add_executable(fftw_Dirichlet3D test/fftw3D_Dirichlet.cpp)
-add_executable(fftw_Dirichlet1D test/fftw1D_Dirichlet.cpp)
-add_executable(fftw_Dirichlet1D_spectral test/fftw1D_Dirichlet_spectral.cpp)
-add_executable(fftw_Neumann3D test/fftw3D_Neumann.cpp)
-add_executable(fftw_Neumann1D test/fftw1D_Neumann.cpp)
-add_executable(2decomp_test test/2decomp_test.cpp)
-add_executable(2decomp_test_parallel test/2decomp_test_parallel.cpp)
-
-# temporary: here are the tests that have been properly validated
-add_executable(test_fftw_1d_periodic test/fftw/test_fftw_1d_periodic.cpp)
-add_executable(test_fftw_1d_neumann test/fftw/test_fftw_1d_neumann.cpp)
-add_executable(test_fftw_1d_neumann_in_place test/fftw/test_fftw_1d_neumann_in_place.cpp)
-
-add_executable(test_fftw_3d_neumann test/fftw/test_fftw_3d_neumann.cpp)
-target_link_libraries(test_fftw_3d_neumann PRIVATE decomp)
-
-add_executable(test_2decomp_reverse_engineer test/2decomp/test_2decomp_reverse_engineer.cpp)
-target_link_libraries(test_2decomp_reverse_engineer PRIVATE decomp)
-
-add_executable(pressure_test_hn test/pressure_test_hn.cpp)
-add_executable(pressure_test_nhn test/pressure_test_nhn.cpp)
-add_executable(pressure_test_mixed test/pressure_test_mixed.cpp)
-
-add_executable(full_test test/full_test.cpp)
-
-
-# Set link libraries.
-target_link_libraries(tensor_usage_test PRIVATE miflib)
-
-target_link_libraries(velocity_test PRIVATE miflib)
-target_link_libraries(velocity_test_mixed PRIVATE miflib)
-
-target_link_libraries(fftw_Dirichlet3D PRIVATE decomp)
-target_link_libraries(fftw_Dirichlet1D PRIVATE decomp)
-target_link_libraries(fftw_Dirichlet1D_spectral PRIVATE decomp)
-target_link_libraries(fftw_Neumann3D PRIVATE decomp)
-target_link_libraries(fftw_Neumann1D PRIVATE decomp)
-target_link_libraries(2decomp_test PRIVATE miflib decomp)
-target_link_libraries(2decomp_test_parallel PRIVATE miflib decomp)
-
-target_link_libraries(pressure_test_hn PRIVATE miflib decomp)
-target_link_libraries(pressure_test_nhn PRIVATE miflib decomp)
-target_link_libraries(pressure_test_mixed PRIVATE miflib decomp)
-
-target_link_libraries(full_test PRIVATE miflib decomp)
 
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}

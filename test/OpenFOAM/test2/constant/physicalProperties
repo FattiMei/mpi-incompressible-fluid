@@ -9,39 +9,14 @@ FoamFile
 {
     format      ascii;
     class       dictionary;
-    location    "system";
-    object      controlDict;
+    location    "constant";
+    object      physicalProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     icoFoam;
+// if Re := v*h/nu and v = 1, h = 1 ==> nu = 1/Re = 1/1000 = 0.001
 
-startFrom       startTime;
+nu              [0 2 -1 0 0 0 0] 0.001;
 
-startTime       0;
-
-stopAt          endTime;
-
-endTime         8;
-
-deltaT          0.001;
-
-writeControl    timeStep;
-
-writeInterval   1000;
-
-purgeWrite      0;
-
-writeFormat     ascii;
-
-writePrecision  6;
-
-writeCompression off;
-
-timeFormat      general;
-
-timePrecision   6;
-
-runTimeModifiable true;
 
 // ************************************************************************* //

@@ -1,4 +1,5 @@
 #include <cassert>
+#include <fftw3.h>
 #include <chrono>
 #include <iostream>
 #include <mpi.h>
@@ -8,11 +9,11 @@
 #include "PressureGradient.h"
 #include "StaggeredTensorMacros.h"
 #include "Timestep.h"
-#include "VTKExport.h"
+#include "VTKDatExport.h"
 
 double Reynolds;
 
-// Simple main for the test case with no pressure and exact solution known.
+// Test case with both velocity and pressure.
 int main(int argc, char *argv[]) {
   using namespace mif;
 
@@ -112,9 +113,8 @@ int main(int argc, char *argv[]) {
   */
 
   // Compute the solution.
-  const bool print_times = false;
-  const auto before = chrono::high_resolution_clock::now();
-
+  const bool print_times = true;
+  const auto t1 = MPI_Wtime();
   for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
 
     // Set the boundary conditions.
@@ -123,15 +123,18 @@ int main(int argc, char *argv[]) {
     // Update the solution inside the mesh.
     timestep(velocity, velocity_buffer, velocity_buffer_2, exact_velocity, current_time, pressure, pressure_buffer, pressure_solver_buffer);
   }
-
+  const auto t2 = MPI_Wtime();
+  
   if (print_times) {
-    MPI_Barrier(MPI_COMM_WORLD);
-    const auto after = chrono::high_resolution_clock::now();
-    const Real execution_time = (after-before).count() / 1e9;
-    if (rank == 0) {
-      std::cout << "Absolute time: " << execution_time << "s" << std::endl;
-      std::cout << "Relative time: " << execution_time/Nx_global/Ny_global/Nz_global/num_time_steps << std::endl;
+    for (unsigned r=0; r<size; r++) {
+      if (r == rank) {
+        std::cout << "Rank: " << r << '\n';
+        std::cout << "  Absolute time: " << (t2-t1) << "s" << std::endl;
+        std::cout << "  Relative time: " << (t2-t1)/Nx_global/Ny_global/Nz_global/num_time_steps << std::endl;
+      }
+      MPI_Barrier(MPI_COMM_WORLD);
     }
+    MPI_Barrier(MPI_COMM_WORLD);
   }
 
   // Compute the pressure gradient.
@@ -177,10 +180,7 @@ int main(int argc, char *argv[]) {
     writeVTKFullMesh("full.vtk", velocity, pressure);
   }
 
-
-  //direction is 0 for x, 1 for y, 2 for z. this is the axis witch the line is parallel to
-  // x,y,z are the coordinates of the point contained in the line
-  writeDat("line1.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0.0);
+  writeDat("line1.dat", velocity, pressure, 0, 0.5, 0.5, 0.0);
 
   // Finalize MPI.
   MPI_Finalize();

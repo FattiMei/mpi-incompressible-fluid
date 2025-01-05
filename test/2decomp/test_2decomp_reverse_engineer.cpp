@@ -2,9 +2,11 @@
 #include <vector>
 #include <cassert>
 #include <iostream>
-#include <fftw3.h>
 #include <mpi.h>
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wcast-function-type"
 #include "../deps/2Decomp_C/C2Decomp.hpp"
+#pragma GCC diagnostic pop
 
 
 using namespace std;
@@ -39,7 +41,6 @@ int main(int argc, char *argv[]) {
 
 
 	// someone has found that this condition is necessary for the program, otherwise 2Decomp crashes
-	// TODO: make this a runtime decision
 	// leave 0,0 for autotuning (SLOW)
 	const int pRow = 2, pCol = 2;
 	assert(pRow * pCol == totRank);
@@ -89,9 +90,9 @@ int main(int argc, char *argv[]) {
 			<< "line size: " << c2d->xSize[1] << std::endl;
 	}
 
-	double *reference_domain_X = NULL;
-	double *alternate_domain_X = NULL;
-	double *local_domain_Y = NULL;
+	Real *reference_domain_X = NULL;
+	Real *alternate_domain_X = NULL;
+	Real *local_domain_Y = NULL;
 
 	const int ncells = c2d->allocX(reference_domain_X);
 	c2d->allocX(alternate_domain_X);

@@ -1,0 +1,4 @@
+This folder contains 3 exact solution generators:
+- `manufsol_pressure.py`: generates an exact pressure and a velocity whose gradient is equal to the pressure's laplacian. It is used in all standalone pressure tests. To be compatible with the tests, homogeneous Neumann BC or periodic BC in the generator and the test must match. The generator also stores the pressure's exact gradient for debugging purposes.
+- `manufsol_velocity.py`: generates an exact velocity which is divergence free and the corresponding forcing terms to satisfy the momentum equation. It is used in all standalone velocity tests. Periodic BC must match in the generator and the test.
+- `manufsol.py`: generates an exact pressure and velocity that satisfy the Navier-Stokes equations. It is used in the test with both pressure and velocity.

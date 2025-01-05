@@ -1,7 +1,6 @@
 #include "C2Decomp.hpp"
 
-void C2Decomp::updateHalo(double *in, double *&out, int level, int ipencil) {
-
+void C2Decomp::updateHalo(Real* in, Real*& out, int level, int ipencil){
   int xs = 0, ys = 0, zs = 0, xe = 0, ye = 0, ze = 0;
 
   int s1 = 0, s2 = 0, s3 = 0;
@@ -13,7 +12,7 @@ void C2Decomp::updateHalo(double *in, double *&out, int level, int ipencil) {
 
   int tag_e, tag_w, tag_n, tag_s, tag_t, tag_b;
 
-  MPI_Datatype datatype = MPI_DOUBLE;
+  MPI_Datatype datatype = MPI_MIF_REAL;
   MPI_Datatype halo12, halo21, halo31, halo32;
 
   if (ipencil == 0) { // X Pencil
@@ -61,7 +60,7 @@ void C2Decomp::updateHalo(double *in, double *&out, int level, int ipencil) {
   int outYsize = ye - ys + 1;
   int outZsize = ze - zs + 1;
   int outsize = outXsize * outYsize * outZsize;
-  out = new double[outsize];
+  out = new Real[outsize];
 
   for (int kp = 0; kp < s3; kp++) {
     for (int jp = 0; jp < s2; jp++) {
@@ -109,8 +108,8 @@ void C2Decomp::updateHalo(double *in, double *&out, int level, int ipencil) {
     MPI_Type_commit(&halo12);
 
     // Receive from south
-    double *southRecvLocation, *northRecvLocation;
-    double *southSendLocation, *northSendLocation;
+    Real *southRecvLocation, *northRecvLocation;
+    Real *southSendLocation, *northSendLocation;
 
     southRecvLocation = &out[(zs + level - 1) * outYsize * outXsize +
                              (ys + level - 1) * outXsize + xs - 1];
@@ -143,8 +142,8 @@ void C2Decomp::updateHalo(double *in, double *&out, int level, int ipencil) {
       tag_t = coord[1] + 1;
     }
 
-    double *bottomRecvLocation, *topRecvLocation;
-    double *bottomSendLocation, *topSendLocation;
+    Real *bottomRecvLocation, *topRecvLocation;
+    Real *bottomSendLocation, *topSendLocation;
 
     bottomRecvLocation = &out[(zs + level - 1) * outYsize * outXsize +
                               (ys + level - 1) * outXsize + xs - 1];
@@ -182,8 +181,8 @@ void C2Decomp::updateHalo(double *in, double *&out, int level, int ipencil) {
     MPI_Type_vector(icount, ilength, ijump, datatype, &halo21);
     MPI_Type_commit(&halo21);
 
-    double *eastRecvLocation, *westRecvLocation;
-    double *eastSendLocation, *westSendLocation;
+    Real *eastRecvLocation, *westRecvLocation;
+    Real *eastSendLocation, *westSendLocation;
 
     westRecvLocation = &out[(zs + level - 1) * outYsize * outXsize +
                             (ys - 1) * outXsize + xs + level - 1];
@@ -221,8 +220,8 @@ void C2Decomp::updateHalo(double *in, double *&out, int level, int ipencil) {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    double *bottomRecvLocation, *topRecvLocation;
-    double *bottomSendLocation, *topSendLocation;
+    Real *bottomRecvLocation, *topRecvLocation;
+    Real *bottomSendLocation, *topSendLocation;
 
     bottomRecvLocation = &out[(zs + level - 1) * outYsize * outXsize +
                               (ys - 1) * outXsize + xs + level - 1];
@@ -261,8 +260,8 @@ void C2Decomp::updateHalo(double *in, double *&out, int level, int ipencil) {
     MPI_Type_vector(icount, ilength, ijump, datatype, &halo31);
     MPI_Type_commit(&halo31);
 
-    double *eastRecvLocation, *westRecvLocation;
-    double *eastSendLocation, *westSendLocation;
+    Real *eastRecvLocation, *westRecvLocation;
+    Real *eastSendLocation, *westSendLocation;
 
     westRecvLocation = &out[(zs - 1) * outYsize * outXsize +
                             (ys + level - 1) * outXsize + xs + level - 1];
@@ -303,8 +302,8 @@ void C2Decomp::updateHalo(double *in, double *&out, int level, int ipencil) {
     MPI_Type_commit(&halo32);
 
     // Receive from south
-    double *southRecvLocation, *northRecvLocation;
-    double *southSendLocation, *northSendLocation;
+    Real *southRecvLocation, *northRecvLocation;
+    Real *southSendLocation, *northSendLocation;
 
     southRecvLocation = &out[(zs - 1) * outYsize * outXsize +
                              (ys + level - 1) * outXsize + xs + level - 1];

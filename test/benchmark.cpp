@@ -22,6 +22,7 @@ static void clear_cache_line() {
   }
 }
 
+// Benchmarking the velocity solver.
 static void timestepper(benchmark::State &state) {
   clear_cache_line();
   const size_t Nx = state.range(0);

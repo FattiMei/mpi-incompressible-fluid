@@ -3,6 +3,7 @@
 
 extern double Reynolds;
 
+// Exact solutions for the standalone velocity tests.
 double u_exact_v_test(double t, double x, double y, double z);
 double v_exact_v_test(double t, double x, double y, double z);
 double w_exact_v_test(double t, double x, double y, double z);

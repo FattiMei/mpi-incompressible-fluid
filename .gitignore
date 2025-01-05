@@ -1,4 +1,5 @@
 build/
+mbuild/
 
 .ipynb_checkpoints/
 .vscode/
@@ -12,6 +13,12 @@ analysis/*.png
 *.o
 
 test/OpenFOAM/test1
+test/OpenFOAM/test2
 
 source_openfoam.sh
 *.pvsm
+
+mif
+
+*dat
+*vtk

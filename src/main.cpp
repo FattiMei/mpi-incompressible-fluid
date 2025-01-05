@@ -3,7 +3,7 @@
 #include "PressureEquation.h"
 #include "TestCaseBoundaries.h"
 #include "Timestep.h"
-#include "VTKExport.h"
+#include "VTKDatExport.h"
 #include <cassert>
 #include <iostream>
 #include <mpi.h>
@@ -26,7 +26,10 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   // One argument: input file path.
-  assert(argc == 2);
+  if (argc != 2) {
+    std::cerr << "Usage: mpirun -n [PROC COUNT] ./mif [input parameter file]" << std::endl;
+    return 1;
+  }
   const std::string input_file = argv[1];
 
   // Input parameters from the file.
@@ -39,9 +42,37 @@ int main(int argc, char *argv[]) {
   int Py = 0;
   bool test_case_2 = 0;
   try {
+#ifdef MIF_NO_DISTRIBUTED_FS
       // Parse the input file.
+      if (rank == 0) {
+          parse_input_file(input_file, Nx_global, Ny_global, Nz_global,
+	                   dt, num_time_steps, Py, Pz, test_case_2);
+      }
+
+      double input_parameters[] = {Nx_global, Ny_global, Nz_global,
+	                           dt, num_time_steps, Py, Pz, test_case_2};
+
+      MPI_Bcast(
+	input_parameters,
+	sizeof(input_parameters)/sizeof(*input_parameters),
+	MPI_DOUBLE,
+	0,
+	MPI_COMM_WORLD
+      );
+
+      Nx_global      = input_parameters[0];
+      Ny_global      = input_parameters[1];
+      Nz_global      = input_parameters[2];
+      dt             = input_parameters[3];
+      num_time_steps = input_parameters[4];
+      Py             = input_parameters[5];
+      Pz             = input_parameters[6];
+      test_case_2    = input_parameters[7];
+#else
       parse_input_file(input_file, Nx_global, Ny_global, Nz_global,
                        dt, num_time_steps, Py, Pz, test_case_2);
+#endif
+	
 
       // Check processor consistency.
       if (Pz < 1 || Py < 1) {
@@ -108,13 +139,13 @@ int main(int argc, char *argv[]) {
 
   // Store the required parts of the solution as dat files.
   if (!test_case_2){
-    writeDat("profile1.dat", velocity, constants, pressure, rank, size, 1, 0.5, 0.5, 0);
-    writeDat("profile2.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0);
+    writeDat("profile1.dat", velocity, pressure, 1, 0.5, 0.5, 0);
+    writeDat("profile2.dat", velocity, pressure, 0, 0.5, 0.5, 0);
   }
   else{
-    writeDat("profile1.dat", velocity, constants, pressure, rank, size, 1, 0, 0, 0);
-    writeDat("profile2.dat", velocity, constants, pressure, rank, size, 0, 0, 0, 0);
-    writeDat("profile3.dat", velocity, constants, pressure, rank, size, 2, 0, 0, 0);
+    writeDat("profile1.dat", velocity, pressure, 1, 0, 0, 0);
+    writeDat("profile2.dat", velocity, pressure, 0, 0, 0, 0);
+    writeDat("profile3.dat", velocity, pressure, 2, 0, 0, 0);
   }
 
   // Finalize MPI.

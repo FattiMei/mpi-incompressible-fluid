@@ -10,9 +10,12 @@
 
 #include <mpi.h>
 
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wcast-function-type"
 #include "../deps/2Decomp_C/C2Decomp.hpp"
-#include <StaggeredTensor.h>
-#include <VelocityTensor.h>
+#pragma GCC diagnostic pop
+#include "StaggeredTensor.h"
+#include "VelocityTensor.h"
 
 template <typename T> void print_t(T &arr, int n1, int n2, int n3) {
   std::cout << "To visualize: https://array-3d-viz.vercel.app/\n";
@@ -183,11 +186,11 @@ int main(int argc, char *argv[]) {
 
   // Create a global local_tensor for simpliciy. This have the same values as
   // the combined staggered tensors across the processors
-  double global_data[tot_Nz][tot_Ny][tot_Nx];
+  Real global_data[tot_Nz][tot_Ny][tot_Nx];
   for (int kp = 0; kp < tot_Nz; kp++) {
     for (int jp = 0; jp < tot_Ny; jp++) {
       for (int ip = 0; ip < tot_Nx; ip++) {
-        global_data[kp][jp][ip] = static_cast<double>(kp);
+        global_data[kp][jp][ip] = static_cast<Real>(kp);
       }
     }
   }
@@ -241,7 +244,7 @@ int main(int argc, char *argv[]) {
   // c2d->yStart, c2d->yEnd for the Y transposition
   // - The global indices of start
   // and end can be found in c2d->zStart, c2d->zEnd for the Z transposition
-  double xSize[3], ySize[3], zSize[3];
+  Real xSize[3], ySize[3], zSize[3];
   xSize[0] = c2d->xSize[0];
   xSize[1] = c2d->xSize[1];
   xSize[2] = c2d->xSize[2];
@@ -291,8 +294,8 @@ int main(int argc, char *argv[]) {
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  double *u1, *u2, *u3;
-  double t1, t2, t3;
+  Real *u1, *u2, *u3;
+  Real t1, t2, t3;
   // auto const u1_size = c2d->allocX(u1);
   auto const u2_size = c2d->allocY(u2);
   auto const u3_size = c2d->allocZ(u3);
@@ -309,7 +312,7 @@ int main(int argc, char *argv[]) {
   //}
   //MPI_Barrier(MPI_COMM_WORLD);
   // This works but I don't know how safe it is...
-  u1 = static_cast<double*>(local_tensor.raw_data());
+  u1 = static_cast<Real*>(local_tensor.raw_data());
 
   // Show copied tensor on master rank
   if (mpiRank == 0) {
@@ -318,7 +321,7 @@ int main(int argc, char *argv[]) {
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  double transp_error = 0.0;
+  Real transp_error = 0.0;
 
   t1 = MPI_Wtime();
   c2d->transposeX2Y_MajorIndex(u1, u2);
@@ -332,10 +335,10 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < ySize[1]; jp++) {
       for (int ip = 0; ip < ySize[0]; ip++) {
         int ii = ip * ySize[2] * ySize[1] + kp * ySize[1] + jp;
-        double temp = u2[ii];
+        Real temp = u2[ii];
         // Check with global data as after transposed, some data are in other
         // processors
-        double temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
+        Real temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
                                   [c2d->yStart[0] + ip];
         transp_error += abs(temp - temp1);
       }
@@ -361,8 +364,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < zSize[1]; jp++) {
       for (int ip = 0; ip < zSize[0]; ip++) {
         int ii = jp * zSize[2] * zSize[0] + ip * zSize[2] + kp;
-        double temp = u3[ii];
-        double temp1 = global_data[c2d->zStart[2] + kp][c2d->zStart[1] + jp]
+        Real temp = u3[ii];
+        Real temp1 = global_data[c2d->zStart[2] + kp][c2d->zStart[1] + jp]
                                   [c2d->zStart[0] + ip];
         transp_error += abs(temp - temp1);
       }
@@ -388,8 +391,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < ySize[1]; jp++) {
       for (int ip = 0; ip < ySize[0]; ip++) {
         int ii = ip * ySize[2] * ySize[1] + kp * ySize[1] + jp;
-        double temp = u2[ii];
-        double temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
+        Real temp = u2[ii];
+        Real temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
                                   [c2d->yStart[0] + ip];
         transp_error += abs(temp - temp1);
       }
@@ -415,8 +418,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < xSize[1]; jp++) {
       for (int ip = 0; ip < xSize[0]; ip++) {
         int ii = kp * xSize[1] * xSize[0] + jp * xSize[0] + ip;
-        double temp = u1[ii];
-        double temp1 = global_data[c2d->xStart[2] + kp][c2d->xStart[1] + jp]
+        Real temp = u1[ii];
+        Real temp1 = global_data[c2d->xStart[2] + kp][c2d->xStart[1] + jp]
                                   [c2d->xStart[0] + ip];
         transp_error += abs(temp - temp1);
       }
@@ -431,8 +434,8 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   // allocate new buffers for non-blocking comms
-  double *sbuf = new double[c2d->decompBufSize];
-  double *rbuf = new double[c2d->decompBufSize];
+  Real *sbuf = new Real[c2d->decompBufSize];
+  Real *rbuf = new Real[c2d->decompBufSize];
   MPI_Request x2yHandle;
   t1 = MPI_Wtime();
   c2d->transposeX2Y_MajorIndex_Start(x2yHandle, u1, u2, sbuf, rbuf);
@@ -448,8 +451,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < ySize[1]; jp++) {
       for (int ip = 0; ip < ySize[0]; ip++) {
         int ii = ip * ySize[1] * ySize[2] + kp * ySize[1] + jp;
-        double temp = u2[ii];
-        double temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
+        Real temp = u2[ii];
+        Real temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
                                   [c2d->yStart[0] + ip];
         transp_error += abs(temp - temp1);
       }
@@ -471,8 +474,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < zSize[1]; jp++) {
       for (int ip = 0; ip < zSize[0]; ip++) {
         int ii = jp * zSize[2] * zSize[0] + ip * zSize[2] + kp;
-        double temp = u3[ii];
-        double temp1 = global_data[c2d->zStart[2] + kp][c2d->zStart[1] + jp]
+        Real temp = u3[ii];
+        Real temp1 = global_data[c2d->zStart[2] + kp][c2d->zStart[1] + jp]
                                   [c2d->zStart[0] + ip];
         transp_error += abs(temp - temp1);
       }
@@ -494,8 +497,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < ySize[1]; jp++) {
       for (int ip = 0; ip < ySize[0]; ip++) {
         int ii = ip * ySize[1] * ySize[2] + kp * ySize[1] + jp;
-        double temp = u2[ii];
-        double temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
+        Real temp = u2[ii];
+        Real temp1 = global_data[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
                                   [c2d->yStart[0] + ip];
         transp_error += abs(temp - temp1);
       }
@@ -518,8 +521,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < xSize[1]; jp++) {
       for (int ip = 0; ip < xSize[0]; ip++) {
         int ii = kp * xSize[1] * xSize[0] + jp * xSize[0] + ip;
-        double temp = u1[ii];
-        double temp1 = global_data[c2d->xStart[2] + kp][c2d->xStart[1] + jp]
+        Real temp = u1[ii];
+        Real temp1 = global_data[c2d->xStart[2] + kp][c2d->xStart[1] + jp]
                                   [c2d->xStart[0] + ip];
         transp_error += abs(temp - temp1);
       }
