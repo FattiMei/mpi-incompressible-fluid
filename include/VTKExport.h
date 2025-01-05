@@ -20,10 +20,10 @@ void writeVTK(const std::string&     filename,
         const int direction,
         const Real x, const Real y, const Real z
     );
-};
+
 // only works for runs with only one processor, used for validating the line exporting
 void writeVTKFullMesh(const std::string&     filename,
-			  const VelocityTensor&  velocity,
+			  const mif::VelocityTensor&  velocity,
 			  const StaggeredTensor& pressure);
 
 } // mif

@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
   // TODO: based on the test case write the corrisponding dat files
   //direction is 0 for x, 1 for y, 2 for z. this is the axis witch the line is parallel to
   // x,y,z are the coordinates of the point contained in the line
-    writeDat("output.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0.5);
+  writeDat("output.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0.5);
   // Finalize MPI.
   MPI_Finalize();
 }
