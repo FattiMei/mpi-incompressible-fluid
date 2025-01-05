@@ -1,4 +1,5 @@
 #include <cassert>
+#include <fftw3.h>
 #include <iostream>
 #include <mpi.h>
 #include "Manufactured.h"

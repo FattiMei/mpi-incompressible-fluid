@@ -203,8 +203,8 @@ void C2Decomp::decompInfoInit() {
       work2_r = NULL;
     }
 
-    work1_r = new double[bufSize];
-    work2_r = new double[bufSize];
+    work1_r = new Real[bufSize];
+    work2_r = new Real[bufSize];
     decompBufSize = bufSize;
   }
 };

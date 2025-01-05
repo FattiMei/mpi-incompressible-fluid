@@ -1,6 +1,6 @@
 #include "C2Decomp.hpp"
 
-void C2Decomp::memSplitXY(double *in, int n1, int n2, int n3, double *out,
+void C2Decomp::memSplitXY(Real *in, int n1, int n2, int n3, Real *out,
                           int iproc, int *dist) {
 
   int i1, i2, pos;
@@ -28,7 +28,7 @@ void C2Decomp::memSplitXY(double *in, int n1, int n2, int n3, double *out,
   }
 };
 
-void C2Decomp::memMergeXY(double *in, int n1, int n2, int n3, double *out,
+void C2Decomp::memMergeXY(Real *in, int n1, int n2, int n3, Real *out,
                           int iproc, int *dist) {
 
   int i1, i2, pos;
@@ -56,8 +56,8 @@ void C2Decomp::memMergeXY(double *in, int n1, int n2, int n3, double *out,
   }
 }
 
-void C2Decomp::memMergeXY_YMajor(double *in, int n1, int n2, int n3,
-                                 double *out, int iproc, int *dist) {
+void C2Decomp::memMergeXY_YMajor(Real *in, int n1, int n2, int n3,
+                                 Real *out, int iproc, int *dist) {
 
   int i1, i2, pos;
 
@@ -85,7 +85,7 @@ void C2Decomp::memMergeXY_YMajor(double *in, int n1, int n2, int n3,
   }
 }
 
-void C2Decomp::memSplitYZ(double *in, int n1, int n2, int n3, double *out,
+void C2Decomp::memSplitYZ(Real *in, int n1, int n2, int n3, Real *out,
                           int iproc, int *dist) {
 
   int i1, i2, pos;
@@ -113,8 +113,8 @@ void C2Decomp::memSplitYZ(double *in, int n1, int n2, int n3, double *out,
   }
 };
 
-void C2Decomp::memSplitYZ_YMajor(double *in, int n1, int n2, int n3,
-                                 double *out, int iproc, int *dist) {
+void C2Decomp::memSplitYZ_YMajor(Real *in, int n1, int n2, int n3,
+                                 Real *out, int iproc, int *dist) {
 
   int i1, i2, pos;
 
@@ -142,7 +142,7 @@ void C2Decomp::memSplitYZ_YMajor(double *in, int n1, int n2, int n3,
   }
 };
 
-void C2Decomp::memMergeYZ(double *in, int n1, int n2, int n3, double *out,
+void C2Decomp::memMergeYZ(Real *in, int n1, int n2, int n3, Real *out,
                           int iproc, int *dist) {
 
   int i1, i2, pos;
@@ -170,8 +170,8 @@ void C2Decomp::memMergeYZ(double *in, int n1, int n2, int n3, double *out,
   }
 };
 
-void C2Decomp::memMergeYZ_ZMajor(double *in, int n1, int n2, int n3,
-                                 double *out, int iproc, int *dist) {
+void C2Decomp::memMergeYZ_ZMajor(Real *in, int n1, int n2, int n3,
+                                 Real *out, int iproc, int *dist) {
 
   int i1, i2, pos;
 
@@ -199,7 +199,7 @@ void C2Decomp::memMergeYZ_ZMajor(double *in, int n1, int n2, int n3,
   }
 };
 
-void C2Decomp::memSplitZY(double *in, int n1, int n2, int n3, double *out,
+void C2Decomp::memSplitZY(Real *in, int n1, int n2, int n3, Real *out,
                           int iproc, int *dist) {
 
   int i1, i2, pos;
@@ -227,8 +227,8 @@ void C2Decomp::memSplitZY(double *in, int n1, int n2, int n3, double *out,
   }
 };
 
-void C2Decomp::memSplitZY_ZMajor(double *in, int n1, int n2, int n3,
-                                 double *out, int iproc, int *dist) {
+void C2Decomp::memSplitZY_ZMajor(Real *in, int n1, int n2, int n3,
+                                 Real *out, int iproc, int *dist) {
 
   int i1, i2, pos;
 
@@ -256,7 +256,7 @@ void C2Decomp::memSplitZY_ZMajor(double *in, int n1, int n2, int n3,
   }
 };
 
-void C2Decomp::memMergeZY(double *in, int n1, int n2, int n3, double *out,
+void C2Decomp::memMergeZY(Real *in, int n1, int n2, int n3, Real *out,
                           int iproc, int *dist) {
 
   int i1, i2, pos;
@@ -284,8 +284,8 @@ void C2Decomp::memMergeZY(double *in, int n1, int n2, int n3, double *out,
   }
 }
 
-void C2Decomp::memMergeZY_YMajor(double *in, int n1, int n2, int n3,
-                                 double *out, int iproc, int *dist) {
+void C2Decomp::memMergeZY_YMajor(Real *in, int n1, int n2, int n3,
+                                 Real *out, int iproc, int *dist) {
 
   int i1, i2, pos;
 
@@ -313,7 +313,7 @@ void C2Decomp::memMergeZY_YMajor(double *in, int n1, int n2, int n3,
   }
 }
 
-void C2Decomp::memSplitYX(double *in, int n1, int n2, int n3, double *out,
+void C2Decomp::memSplitYX(Real *in, int n1, int n2, int n3, Real *out,
                           int iproc, int *dist) {
 
   int i1, i2, pos;
@@ -341,8 +341,8 @@ void C2Decomp::memSplitYX(double *in, int n1, int n2, int n3, double *out,
   }
 };
 
-void C2Decomp::memSplitYX_YMajor(double *in, int n1, int n2, int n3,
-                                 double *out, int iproc, int *dist) {
+void C2Decomp::memSplitYX_YMajor(Real *in, int n1, int n2, int n3,
+                                 Real *out, int iproc, int *dist) {
 
   int i1, i2, pos;
 
@@ -370,7 +370,7 @@ void C2Decomp::memSplitYX_YMajor(double *in, int n1, int n2, int n3,
   }
 };
 
-void C2Decomp::memMergeYX(double *in, int n1, int n2, int n3, double *out,
+void C2Decomp::memMergeYX(Real *in, int n1, int n2, int n3, Real *out,
                           int iproc, int *dist) {
 
   int i1, i2, pos;

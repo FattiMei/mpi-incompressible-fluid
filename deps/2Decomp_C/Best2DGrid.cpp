@@ -5,7 +5,7 @@ void C2Decomp::FindFactor(int num, int *factors, int &nfact) {
   int m;
 
   // Finding factors <= sqrt(num)
-  m = (int)sqrt((double)num);
+  m = (int)sqrt((Real)num);
   nfact = 1;
   for (int ip = 1; ip < m + 1; ip++) {
     if (num / ip * ip == num) {
@@ -35,15 +35,15 @@ void C2Decomp::best2DGrid(int iproc, int &best_pRow, int &best_pCol) {
     cout << "C2Decomp: In auto-tuning mode..." << endl;
   }
 
-  double best_time = HUGE_VAL;
-  double t2, t1;
+  Real best_time = HUGE_VAL;
+  Real t2, t1;
 
   best_pRow = -1;
   best_pCol = -1;
 
-  double *u1, *u2, *u3;
+  Real *u1, *u2, *u3;
 
-  int factSize = (int)sqrt((double)iproc) + 10;
+  int factSize = (int)sqrt((Real)iproc) + 10;
   int *factors = new int[factSize];
   int nfact = 0;
 
@@ -102,9 +102,9 @@ void C2Decomp::best2DGrid(int iproc, int &best_pRow, int &best_pCol) {
 
       decompInfoFinalize();
 
-      MPI_Allreduce(&t2, &t1, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+      MPI_Allreduce(&t2, &t1, 1, MPI_MIF_REAL, MPI_SUM, MPI_COMM_WORLD);
 
-      t1 /= (double)nProc;
+      t1 /= (Real)nProc;
 
       if (!nRank) {
         cout << "    Processor Grid " << row << " by " << col

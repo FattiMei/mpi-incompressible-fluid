@@ -1,6 +1,6 @@
 #include "C2Decomp.hpp"
 
-void C2Decomp::transposeZ2Y(double *src, double *dst) {
+void C2Decomp::transposeZ2Y(Real *src, Real *dst) {
 
   int s1, s2, s3, d1, d2, d3;
 
@@ -15,7 +15,7 @@ void C2Decomp::transposeZ2Y(double *src, double *dst) {
   memMergeZY(work2_r, d1, d2, d3, dst, dims[1], decompMain.y2dist);
 }
 
-void C2Decomp::transposeZ2Y_MajorIndex(double *src, double *dst) {
+void C2Decomp::transposeZ2Y_MajorIndex(Real *src, Real *dst) {
 
   int s1, s2, s3, d1, d2, d3;
 
@@ -45,8 +45,8 @@ void C2Decomp::transposeZ2Y_MajorIndex(double *src, double *dst) {
   memMergeZY_YMajor(work2_r, d1, d2, d3, dst, dims[1], decompMain.y2dist);
 }
 
-void C2Decomp::transposeZ2Y_Start(MPI_Request &handle, double *src, double *dst,
-                                  double *sbuf, double *rbuf) {
+void C2Decomp::transposeZ2Y_Start(MPI_Request &handle, Real *src, Real *dst,
+                                  Real *sbuf, Real *rbuf) {
 
   int s1, s2, s3;
 
@@ -54,15 +54,15 @@ void C2Decomp::transposeZ2Y_Start(MPI_Request &handle, double *src, double *dst,
   s2 = decompMain.zsz[1];
   s3 = decompMain.zsz[2];
 
-  memcpy(sbuf, src, s1 * s2 * s3 * sizeof(double));
+  memcpy(sbuf, src, s1 * s2 * s3 * sizeof(Real));
 
   MPI_Ialltoallv(sbuf, decompMain.z2cnts, decompMain.z2disp, realType, rbuf,
                  decompMain.y2cnts, decompMain.y2disp, realType,
                  DECOMP_2D_COMM_ROW, &handle);
 }
 
-void C2Decomp::transposeZ2Y_Wait(MPI_Request &handle, double *src, double *dst,
-                                 double *sbuf, double *rbuf) {
+void C2Decomp::transposeZ2Y_Wait(MPI_Request &handle, Real *src, Real *dst,
+                                 Real *sbuf, Real *rbuf) {
 
   int d1, d2, d3;
   MPI_Status status;
@@ -76,9 +76,9 @@ void C2Decomp::transposeZ2Y_Wait(MPI_Request &handle, double *src, double *dst,
   memMergeZY(rbuf, d1, d2, d3, dst, dims[1], decompMain.y2dist);
 }
 
-void C2Decomp::transposeZ2Y_MajorIndex_Start(MPI_Request &handle, double *src,
-                                             double *dst, double *sbuf,
-                                             double *rbuf) {
+void C2Decomp::transposeZ2Y_MajorIndex_Start(MPI_Request &handle, Real *src,
+                                             Real *dst, Real *sbuf,
+                                             Real *rbuf) {
 
   int s1, s2, s3;
 
@@ -102,9 +102,9 @@ void C2Decomp::transposeZ2Y_MajorIndex_Start(MPI_Request &handle, double *src,
                  DECOMP_2D_COMM_ROW, &handle);
 }
 
-void C2Decomp::transposeZ2Y_MajorIndex_Wait(MPI_Request &handle, double *src,
-                                            double *dst, double *sbuf,
-                                            double *rbuf) {
+void C2Decomp::transposeZ2Y_MajorIndex_Wait(MPI_Request &handle, Real *src,
+                                            Real *dst, Real *sbuf,
+                                            Real *rbuf) {
 
   int d1, d2, d3;
   MPI_Status status;

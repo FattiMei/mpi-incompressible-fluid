@@ -1,6 +1,6 @@
 #include "C2Decomp.hpp"
 
-void C2Decomp::transposeX2Y(double *src, double *dst) {
+void C2Decomp::transposeX2Y(Real *src, Real *dst) {
 
   int s1, s2, s3, d1, d2, d3;
 
@@ -22,7 +22,7 @@ void C2Decomp::transposeX2Y(double *src, double *dst) {
   // memMergeXY_YMajor(work2_r, d1, d2, d3, dst, dims[0], decompMain.y1dist);
 }
 
-void C2Decomp::transposeX2Y_MajorIndex(double *src, double *dst) {
+void C2Decomp::transposeX2Y_MajorIndex(Real *src, Real *dst) {
 
   int s1, s2, s3, d1, d2, d3;
 
@@ -44,8 +44,8 @@ void C2Decomp::transposeX2Y_MajorIndex(double *src, double *dst) {
   memMergeXY_YMajor(work2_r, d1, d2, d3, dst, dims[0], decompMain.y1dist);
 }
 
-void C2Decomp::transposeX2Y_Start(MPI_Request &handle, double *src, double *dst,
-                                  double *sbuf, double *rbuf) {
+void C2Decomp::transposeX2Y_Start(MPI_Request &handle, Real *src, Real *dst,
+                                  Real *sbuf, Real *rbuf) {
 
   int s1, s2, s3;
 
@@ -60,9 +60,9 @@ void C2Decomp::transposeX2Y_Start(MPI_Request &handle, double *src, double *dst,
                  DECOMP_2D_COMM_COL, &handle);
 }
 
-void C2Decomp::transposeX2Y_MajorIndex_Start(MPI_Request &handle, double *src,
-                                             double *dst, double *sbuf,
-                                             double *rbuf) {
+void C2Decomp::transposeX2Y_MajorIndex_Start(MPI_Request &handle, Real *src,
+                                             Real *dst, Real *sbuf,
+                                             Real *rbuf) {
 
   int s1, s2, s3;
 
@@ -77,8 +77,8 @@ void C2Decomp::transposeX2Y_MajorIndex_Start(MPI_Request &handle, double *src,
                  DECOMP_2D_COMM_COL, &handle);
 }
 
-void C2Decomp::transposeX2Y_Wait(MPI_Request &handle, double *src, double *dst,
-                                 double *sbuf, double *rbuf) {
+void C2Decomp::transposeX2Y_Wait(MPI_Request &handle, Real *src, Real *dst,
+                                 Real *sbuf, Real *rbuf) {
 
   int d1, d2, d3;
   MPI_Status status;
@@ -92,9 +92,9 @@ void C2Decomp::transposeX2Y_Wait(MPI_Request &handle, double *src, double *dst,
   memMergeXY(rbuf, d1, d2, d3, dst, dims[0], decompMain.y1dist);
 }
 
-void C2Decomp::transposeX2Y_MajorIndex_Wait(MPI_Request &handle, double *src,
-                                            double *dst, double *sbuf,
-                                            double *rbuf) {
+void C2Decomp::transposeX2Y_MajorIndex_Wait(MPI_Request &handle, Real *src,
+                                            Real *dst, Real *sbuf,
+                                            Real *rbuf) {
 
   int d1, d2, d3;
   MPI_Status status;

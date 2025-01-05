@@ -77,7 +77,11 @@ void solve_pressure_equation(PressureTensor &pressure,
             memcpy(structures.buffer_x, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.xSize[0]);
 
             // Execute the fft.
+#if USE_DOUBLE
             fftw_execute(structures.fft_plan_x);
+#else
+            fftwf_execute(structures.fft_plan_x);
+#endif
 
             // Copy the transformed data.
             memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_x, sizeof(Real)*c2d.xSize[0]);
@@ -95,7 +99,11 @@ void solve_pressure_equation(PressureTensor &pressure,
             memcpy(structures.buffer_y, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.ySize[1]);
 
             // Execute the fft.
+#if USE_DOUBLE
             fftw_execute(structures.fft_plan_y);
+#else
+            fftwf_execute(structures.fft_plan_y);
+#endif
 
             // Copy the transformed data.
             memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_y, sizeof(Real)*c2d.ySize[1]);
@@ -113,8 +121,11 @@ void solve_pressure_equation(PressureTensor &pressure,
             memcpy(structures.buffer_z, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.zSize[2]);
 
             // Execute the fft.
+#if USE_DOUBLE
             fftw_execute(structures.fft_plan_z);
-
+#else
+            fftwf_execute(structures.fft_plan_z);
+#endif
             // Copy the transformed data.
             memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_z, sizeof(Real)*c2d.zSize[2]);
         }
@@ -140,8 +151,11 @@ void solve_pressure_equation(PressureTensor &pressure,
             memcpy(structures.buffer_z, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.zSize[2]);
 
             // Execute the fft.
+#if USE_DOUBLE
             fftw_execute(structures.ifft_plan_z);
-
+#else
+            fftwf_execute(structures.ifft_plan_z);
+#endif
             // Copy the transformed data.
             for (int k = 0; k < c2d.zSize[2]; k++) {
                 pressure(base_index+k) = structures.buffer_z[k] / normalization_constant_z;
@@ -161,7 +175,11 @@ void solve_pressure_equation(PressureTensor &pressure,
             memcpy(structures.buffer_y, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.ySize[1]);
 
             // Execute the fft.
+#if USE_DOUBLE
             fftw_execute(structures.ifft_plan_y);
+#else
+            fftwf_execute(structures.ifft_plan_y);
+#endif
 
             // Copy the transformed data.
             for (int j = 0; j < c2d.ySize[1]; j++){
@@ -182,7 +200,11 @@ void solve_pressure_equation(PressureTensor &pressure,
             memcpy(structures.buffer_x, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.xSize[0]);
 
             // Execute the fft.
+#if USE_DOUBLE
             fftw_execute(structures.ifft_plan_x);
+#else
+            fftwf_execute(structures.ifft_plan_x);
+#endif
 
             // Copy the transformed data.
             for (int i = 0; i < c2d.xSize[0]; i++) {
