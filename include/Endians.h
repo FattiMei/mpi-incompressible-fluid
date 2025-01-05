@@ -1,14 +1,11 @@
 #ifndef ENDIAN_H
 #define ENDIAN_H
 
-
 #include <cstdint>
 #include <vector>
 
-
-// in case the cluster compiler is not so modern, we provide a fallback implementation
+// In case the cluster compiler is not so modern, we provide a fallback implementation.
 #ifdef MIF_LEGACY_COMPILER
-#warning("We are now using the legacy endian conversion")
 #include <byteswap.h>
 
 namespace mif {
@@ -59,24 +56,27 @@ constexpr T correct_endianness(const T x) noexcept {
 	return x;
 }
 
+// This is not that good of a test but it is better than nothing, this would pass even if the function was x => return -x.
 constexpr void test_implementations() {
-	static_assert(10.0f == correct_endianness(correct_endianness(10.0f)));//This is not that good of a test but it is better than nothing, this would pass even if the function was x return -x
+	static_assert(10.0f == correct_endianness(correct_endianness(10.0f)));
 	static_assert(-123.456f == correct_endianness(correct_endianness(-123.456f)));
 
-	static_assert(10.0d == correct_endianness(correct_endianness(10.0d)));
-	static_assert(-123.456d == correct_endianness(correct_endianness(-123.456d)));
+	static_assert(10.0 == correct_endianness(correct_endianness(10.0)));
+	static_assert(-123.456 == correct_endianness(correct_endianness(-123.456)));
 
 	static_assert(123.456 != correct_endianness(123.456));
 }
 };
+
 #endif
 
-
 namespace mif {
+
 template <typename T>
 void vectorToBigEndian(std::vector<T> &xs) noexcept {
         for (T& x : xs) x = correct_endianness(x);
 }
+
 };
 
 

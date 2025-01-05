@@ -1,22 +1,14 @@
 #ifndef VTK_EXPORT_H
 #define VTK_EXPORT_H
 
-
 #include <string>
-#include "Tensor.h"
 #include "VelocityTensor.h"
 
+namespace mif {
 
-namespace mif{
-    void writeVTK(
-        const std::string& filename,
-        const VelocityTensor& velocity,
-        const Constants& constants,
-        const StaggeredTensor& pressure,
-        const int rank,
-        const int size
-
-    );
+void writeVTK(const std::string&     filename,
+			  const VelocityTensor&  velocity,
+			  const StaggeredTensor& pressure);
 
     void writeDat(
         const std::string& filename,
@@ -29,6 +21,11 @@ namespace mif{
         const Real x, const Real y, const Real z
     );
 };
+// only works for runs with only one processor, used for validating the line exporting
+void writeVTKFullMesh(const std::string&     filename,
+			  const VelocityTensor&  velocity,
+			  const StaggeredTensor& pressure);
 
+} // mif
 
-#endif
+#endif // VTK_EXPORT_H

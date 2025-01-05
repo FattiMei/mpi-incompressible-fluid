@@ -157,8 +157,11 @@ int main(int argc, char *argv[]) {
     " " << error_l1_global_pg << " " << error_l2_global_pg << " " << error_lInf_global_pg << std::endl;
   }
 
+  writeVTK("solution.vtk", velocity, pressure);
 
-  writeVTK("full.vtk", velocity, constants, pressure, rank, size);
+  if (rank == 0 and size == 1) {
+    writeVTKFullMesh("full.vtk", velocity, pressure);
+  }
 
 
   //direction is 0 for x, 1 for y, 2 for z. this is the axis witch the line is parallel to
