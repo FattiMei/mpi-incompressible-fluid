@@ -50,6 +50,7 @@ boundary
             (0 4 7 3)
         );
     }
+
     fixedWalls
     {
         type wall;
@@ -60,14 +61,19 @@ boundary
             (2 6 5 1)
         );
     }
-    frontAndBack
+
+    inlet
     {
-        type patch;
-        faces
-        (
-            (1 5 4 0)
-            (3 7 6 2)
-        );
+	type cyclic;
+	neighbourPatch outlet;
+	faces ((1 5 4 0));
+    }
+
+    outlet
+    {
+        type cyclic;
+	neighbourPatch inlet;
+        faces ((3 7 6 2));
     }
 );
 

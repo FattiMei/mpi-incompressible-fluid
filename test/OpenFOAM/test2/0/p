@@ -29,9 +29,14 @@ boundaryField
         type            zeroGradient;
     }
 
-    frontAndBack
+    inlet
     {
-        type            zeroGradient;
+        type cyclic;
+    }
+
+    outlet
+    {
+        type cyclic;
     }
 }
 
