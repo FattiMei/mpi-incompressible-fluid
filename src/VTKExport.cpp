@@ -465,7 +465,6 @@ namespace mif{
 
 
         if (rank == 0 || local_size > 0){
-
             //send the data to the first processor
             MPI_Gatherv(point_data_u.data(), local_size * sizeof(Real), MPI_BYTE, point_data_u_global.data(),
                         counts.data(),
@@ -486,11 +485,9 @@ namespace mif{
         }
         //sort the data based on the coordinates and write it to the file
         if (rank == 0){
-
-
             insertionSort(points_coordinate_global, point_data_u_global, point_data_v_global, point_data_w_global,
                           point_data_p_global);
-          
+
 
             FILE* file = fopen(filename.c_str(), "w");
             if (direction == 0){
