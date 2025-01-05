@@ -1,8 +1,8 @@
-Nt : 20000
+Nt : 10
 dt : 1e-3
-Nx : 32
-Ny : 32
-Nz : 32
+Nx : 16
+Ny : 16
+Nz : 16
 Py : 1
 Pz : 1
 test_case_2 : true

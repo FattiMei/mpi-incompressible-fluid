@@ -5,4 +5,4 @@ Ny : 32
 Nz : 32
 Py : 2
 Pz : 3
-test_case_2 : false
+test_case_2 : true

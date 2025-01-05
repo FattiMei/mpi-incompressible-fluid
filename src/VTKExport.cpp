@@ -42,8 +42,8 @@ namespace mif{
     // data at the index returned by this function and at the index + 1, using the value
     // returned by this function as weight for the first value, and 1 - that weight for the
     // second value.
-    std::tuple<size_t, float> pos_to_index(Real pos, Real min_pos_global, Real delta, bool periodic){
-        const Real offset = pos - min_pos_global + periodic * delta;
+    std::tuple<size_t, float> pos_to_index(Real pos, Real min_pos_global, Real delta) {
+        const Real offset = pos - min_pos_global;
         const Real float_index = offset / delta;
         const Real int_index_1 = std::floor(float_index);
         const Real index_1_importance = 1.0 - (float_index - int_index_1);
@@ -149,7 +149,7 @@ namespace mif{
         // Write data in a point given its indices.
         auto write_point = [&constants, &velocity, &pressure, &points_coordinates,
                 &point_data_u, &point_data_v, &point_data_w, &point_data_p, &point_data_mag]
-        (int i, int j, int k){
+        (int i, int j, int k) {
             points_coordinates.push_back(constants.min_x_global + (constants.base_i + i) * constants.dx);
             points_coordinates.push_back(constants.min_y_global + (constants.base_j + j) * constants.dy);
             points_coordinates.push_back(constants.min_z_global + (constants.base_k + k) * constants.dz);
@@ -167,14 +167,13 @@ namespace mif{
             );
         };
 
-        // z = 0 plane. I need this first to simplify the celll creation
+        // z = 0 plane. This must be first to simplify the cell creation.
         {
             assert(constants.min_z_global <= 0.0 && (constants.min_z_global + constants.z_size_global) >= 0.0);
-            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_z_global, constants.dz,
-                                                             constants.periodic_bc[2]);
+            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_z_global, constants.dz);
             const int k_global = std::get<0>(index);
-            if (k_global >= start_k_write_global && k_global < end_k_write_global){
-                const int k = k_global - start_k_write_global;
+            if (k_global >= start_k_write_global && k_global < end_k_write_global) {
+                const int k = k_global - start_k_write_global + start_k_write_local;
                 for (int i = start_i_write_local; i < end_i_write_local; i++){
                     for (int j = start_j_write_local; j < end_j_write_local; j++){
                         write_point(i, j, k);
@@ -186,11 +185,11 @@ namespace mif{
         // x = 0 plane.
         {
             assert(constants.min_x_global <= 0.0 && (constants.min_x_global + constants.x_size) >= 0.0);
-            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_x_global, constants.dx,
-                                                             constants.periodic_bc[0]);
-            const int i = std::get<0>(index);
-            assert(i >= start_i_write_global && i < end_i_write_global);
-            for (int j = start_j_write_local; j < end_j_write_local; j++){
+            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_x_global, constants.dx);
+            const int i_global = std::get<0>(index);
+            assert(i_global >= start_i_write_global && i_global < end_i_write_global);
+            const int i = i_global - start_i_write_global + start_i_write_local;
+            for (int j = start_j_write_local; j < end_j_write_local; j++) {
                 for (int k = start_k_write_local; k < end_k_write_local; k++){
                     write_point(i, j, k);
                 }
@@ -200,11 +199,10 @@ namespace mif{
         // y = 0 plane.
         {
             assert(constants.min_y_global <= 0.0 && (constants.min_y_global + constants.y_size_global) >= 0.0);
-            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_y_global, constants.dy,
-                                                             constants.periodic_bc[1]);
+            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_y_global, constants.dy);
             const int j_global = std::get<0>(index);
-            if (j_global >= start_j_write_global && j_global < end_j_write_global){
-                const int j = j_global - start_j_write_global;
+            if (j_global >= start_j_write_global && j_global < end_j_write_global) {
+                const int j = j_global - start_j_write_global + start_j_write_local;
                 for (int i = start_i_write_local; i < end_i_write_local; i++){
                     for (int k = start_k_write_local; k < end_k_write_local; k++){
                         write_point(i, j, k);
