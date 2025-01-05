@@ -7,7 +7,7 @@
 # Questa build non sarà delle più robuste in termini di incremental build, ma va bene per fare una full build del progetto
 CXX = mpicxx -std=c++23
 
-CXX_FLAGS = -Wall -Wextra -Ofast -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto -lfftw3 -lfftw3f -DNDEBUG
+CXX_FLAGS = -DNDEBUG -Wall -Wextra -Ofast -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto
 
 
 DECOMP_DIR = ./deps/2Decomp_C
@@ -35,7 +35,7 @@ FFTW_INC ?= /usr/include/
 FFTW_LIB ?= /usr/lib/x86_64-linux-gnu/libfftw3.so
 
 INCLUDE += -I $(FFTW_INC)
-LIBS += -lfftw3 -L $(FFTW_LIB)
+LIBS += -lfftw3 -lfftw3f -L $(FFTW_LIB)
 
 # decommentare questa riga nel caso si abbiano problemi di compilazione (in particolare riferimento alle funzionalità di std::byteswap
 # DEFINES += -DMIF_LEGACY_COMPILER
