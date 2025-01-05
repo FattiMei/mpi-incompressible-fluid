@@ -20,7 +20,7 @@ if (benchmark_FOUND)
 	set(BENCH_OK TRUE)
 endif()
 
-add_compile_definitions(USE_DOUBLE=0)
+add_compile_definitions(USE_DOUBLE=1)
 # Set the compiler.
 set(CMAKE_C_COMPILER "mpicc")
 set(CMAKE_CXX_COMPILER "mpicxx")

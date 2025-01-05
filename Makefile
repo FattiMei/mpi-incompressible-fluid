@@ -9,7 +9,7 @@ CXX = mpicxx -std=c++23
 
 CXX_FLAGS = -DNDEBUG -Wall -Wextra -Ofast -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto
 
-DEFINES = -DNDEBUG -DUSE_DOUBLE=0
+DEFINES = -DNDEBUG -DUSE_DOUBLE=1
 
 DECOMP_DIR = ./deps/2Decomp_C
 DECOMP_SRC = $(DECOMP_DIR)/Alloc.cpp         \
