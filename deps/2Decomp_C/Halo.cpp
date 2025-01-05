@@ -1,7 +1,6 @@
 #include "C2Decomp.hpp"
 
-void C2Decomp::updateHalo(Real *in, Real *&out, int level, int ipencil) {
-
+void C2Decomp::updateHalo(Real* in, Real*& out, int level, int ipencil){
   int xs = 0, ys = 0, zs = 0, xe = 0, ye = 0, ze = 0;
 
   int s1 = 0, s2 = 0, s3 = 0;

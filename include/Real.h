@@ -17,7 +17,6 @@ namespace mif {
 // #undef MPI_Real_PRECISION
 // #define MPI_Real_PRECISION MPI_FLOAT_PRECISION
 #endif
-
 } // namespace mif
 
 #endif // REAL_H

@@ -458,10 +458,10 @@ namespace mif{
 
         //alocate the space for the data
         std::vector<Real> point_data_u_global(std::accumulate(counts.begin(), counts.end(), 0) / sizeof(Real));
-        std::vector<Real> point_data_v_global(std::accumulate(counts.begin(), counts.end(), 0) /  sizeof(Real));
-        std::vector<Real> point_data_w_global(std::accumulate(counts.begin(), counts.end(), 0) /  sizeof(Real));
-        std::vector<Real> point_data_p_global(std::accumulate(counts.begin(), counts.end(), 0) /  sizeof(Real));
-        std::vector<Real> points_coordinate_global(std::accumulate(counts.begin(), counts.end(), 0) /  sizeof(Real));
+        std::vector<Real> point_data_v_global(std::accumulate(counts.begin(), counts.end(), 0) / sizeof(Real));
+        std::vector<Real> point_data_w_global(std::accumulate(counts.begin(), counts.end(), 0) / sizeof(Real));
+        std::vector<Real> point_data_p_global(std::accumulate(counts.begin(), counts.end(), 0) / sizeof(Real));
+        std::vector<Real> points_coordinate_global(std::accumulate(counts.begin(), counts.end(), 0) / sizeof(Real));
 
 
         if (rank == 0 || local_size > 0){
