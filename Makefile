@@ -9,6 +9,7 @@ CXX = mpicxx -std=c++23
 
 CXX_FLAGS = -Wall -Wextra -O3 -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto
 
+DEFINES = -DNDEBUG
 
 DECOMP_DIR = ./deps/2Decomp_C
 DECOMP_SRC = $(DECOMP_DIR)/Alloc.cpp         \
@@ -30,10 +31,12 @@ MIF_OBJ = $(patsubst $(MIF_DIR)/%.cpp, mbuild/mif/%.o, $(MIF_SRC))
 
 INCLUDE = -I ./include -I $(DECOMP_DIR)
 
-# IMPORTANTE: cambiare queste riga aggiungendo le vere dipendenze della libreria FFTW
-INCLUDE += -I /usr/include/
-LIBS += -lfftw3 -L /usr/lib/x86_64-linux-gnu/libfftw3.so
+# those variables need to be defined from the outside, else fallback to those
+FFTW_INC ?= /usr/include/
+FFTW_LIB ?= /usr/lib/x86_64-linux-gnu/libfftw3.so
 
+INCLUDE += -I $(FFTW_INC)
+LIBS += -lfftw3 -L $(FFTW_LIB)
 
 # decommentare questa riga nel caso si abbiano problemi di compilazione (in particolare riferimento alle funzionalità di std::byteswap
 # DEFINES += -DMIF_LEGACY_COMPILER
@@ -47,7 +50,7 @@ mif: $(MIF_OBJ) mbuild/decomp.a
 
 
 mbuild/mif/%.o: $(MIF_DIR)/%.cpp
-	$(CXX) $(CXX_FLAGS) $(DEFINE) $(INCLUDE) -c -o $@ $^
+	$(CXX) $(CXX_FLAGS) $(DEFINES) $(INCLUDE) -c -o $@ $^
 
 
 mbuild/decomp.a: $(DECOMP_OBJ)
@@ -55,7 +58,7 @@ mbuild/decomp.a: $(DECOMP_OBJ)
 
 
 mbuild/decomp/%.o: $(DECOMP_DIR)/%.cpp
-	$(CXX) $(CXX_FLAGS) $(DEFINE) $(INCLUDE) -c -o $@ $^
+	$(CXX) $(CXX_FLAGS) $(DEFINES) $(INCLUDE) -c -o $@ $^
 
 
 mbuild:
