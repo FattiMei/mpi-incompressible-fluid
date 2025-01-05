@@ -17,10 +17,7 @@ void writeVTK(const std::string&     filename,
 void writeDat(
     const std::string& filename,
     const VelocityTensor& velocity,
-    const Constants& constants,
     const StaggeredTensor& pressure,
-    const int rank,
-    const int mpisize,
     const int direction,
     const Real x, const Real y, const Real z
 );
