@@ -26,7 +26,10 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   // One argument: input file path.
-  assert(argc == 2);
+  if (argc != 2) {
+    std::cout << "Usage: mpirun -n [PROC COUNT] ./mif [input parameter file]" << std::endl;
+    return 1;
+  }
   const std::string input_file = argv[1];
 
   // Input parameters from the file.
