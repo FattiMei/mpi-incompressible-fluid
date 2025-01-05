@@ -516,26 +516,26 @@ namespace mif{
 
     void writeVTKFullMesh(const std::string& filename,
                           const mif::VelocityTensor& velocity,
-                          const mif::StaggeredTensor& pressure){
+                          const mif::StaggeredTensor& pressure) {
         std::ofstream out(filename);
         const mif::Constants& constants = velocity.constants;
         const int size = constants.Py * constants.Pz;
 
         assert(size == 1);
 
-          const size_t Nx = constants.Nx_global;
-          const size_t Ny = (constants.y_rank == 0 && constants.periodic_bc[1])
-                              ? constants.Ny_owner + 1
-                              : constants.Ny_owner;
-          const size_t Nz = (constants.z_rank == 0 && constants.periodic_bc[2])
-                              ? constants.Nz_owner + 1
-                              : constants.Nz_owner;
-          const int start_i_write_local = constants.periodic_bc[0] ? 1 : 0;
-          const int start_j_write_local = (constants.prev_proc_y == -1) ? 0 : 1;
-          const int start_k_write_local = (constants.prev_proc_z == -1) ? 0 : 1;
-          const int end_i_write_local = start_i_write_local + Nx;
-          const int end_j_write_local = start_j_write_local + Ny;
-          const int end_k_write_local = start_k_write_local + Nz;
+        const size_t Nx = constants.Nx_global;
+        const size_t Ny = (constants.y_rank == 0 && constants.periodic_bc[1])
+                            ? constants.Ny_owner + 1
+                            : constants.Ny_owner;
+        const size_t Nz = (constants.z_rank == 0 && constants.periodic_bc[2])
+                            ? constants.Nz_owner + 1
+                            : constants.Nz_owner;
+        const int start_i_write_local = constants.periodic_bc[0] ? 1 : 0;
+        const int start_j_write_local = (constants.prev_proc_y == -1) ? 0 : 1;
+        const int start_k_write_local = (constants.prev_proc_z == -1) ? 0 : 1;
+        const int end_i_write_local = start_i_write_local + Nx;
+        const int end_j_write_local = start_j_write_local + Ny;
+        const int end_k_write_local = start_k_write_local + Nz;
 
         out
             << "# vtk DataFile Version 3.0\n"
@@ -547,9 +547,6 @@ namespace mif{
             << "SPACING " << constants.dx << ' ' << constants.dy << ' ' << constants.dz << '\n'
             << "POINT_DATA " << Nx*Ny*Nz << '\n';
 
-        out
-            << "SCALARS u double 1\n"
-            << "LOOKUP_TABLE default\n";
         out
             << "SCALARS u double 1\n"
             << "LOOKUP_TABLE default\n";
@@ -577,9 +574,6 @@ namespace mif{
         out
             << "SCALARS w double 1\n"
             << "LOOKUP_TABLE default\n";
-        out
-            << "SCALARS w double 1\n"
-            << "LOOKUP_TABLE default\n";
 
         for (int k = start_k_write_local; k < end_k_write_local; ++k) {
             for (int j = start_j_write_local; j < end_j_write_local; ++j) {
@@ -589,9 +583,6 @@ namespace mif{
             }
         }
 
-        out
-            << "SCALARS |u| double 1\n"
-            << "LOOKUP_TABLE default\n";
         out
             << "SCALARS |u| double 1\n"
             << "LOOKUP_TABLE default\n";
@@ -607,14 +598,7 @@ namespace mif{
                 }
             }
         }
-                    out << std::sqrt(ux*ux + uy*uy + uz*uz) << ' ';
-                }
-            }
-        }
 
-        out
-            << "SCALARS p double 1\n"
-            << "LOOKUP_TABLE default\n";
         out
             << "SCALARS p double 1\n"
             << "LOOKUP_TABLE default\n";
@@ -626,12 +610,6 @@ namespace mif{
                 }
             }
         }
-        for (int k = start_k_write_local; k < end_k_write_local; ++k) {
-            for (int j = start_j_write_local; j < end_j_write_local; ++j) {
-                for (int i = start_i_write_local; i < end_i_write_local; ++i) {
-                    out << pressure(i,j,k) << ' ';
-                }
-            }
-        }
     }
+
 } // mif
