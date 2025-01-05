@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 
   writeVTK("solution.vtk", velocity, pressure);
 
-  if (rank == 0 and size == 1) {
+  if (rank == 0 && size == 1) {
     writeVTKFullMesh("full.vtk", velocity, pressure);
   }
 

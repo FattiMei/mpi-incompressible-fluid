@@ -3,10 +3,10 @@
 #include "PressureEquation.h"
 #include "TestCaseBoundaries.h"
 #include "Timestep.h"
+#include "VTKExport.h"
 #include <cassert>
 #include <iostream>
 #include <mpi.h>
-#include "VTKExport.h"
 
 double Reynolds;
 
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
   // Store the requested slices as a VTK file.
   writeVTK("solution.vtk", velocity, pressure);
 
-  if (rank == 0 and size == 1) {
+  if (rank == 0 && size == 1) {
     writeVTKFullMesh("full.vtk", velocity, pressure);
   }
   

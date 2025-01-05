@@ -9,6 +9,8 @@
 #include <byteswap.h>
 
 namespace mif {
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 float correct_endianness(float x) {
 	uint32_t trasmute = *reinterpret_cast<uint32_t*>(&x);
 	uint32_t swapped = bswap_32(trasmute);
@@ -22,6 +24,7 @@ double correct_endianness(double x) {
 
 	return *reinterpret_cast<double*>(&swapped);
 }
+#pragma GCC diagnostic pop
 };
 
 #else
