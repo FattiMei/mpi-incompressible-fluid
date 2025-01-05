@@ -1,8 +1,8 @@
-Nt : 8
-dt : 1e-4
-Nx : 32
-Ny : 32
-Nz : 32
-Py : 2
-Pz : 3
-test_case_2 : true
+Nt : 50
+dt : 1e-3
+Nx : 240
+Ny : 240
+Nz : 240
+Py : 6
+Pz : 1
+test_case_2 : false
