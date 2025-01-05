@@ -7,7 +7,7 @@
 # Questa build non sarà delle più robuste in termini di incremental build, ma va bene per fare una full build del progetto
 CXX = mpicxx -std=c++23
 
-CXX_FLAGS = -Wall -Wextra -O3 -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto
+CXX_FLAGS = -Wall -Wextra -Ofast -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto -lfftw3 -lfftw3f -DNDEBUG
 
 
 DECOMP_DIR = ./deps/2Decomp_C
