@@ -40,9 +40,9 @@ int main(int argc, char *argv[]) {
   bool test_case_2 = 0;
   try {
       // Parse the input file.
-      parse_input_file(input_file, Nx_global, Ny_global, Nz_global, 
+      parse_input_file(input_file, Nx_global, Ny_global, Nz_global,
                        dt, num_time_steps, Py, Pz, test_case_2);
-      
+
       // Check processor consistency.
       if (Pz < 1 || Py < 1) {
         if (rank == 0) std::cerr << "The number of processors in each direction must be at least 1." << std::endl;
@@ -110,9 +110,13 @@ int main(int argc, char *argv[]) {
   if (rank == 0 and size == 1) {
     writeVTKFullMesh("full.vtk", velocity, pressure);
   }
-  
+
   // TODO: store the required parts of the solution as dat files.
 
+  // TODO: based on the test case write the corrisponding dat files
+  //direction is 0 for x, 1 for y, 2 for z. this is the axis witch the line is parallel to
+  // x,y,z are the coordinates of the point contained in the line
+  writeDat("output.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0.5);
   // Finalize MPI.
   MPI_Finalize();
 }
