@@ -7,7 +7,8 @@
 // following functions calculate the right-hand side of the momentum equation
 // for the u, v, and w components, respectively. The incoming parameters are the
 // scalar fields u, v, and w, which represent the velocity components in the x,
-// y, and z directions, respectively.
+// y, and z directions, respectively. The pressure gradient and forcing terms are
+// not included.
 
 // We're suggesting the compiler to inline these functions, since they're very
 // small and called many times.
@@ -66,14 +67,9 @@ calculate_momentum_rhs_u(const VelocityTensor &velocity, // Velocity field.
 
   const Real convection_term =
       // TERM: u ∂u/∂x
-      // We use a first-order finite difference scheme to approximate the
-      // convection term, this is sufficient for second-order accuracy in the
-      // overall scheme.
       -var1 * (var10 - var13) * constants.one_over_2_dx
 
       // TERM: v ∂u/∂y
-      // We use a second-order central difference scheme to approximate the
-      // convection term.
       -
       (var14 + var15 + var16 + var17) * (var7 - var8) * constants.one_over_8_dy
 
@@ -82,8 +78,6 @@ calculate_momentum_rhs_u(const VelocityTensor &velocity, // Velocity field.
       (var21 + var18 + var19 + var20) * (var2 - var4) * constants.one_over_8_dz;
 
   // TERM: 1/Re * (∂²u/∂x² + ∂²u/∂y² + ∂²u/∂z²)
-  // We use a second-order central difference scheme to approximate the second
-  // derivatives.
   const Real diffusion_term =
       (var10 - 2 * var1 + var13) * constants.one_over_dx2_Re +
       (var7 - 2 * var1 + var8) * constants.one_over_dy2_Re +
@@ -93,14 +87,9 @@ calculate_momentum_rhs_u(const VelocityTensor &velocity, // Velocity field.
 #else
   const Real convection_term =
       // TERM: u ∂u/∂x
-      // We use a first-order finite difference scheme to approximate the
-      // convection term, this is sufficient for second-order accuracy in the
-      // overall scheme.
       -u(i, j, k) * (u(i + 1, j, k) - u(i - 1, j, k)) * constants.one_over_2_dx
 
       // TERM: v ∂u/∂y
-      // We use a second-order central difference scheme to approximate the
-      // convection term.
       - (v(i, j + 1, k) + v(i, j, k) + v(i - 1, j + 1, k) + v(i - 1, j, k)) *
             (u(i, j + 1, k) - u(i, j - 1, k)) * constants.one_over_8_dy
 
@@ -241,8 +230,7 @@ calculate_momentum_rhs_w(const VelocityTensor &velocity, // Velocity field.
             (w(i, j + 1, k) - w(i, j - 1, k)) * constants.one_over_8_dy
 
       // TERM: w ∂w/∂z
-      -
-      w(i, j, k) * (w(i, j, k + 1) - w(i, j, k - 1)) * constants.one_over_2_dz;
+      - w(i, j, k) * (w(i, j, k + 1) - w(i, j, k - 1)) * constants.one_over_2_dz;
 
   // TERM: 1/Re * (∂²w/∂x² + ∂²w/∂y² + ∂²w/∂z²)
   const Real diffusion_term =

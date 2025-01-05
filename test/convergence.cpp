@@ -11,6 +11,7 @@ constexpr Real T = 1e-4;
 
 using namespace mif;
 
+// Convergence test for the test case with only velocity.
 int main() {
   std::cout << "deltax,deltat,l1,l2,linf" << std::endl;
 

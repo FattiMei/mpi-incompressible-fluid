@@ -9,11 +9,11 @@
 #include "PressureGradient.h"
 #include "StaggeredTensorMacros.h"
 #include "Timestep.h"
-#include "VTKExport.h"
+#include "VTKDatExport.h"
 
 double Reynolds;
 
-// Simple main for the test case with no pressure and exact solution known.
+// Test case with both velocity and pressure.
 int main(int argc, char *argv[]) {
   using namespace mif;
 
@@ -178,10 +178,7 @@ int main(int argc, char *argv[]) {
     writeVTKFullMesh("full.vtk", velocity, pressure);
   }
 
-
-  //direction is 0 for x, 1 for y, 2 for z. this is the axis witch the line is parallel to
-  // x,y,z are the coordinates of the point contained in the line
-  writeDat("line1.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0.0);
+  writeDat("line1.dat", velocity, pressure, 0, 0.5, 0.5, 0.0);
 
   // Finalize MPI.
   MPI_Finalize();

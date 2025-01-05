@@ -30,14 +30,9 @@ boundaryField
         type            noSlip;
     }
 
-    inlet
+    frontAndBack
     {
-    	type		cyclic;
-    }
-
-    outlet
-    {
-    	type		cyclic;
+        type            noSlip;
     }
 }
 

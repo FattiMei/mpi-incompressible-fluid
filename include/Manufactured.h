@@ -3,6 +3,7 @@
 
 extern double Reynolds;
 
+// Exact solutions for the velocity+pressure tests.
 double u_exact(double t, double x, double y, double z);
 double v_exact(double t, double x, double y, double z);
 double w_exact(double t, double x, double y, double z);

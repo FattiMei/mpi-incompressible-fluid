@@ -1,0 +1,1 @@
+A folder containing a modified version of the C version of the 2Decomp library. 
