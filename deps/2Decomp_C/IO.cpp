@@ -1,7 +1,6 @@
 #include "C2Decomp.hpp"
 
-void C2Decomp::writeOne(int ipencil, Real *var, string filename) {
-
+void C2Decomp::writeOne(int ipencil, Real* var, string filename){
   MPI_Offset disp, filesize;
   MPI_File fh;
   MPI_Datatype data_type, new_type;
@@ -52,8 +51,7 @@ void C2Decomp::writeOne(int ipencil, Real *var, string filename) {
   MPI_Type_free(&new_type);
 }
 
-void C2Decomp::readOne(int ipencil, Real *var, string filename) {
-
+void C2Decomp::readOne(int ipencil, Real* var, string filename){
   MPI_Offset disp;
   MPI_File fh;
   MPI_Datatype data_type, new_type;
@@ -102,8 +100,7 @@ void C2Decomp::readOne(int ipencil, Real *var, string filename) {
 }
 
 void C2Decomp::writeVar(MPI_File &fh, MPI_Offset &disp, int ipencil,
-                        Real *var) {
-
+                        Real* var){
   int sizes[3], subsizes[3], starts[3];
   MPI_Datatype data_type, new_type;
 
@@ -145,8 +142,7 @@ void C2Decomp::writeVar(MPI_File &fh, MPI_Offset &disp, int ipencil,
 }
 
 void C2Decomp::readVar(MPI_File &fh, MPI_Offset &disp, int ipencil,
-                       Real *var) {
-
+                       Real* var){
   int sizes[3], subsizes[3], starts[3];
   MPI_Datatype data_type, new_type;
 
@@ -187,8 +183,7 @@ void C2Decomp::readVar(MPI_File &fh, MPI_Offset &disp, int ipencil,
   disp += sizes[0] * sizes[1] * sizes[2] * myTypeBytes;
 }
 
-void C2Decomp::writeScalar(MPI_File &fh, MPI_Offset &disp, int n, Real *var) {
-
+void C2Decomp::writeScalar(MPI_File& fh, MPI_Offset& disp, int n, Real* var){
   int m;
 
   MPI_Datatype data_type;
@@ -207,8 +202,7 @@ void C2Decomp::writeScalar(MPI_File &fh, MPI_Offset &disp, int n, Real *var) {
   disp += n * myTypeBytes;
 }
 
-void C2Decomp::readScalar(MPI_File &fh, MPI_Offset &disp, int n, Real *var) {
-
+void C2Decomp::readScalar(MPI_File& fh, MPI_Offset& disp, int n, Real* var){
   MPI_Datatype data_type;
   data_type = MPI_MIF_REAL;
 
@@ -219,11 +213,11 @@ void C2Decomp::readScalar(MPI_File &fh, MPI_Offset &disp, int n, Real *var) {
   disp += n * myTypeBytes;
 }
 
-void C2Decomp::writePlane(int ipencil, Real *var, int iplane, int n,
+void C2Decomp::writePlane(int ipencil, Real* var, int iplane, int n,
                           string filename) {
 
   Real *wk, *wk2;
-  Real *wk2d = NULL;
+  Real* wk2d = NULL;
 
   int sizes[3], subsizes[3], starts[3];
 
@@ -378,7 +372,7 @@ void C2Decomp::writePlane(int ipencil, Real *var, int iplane, int n,
   delete[] wk2d;
 }
 
-void C2Decomp::writeEvery(int ipencil, Real *var, int iskip, int jskip,
+void C2Decomp::writeEvery(int ipencil, Real* var, int iskip, int jskip,
                           int kskip, string filename, bool from1) {
 
   Real *wk, *wk2;

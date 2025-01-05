@@ -3,7 +3,7 @@
 void C2Decomp::transposeX2Y(Real* src, Real* dst){
     int s1, s2, s3, d1, d2, d3;
 
-  s1 = decompMain.xsz[0];
+    s1 = decompMain.xsz[0];
   s2 = decompMain.xsz[1];
   s3 = decompMain.xsz[2];
 
