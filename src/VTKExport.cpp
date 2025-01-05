@@ -166,6 +166,22 @@ namespace mif{
             );
         };
 
+        // z = 0 plane. I need this first to simplify the celll creation
+        {
+            assert(constants.min_z_global <= 0.0 && (constants.min_z_global + constants.z_size_global) >= 0.0);
+            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_z_global, constants.dz,
+                                                             constants.periodic_bc[2]);
+            const int k_global = std::get<0>(index);
+            if (k_global >= start_k_write_global && k_global < end_k_write_global){
+                const int k = k_global - start_k_write_global;
+                for (int i = start_i_write_local; i < end_i_write_local; i++){
+                    for (int j = start_j_write_local; j < end_j_write_local; j++){
+                        write_point(i, j, k);
+                    }
+                }
+            }
+        }
+
         // x = 0 plane.
         {
             assert(constants.min_x_global <= 0.0 && (constants.min_x_global + constants.x_size) >= 0.0);
@@ -190,22 +206,6 @@ namespace mif{
                 const int j = j_global - start_j_write_global;
                 for (int i = start_i_write_local; i < end_i_write_local; i++){
                     for (int k = start_k_write_local; k < end_k_write_local; k++){
-                        write_point(i, j, k);
-                    }
-                }
-            }
-        }
-
-        // z = 0 plane.
-        {
-            assert(constants.min_z_global <= 0.0 && (constants.min_z_global + constants.z_size_global) >= 0.0);
-            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_z_global, constants.dz,
-                                                             constants.periodic_bc[2]);
-            const int k_global = std::get<0>(index);
-            if (k_global >= start_k_write_global && k_global < end_k_write_global){
-                const int k = k_global - start_k_write_global;
-                for (int i = start_i_write_local; i < end_i_write_local; i++){
-                    for (int j = start_j_write_local; j < end_j_write_local; j++){
                         write_point(i, j, k);
                     }
                 }
