@@ -61,12 +61,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Set test case domain information.
-  const Real min_x_global = test_case_2 ? -0.5 : 0.0;
-  const Real min_y_global = test_case_2 ? -0.5 : 0.0;
-  const Real min_z_global = test_case_2 ? -0.5 : -1.0;
-  constexpr Real x_size = 1.0;
-  constexpr Real y_size = 1.0;
-  const Real z_size = test_case_2 ? 1.0 : 2.0;
+
   constexpr Real Re = 1e3;
   const std::array<bool, 3> periodic_bc{false, false, test_case_2};
   // Create needed structures.
@@ -116,7 +111,18 @@ int main(int argc, char *argv[]) {
   // TODO: based on the test case write the corrisponding dat files
   //direction is 0 for x, 1 for y, 2 for z. this is the axis witch the line is parallel to
   // x,y,z are the coordinates of the point contained in the line
-  writeDat("output.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0.5);
+  if (!test_case_2){
+    writeDat("profile1.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0);
+    writeDat("profile2.dat", velocity, constants, pressure, rank, size, 1, 0.5, 0.5, 0);
+    // writeDat("profile3.dat", velocity, constants, pressure, rank, size, 2, 0.5, 0.5, 0);
+  }
+    else{
+      writeDat("profile1.dat", velocity, constants, pressure, rank, size, 0, 0, 0, 0);
+      writeDat("profile2.dat", velocity, constants, pressure, rank, size, 1, 0, 0, 0);
+      writeDat("profile3.dat", velocity, constants, pressure, rank, size, 2, 0, 0, 0);
+    }
+
+
   // Finalize MPI.
   MPI_Finalize();
 }
