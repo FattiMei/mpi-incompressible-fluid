@@ -51,7 +51,6 @@ std::tuple<size_t, float> pos_to_index(Real pos, Real min_pos_global, Real delta
     return {int_index_1, index_1_importance};
 }
 
-// TODO: add coordinates offsets to the functions.
 // Compute the file cell offsets as each processor writes data about its local points,
 // and the others need to know how much space it occupied.
 std::vector<int> compute_displacements(int n_local_points, int mpi_size){

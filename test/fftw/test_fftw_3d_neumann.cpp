@@ -1,5 +1,3 @@
-//TODO 
-// 
 // OK: Initialize the rhs in order to match the domain decomp
 // OK: Define size local for each pencil
 // OK: Understand how to implement in order to avoid the x direction to be the slowest (Won't need exxtract array?)
@@ -146,7 +144,6 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
-        // TODO Funziona in parallelo che itero la rotazione xtoy??
         c2d->transposeX2Y_MajorIndex(btilde, btilde);
 
         b = btilde;
