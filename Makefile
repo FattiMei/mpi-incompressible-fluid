@@ -33,7 +33,7 @@ INCLUDE = -I ./include -I $(DECOMP_DIR)
 
 # those variables need to be defined from the outside, else fallback to those
 FFTW_INC ?= /usr/include/
-FFTW_LIB ?= /usr/lib/x86_64-linux-gnu/libfftw3.so
+FFTW_LIB ?= /usr/lib/x86_64-linux-gnu/
 
 INCLUDE += -I $(FFTW_INC)
 LIBS += -lfftw3 -lfftw3f -L $(FFTW_LIB)
