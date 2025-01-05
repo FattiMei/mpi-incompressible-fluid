@@ -39,7 +39,6 @@ int main(int argc, char *argv[]) {
 
 
 	// someone has found that this condition is necessary for the program, otherwise 2Decomp crashes
-	// TODO: make this a runtime decision
 	// leave 0,0 for autotuning (SLOW)
 	const int pRow = 2, pCol = 2;
 	assert(pRow * pCol == totRank);

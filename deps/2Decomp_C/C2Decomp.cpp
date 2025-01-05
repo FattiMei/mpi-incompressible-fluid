@@ -285,7 +285,7 @@ void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
       big_size = div + 1;
     }
 
-    // TODO: make these only under debug mode
+    #ifndef NDEBUG
     if (n_big_size + n_small_size != proc) {
       int errorcode = 1;
       std::string errorstring =
@@ -306,6 +306,7 @@ void C2Decomp::distribute(int data1, int proc, int *st, int *en, int *sz) {
           " mod=" + std::to_string(mod) + "\n";
       decomp2DAbort(errorcode, errorstring);
     }
+    #endif
 
     st[0] = 1;
     sz[0] = big_size;

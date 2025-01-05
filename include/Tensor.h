@@ -234,9 +234,6 @@ public:
    * Apply Dirichlet boundary conditions
    * This will apply a value on a given point. Checks that the point lies on a
    * face is left to the caller
-   * TODO: Integrate the assertion that the point lies on a face
-   * TODO: Currently when this method is called you have to specify the template
-   * arguments
    * @param face The boundary face
    * @param value The boundary value
    */
@@ -425,8 +422,6 @@ public:
 
   /*!
    * Load tensor content from file
-   * TODO: Currently this does not support a second read (we have to resize the
-   * tensor)
    * @param file_name The input file name
    */
   uint8_t load(std::string const &file_name) {

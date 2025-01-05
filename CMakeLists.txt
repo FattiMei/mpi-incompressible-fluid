@@ -124,6 +124,7 @@ if (${BENCH_OK})
 	)
 endif()
 
+# Add executables.
 add_executable(tensor_usage_test test/tensor_usage_test.cpp)
 
 add_executable(velocity_test test/velocity_test.cpp)
@@ -131,31 +132,25 @@ add_executable(velocity_test_mixed test/velocity_test_mixed.cpp)
 
 add_executable(mpi_test test/mpi_test.cpp)
 
-add_executable(fftw_Dirichlet3D test/fftw3D_Dirichlet.cpp)
-add_executable(fftw_Dirichlet1D test/fftw1D_Dirichlet.cpp)
-add_executable(fftw_Dirichlet1D_spectral test/fftw1D_Dirichlet_spectral.cpp)
-add_executable(fftw_Neumann3D test/fftw3D_Neumann.cpp)
-add_executable(fftw_Neumann1D test/fftw1D_Neumann.cpp)
-add_executable(2decomp_test test/2decomp_test.cpp)
-add_executable(2decomp_test_parallel test/2decomp_test_parallel.cpp)
-
-# temporary: here are the tests that have been properly validated
+add_executable(fftw_Dirichlet3D test/fftw/fftw3D_Dirichlet.cpp)
+add_executable(fftw_Dirichlet1D test/fftw/fftw1D_Dirichlet.cpp)
+add_executable(fftw_Dirichlet1D_spectral test/fftw/fftw1D_Dirichlet_spectral.cpp)
+add_executable(fftw_Neumann3D test/fftw/fftw3D_Neumann.cpp)
+add_executable(fftw_Neumann1D test/fftw/fftw1D_Neumann.cpp)
 add_executable(test_fftw_1d_periodic test/fftw/test_fftw_1d_periodic.cpp)
 add_executable(test_fftw_1d_neumann test/fftw/test_fftw_1d_neumann.cpp)
 add_executable(test_fftw_1d_neumann_in_place test/fftw/test_fftw_1d_neumann_in_place.cpp)
-
 add_executable(test_fftw_3d_neumann test/fftw/test_fftw_3d_neumann.cpp)
-target_link_libraries(test_fftw_3d_neumann PRIVATE decomp)
 
+add_executable(2decomp_test test/2decomp/2decomp_test.cpp)
+add_executable(2decomp_test_parallel test/2decomp/2decomp_test_parallel.cpp)
 add_executable(test_2decomp_reverse_engineer test/2decomp/test_2decomp_reverse_engineer.cpp)
-target_link_libraries(test_2decomp_reverse_engineer PRIVATE decomp)
 
 add_executable(pressure_test_hn test/pressure_test_hn.cpp)
 add_executable(pressure_test_nhn test/pressure_test_nhn.cpp)
 add_executable(pressure_test_mixed test/pressure_test_mixed.cpp)
 
 add_executable(full_test test/full_test.cpp)
-
 
 # Set link libraries.
 target_link_libraries(tensor_usage_test PRIVATE miflib)
@@ -168,8 +163,14 @@ target_link_libraries(fftw_Dirichlet1D PRIVATE decomp)
 target_link_libraries(fftw_Dirichlet1D_spectral PRIVATE decomp)
 target_link_libraries(fftw_Neumann3D PRIVATE decomp)
 target_link_libraries(fftw_Neumann1D PRIVATE decomp)
+target_link_libraries(test_fftw_1d_periodic PRIVATE decomp)
+target_link_libraries(test_fftw_1d_neumann PRIVATE decomp)
+target_link_libraries(test_fftw_1d_neumann_in_place PRIVATE decomp)
+target_link_libraries(test_fftw_3d_neumann PRIVATE decomp)
+
 target_link_libraries(2decomp_test PRIVATE miflib decomp)
 target_link_libraries(2decomp_test_parallel PRIVATE miflib decomp)
+target_link_libraries(test_2decomp_reverse_engineer PRIVATE decomp)
 
 target_link_libraries(pressure_test_hn PRIVATE miflib decomp)
 target_link_libraries(pressure_test_nhn PRIVATE miflib decomp)
