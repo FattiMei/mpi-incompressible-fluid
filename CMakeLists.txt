@@ -41,7 +41,7 @@ if(NOT DEFINED VERBOSE)
     add_compile_definitions(VERBOSE=${VERBOSE})
 endif ()
 
-#add_definitions(-DOPT_CPU_CACHE)
+add_definitions(-DOPT_CPU_CACHE)
 add_definitions(-DMIF_LEGACY_COMPILER)
 
 get_directory_property(MYDEFS COMPILE_DEFINITIONS)
