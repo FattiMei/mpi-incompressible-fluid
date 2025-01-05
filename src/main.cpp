@@ -108,13 +108,13 @@ int main(int argc, char *argv[]) {
 
   // Store the required parts of the solution as dat files.
   if (!test_case_2){
-    writeDat("profile1.dat", velocity, constants, pressure, rank, size, 1, 0.5, 0.5, 0);
-    writeDat("profile2.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0);
+    writeDat("profile1.dat", velocity, pressure, 1, 0.5, 0.5, 0);
+    writeDat("profile2.dat", velocity, pressure, 0, 0.5, 0.5, 0);
   }
   else{
-    writeDat("profile1.dat", velocity, constants, pressure, rank, size, 1, 0, 0, 0);
-    writeDat("profile2.dat", velocity, constants, pressure, rank, size, 0, 0, 0, 0);
-    writeDat("profile3.dat", velocity, constants, pressure, rank, size, 2, 0, 0, 0);
+    writeDat("profile1.dat", velocity, pressure, 1, 0, 0, 0);
+    writeDat("profile2.dat", velocity, pressure, 0, 0, 0, 0);
+    writeDat("profile3.dat", velocity, pressure, 2, 0, 0, 0);
   }
 
   // Finalize MPI.
