@@ -16,12 +16,13 @@
 
 CXX = mpicxx -std=c++23
 
-CXX_FLAGS = -Wall -Wextra -Ofast -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto
+CXX_FLAGS = -Ofast -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto
+WARNINGS = -Wall -Wextra 
 
 DEFINES = -DNDEBUG -DUSE_DOUBLE=1
 
 DECOMP_DIR = ./deps/2Decomp_C
-DECOMP_SRC = $(DECOMP_DIR)/Alloc.cpp     \
+DECOMP_SRC = $(DECOMP_DIR)/Alloc.cpp         \
 	     $(DECOMP_DIR)/Best2DGrid.cpp    \
 	     $(DECOMP_DIR)/C2Decomp.cpp      \
 	     $(DECOMP_DIR)/Halo.cpp          \
@@ -60,7 +61,7 @@ mif: $(MIF_OBJ) mbuild/decomp.a
 
 
 mbuild/mif/%.o: $(MIF_DIR)/%.cpp
-	$(CXX) $(CXX_FLAGS) $(DEFINES) $(INCLUDE) -c -o $@ $^
+	$(CXX) $(CXX_FLAGS) $(WARNINGS) $(DEFINES) $(INCLUDE) -c -o $@ $^
 
 
 mbuild/decomp.a: $(DECOMP_OBJ)
