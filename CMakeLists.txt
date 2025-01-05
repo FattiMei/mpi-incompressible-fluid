@@ -6,9 +6,12 @@ find_package(Python3 REQUIRED)
 find_package(benchmark)
 
 find_package(PkgConfig REQUIRED)
-pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
+pkg_search_module(FFTW  REQUIRED fftw3  IMPORTED_TARGET)
+pkg_search_module(FFTWF REQUIRED fftw3f IMPORTED_TARGET)
 include_directories(PkgConfig::FFTW)
+include_directories(PkgConfig::FFTWF)
 link_libraries(PkgConfig::FFTW)
+link_libraries(PkgConfig::FFTWF)
 
 find_package(MPI REQUIRED)
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
