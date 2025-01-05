@@ -13,6 +13,8 @@ constexpr Real exact_solution_precision = 1e-12;
 // Nevertheless, they are defined everywhere, but should 
 // not be used aside from those cases.
 
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 inline Real exact_u_t1(Real t, Real x, Real y, Real z) {
     return 0.0;
 }
@@ -51,6 +53,7 @@ inline Real exact_w_t2(Real t, Real x, Real y, Real z) {
 inline Real exact_p_initial_t2(Real x, Real y, Real z) {
     return 0.0;
 }
+#pragma GCC diagnostic pop
 
 } // mif
 

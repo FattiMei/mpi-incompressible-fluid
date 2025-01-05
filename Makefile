@@ -7,12 +7,12 @@
 # Questa build non sarà delle più robuste in termini di incremental build, ma va bene per fare una full build del progetto
 CXX = mpicxx -std=c++23
 
-CXX_FLAGS = -DNDEBUG -Wall -Wextra -Ofast -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto
+CXX_FLAGS = -Wall -Wextra -Ofast -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto
 
 DEFINES = -DNDEBUG -DUSE_DOUBLE=1
 
 DECOMP_DIR = ./deps/2Decomp_C
-DECOMP_SRC = $(DECOMP_DIR)/Alloc.cpp         \
+DECOMP_SRC = $(DECOMP_DIR)/Alloc.cpp     \
 	     $(DECOMP_DIR)/Best2DGrid.cpp    \
 	     $(DECOMP_DIR)/C2Decomp.cpp      \
 	     $(DECOMP_DIR)/Halo.cpp          \
