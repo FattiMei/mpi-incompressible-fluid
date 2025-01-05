@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
   // One argument: input file path.
   if (argc != 2) {
-    std::cout << "Usage: mpirun -n [PROC COUNT] ./mif [input parameter file]" << std::endl;
+    std::cerr << "Usage: mpirun -n [PROC COUNT] ./mif [input parameter file]" << std::endl;
     return 1;
   }
   const std::string input_file = argv[1];
