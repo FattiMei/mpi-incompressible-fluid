@@ -7,6 +7,10 @@
 namespace mif {
 
 /*!
+ * Helper functions for the Tensor class.
+ */
+
+/*!
  * Compute an integer sequence size
  */
 template <typename T, T... Ints> struct integer_sequence_size;

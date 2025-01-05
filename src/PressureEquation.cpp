@@ -220,7 +220,8 @@ void adjust_pressure(StaggeredTensor &pressure,
 
     // Compute the sum of differences on each processor.
     Real local_difference = 0;
-    STAGGERED_TENSOR_ITERATE_OVER_ALL_OWNER_POINTS(pressure, local_difference += pressure.evaluate_function_at_index(i, j, k, exact_pressure) - pressure(i, j, k);)
+    STAGGERED_TENSOR_ITERATE_OVER_ALL_OWNER_POINTS(pressure, local_difference += 
+            pressure.evaluate_function_at_index(i, j, k, exact_pressure) - pressure(i, j, k);)
     
     // Send the differences to the first processor. The first processor accumulates the differences and
     // sends back the result.

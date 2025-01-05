@@ -4,7 +4,7 @@
 #include <fstream>
 #include <tuple>
 #include "Endians.h"
-#include "VTKExport.h"
+#include "VTKDatExport.h"
 
 // If someone wants to put the hands in this program, here is a brief description:
 //
@@ -313,23 +313,24 @@ void writeVTK(const std::string& filename,
 }
 
 
-void insertionSort(std::vector<Real>& coordinates, std::vector<Real>& u, std::vector<Real>& v, std::vector<Real>& w,
-                    std::vector<Real>& p){
-    int n = coordinates.size();
+void insertionSort(std::vector<Real>& coordinates, std::vector<Real>& u, 
+                   std::vector<Real>& v, std::vector<Real>& w,
+                   std::vector<Real>& p) {
+    const int n = coordinates.size();
     for (int i = 1; i < n; i++){
-        Real key = coordinates[i];
-        Real key_u = u[i];
-        Real key_v = v[i];
-        Real key_w = w[i];
-        Real key_p = p[i];
+        const Real key = coordinates[i];
+        const Real key_u = u[i];
+        const Real key_v = v[i];
+        const Real key_w = w[i];
+        const Real key_p = p[i];
         int j = i - 1;
-        while (j >= 0 && coordinates[j] > key){
+        while (j >= 0 && coordinates[j] > key) {
             coordinates[j + 1] = coordinates[j];
             u[j + 1] = u[j];
             v[j + 1] = v[j];
             w[j + 1] = w[j];
             p[j + 1] = p[j];
-            j = j - 1;
+            j--;
         }
         coordinates[j + 1] = key;
         u[j + 1] = key_u;

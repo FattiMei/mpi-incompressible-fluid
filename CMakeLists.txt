@@ -29,8 +29,8 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 
 # Set custom flags for Debug build.
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -O3 -march=native -mtune=native \
-     -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
+    -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
 
 # Set custom flags for Release build.
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG} -DNDEBUG")
@@ -100,7 +100,7 @@ add_library(
 	${SOURCE_DIR}/VectorFunction.cpp
 	${SOURCE_DIR}/VelocityTensor.cpp
 	${SOURCE_DIR}/InputParser.cpp
-	${SOURCE_DIR}/VTKExport.cpp
+	${SOURCE_DIR}/VTKDatExport.cpp
 	${FORCING_TERM_ARTIFACT}
 	${PRESSURE_ARTIFACT}
 	${EXACT_SOLUTION_ARTIFACT}

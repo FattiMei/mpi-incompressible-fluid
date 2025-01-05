@@ -1,6 +1,7 @@
 #ifndef MANUFACTURED_PRESSURE_H
 #define MANUFACTURED_PRESSURE_H
 
+// Exact solutions for the standalone pressure tests.
 double u_exact_p_test(double t, double x, double y, double z);
 double v_exact_p_test(double t, double x, double y, double z);
 double w_exact_p_test(double t, double x, double y, double z);

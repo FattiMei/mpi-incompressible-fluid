@@ -11,7 +11,8 @@ namespace mif {
 // The error is calculated using the functions in Manufactured.h.
 // In parallel, this still makes sense, since real boundaries still have no 
 // error, and processor boundaries already have their contribution in 
-// neighbouring processors' errors.
+// neighbouring processors' errors. Errors on periodic boundaries are included
+// in the error computation.
 
 // The L1 norm of a vector function is defined as the integral over the whole
 // domain of the norm of the vector.

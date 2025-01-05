@@ -8,11 +8,11 @@
 #include "PressureGradient.h"
 #include "StaggeredTensorMacros.h"
 #include "Timestep.h"
-#include "VTKExport.h"
+#include "VTKDatExport.h"
 
 double Reynolds;
 
-// Simple main for the test case with no pressure and exact solution known.
+// Test case with both velocity and pressure.
 int main(int argc, char *argv[]) {
   using namespace mif;
 

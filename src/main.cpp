@@ -3,7 +3,7 @@
 #include "PressureEquation.h"
 #include "TestCaseBoundaries.h"
 #include "Timestep.h"
-#include "VTKExport.h"
+#include "VTKDatExport.h"
 #include <cassert>
 #include <iostream>
 #include <mpi.h>
