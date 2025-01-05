@@ -160,6 +160,9 @@ int main(int argc, char *argv[]) {
 
   writeVTK("full.vtk", velocity, constants, pressure, rank, size);
 
+
+  //direction is 0 for x, 1 for y, 2 for z. this is the axis witch the line is parallel to
+  // x,y,z are the coordinates of the point contained in the line
   writeDat("line1.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0.0);
 
   // Finalize MPI.

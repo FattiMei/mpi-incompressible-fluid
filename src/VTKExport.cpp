@@ -299,7 +299,8 @@ namespace mif{
         }
     }
 
-
+    //direction is 0 for x, 1 for y, 2 for z. this is the axis witch the line is parallel to
+    // x,y,z are the coordinates of the point contained in the line
     void writeDat(
         const std::string& filename,
         const VelocityTensor& velocity,

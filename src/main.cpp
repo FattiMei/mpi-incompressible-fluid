@@ -96,6 +96,9 @@ int main(int argc, char *argv[]) {
 
   // TODO: store the required parts of the solution as a vtk and some dat files.
   writeVTK("output.vtk", velocity, constants, pressure, rank, size);
+  //direction is 0 for x, 1 for y, 2 for z. this is the axis witch the line is parallel to
+  // x,y,z are the coordinates of the point contained in the line
+    writeDat("output.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0.5);
   // Finalize MPI.
   MPI_Finalize();
 }
