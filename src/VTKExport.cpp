@@ -42,8 +42,8 @@ namespace mif{
     // data at the index returned by this function and at the index + 1, using the value
     // returned by this function as weight for the first value, and 1 - that weight for the
     // second value.
-    std::tuple<size_t, float> pos_to_index(Real pos, Real min_pos_global, Real delta, bool periodic){
-        const Real offset = pos - min_pos_global + periodic * delta;
+    std::tuple<size_t, float> pos_to_index(Real pos, Real min_pos_global, Real delta) {
+        const Real offset = pos - min_pos_global;
         const Real float_index = offset / delta;
         const Real int_index_1 = std::floor(float_index);
         const Real index_1_importance = 1.0 - (float_index - int_index_1);
@@ -102,6 +102,7 @@ namespace mif{
         const int outcome = MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
                                           MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
         assert(outcome == MPI_SUCCESS);
+        (void) outcome;
 
         // Get sizes of local domain without ghosts points, but with both the start and end of the domain
         // in case of periodic BC.
@@ -148,7 +149,7 @@ namespace mif{
         // Write data in a point given its indices.
         auto write_point = [&constants, &velocity, &pressure, &points_coordinates,
                 &point_data_u, &point_data_v, &point_data_w, &point_data_p, &point_data_mag]
-        (int i, int j, int k){
+        (int i, int j, int k) {
             points_coordinates.push_back(constants.min_x_global + (constants.base_i + i) * constants.dx);
             points_coordinates.push_back(constants.min_y_global + (constants.base_j + j) * constants.dy);
             points_coordinates.push_back(constants.min_z_global + (constants.base_k + k) * constants.dz);
@@ -166,14 +167,29 @@ namespace mif{
             );
         };
 
+        // z = 0 plane. This must be first to simplify the cell creation.
+        {
+            assert(constants.min_z_global <= 0.0 && (constants.min_z_global + constants.z_size_global) >= 0.0);
+            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_z_global, constants.dz);
+            const int k_global = std::get<0>(index);
+            if (k_global >= start_k_write_global && k_global < end_k_write_global) {
+                const int k = k_global - start_k_write_global + start_k_write_local;
+                for (int i = start_i_write_local; i < end_i_write_local; i++){
+                    for (int j = start_j_write_local; j < end_j_write_local; j++){
+                        write_point(i, j, k);
+                    }
+                }
+            }
+        }
+
         // x = 0 plane.
         {
             assert(constants.min_x_global <= 0.0 && (constants.min_x_global + constants.x_size) >= 0.0);
-            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_x_global, constants.dx,
-                                                             constants.periodic_bc[0]);
-            const int i = std::get<0>(index);
-            assert(i >= start_i_write_global && i < end_i_write_global);
-            for (int j = start_j_write_local; j < end_j_write_local; j++){
+            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_x_global, constants.dx);
+            const int i_global = std::get<0>(index);
+            assert(i_global >= start_i_write_global && i_global < end_i_write_global);
+            const int i = i_global - start_i_write_global + start_i_write_local;
+            for (int j = start_j_write_local; j < end_j_write_local; j++) {
                 for (int k = start_k_write_local; k < end_k_write_local; k++){
                     write_point(i, j, k);
                 }
@@ -183,29 +199,12 @@ namespace mif{
         // y = 0 plane.
         {
             assert(constants.min_y_global <= 0.0 && (constants.min_y_global + constants.y_size_global) >= 0.0);
-            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_y_global, constants.dy,
-                                                             constants.periodic_bc[1]);
+            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_y_global, constants.dy);
             const int j_global = std::get<0>(index);
-            if (j_global >= start_j_write_global && j_global < end_j_write_global){
-                const int j = j_global - start_j_write_global;
+            if (j_global >= start_j_write_global && j_global < end_j_write_global) {
+                const int j = j_global - start_j_write_global + start_j_write_local;
                 for (int i = start_i_write_local; i < end_i_write_local; i++){
                     for (int k = start_k_write_local; k < end_k_write_local; k++){
-                        write_point(i, j, k);
-                    }
-                }
-            }
-        }
-
-        // z = 0 plane.
-        {
-            assert(constants.min_z_global <= 0.0 && (constants.min_z_global + constants.z_size_global) >= 0.0);
-            const std::tuple<int, Real> index = pos_to_index(0.0, constants.min_z_global, constants.dz,
-                                                             constants.periodic_bc[2]);
-            const int k_global = std::get<0>(index);
-            if (k_global >= start_k_write_global && k_global < end_k_write_global){
-                const int k = k_global - start_k_write_global;
-                for (int i = start_i_write_local; i < end_i_write_local; i++){
-                    for (int j = start_j_write_local; j < end_j_write_local; j++){
                         write_point(i, j, k);
                     }
                 }
@@ -515,7 +514,7 @@ namespace mif{
 
     void writeVTKFullMesh(const std::string& filename,
                           const mif::VelocityTensor& velocity,
-                          const mif::StaggeredTensor& pressure){
+                          const mif::StaggeredTensor& pressure) {
         std::ofstream out(filename);
         const mif::Constants& constants = velocity.constants;
         const int size = constants.Py * constants.Pz;
@@ -524,11 +523,11 @@ namespace mif{
 
         const size_t Nx = constants.Nx_global;
         const size_t Ny = (constants.y_rank == 0 && constants.periodic_bc[1])
-                              ? constants.Ny_owner + 1
-                              : constants.Ny_owner;
+                            ? constants.Ny_owner + 1
+                            : constants.Ny_owner;
         const size_t Nz = (constants.z_rank == 0 && constants.periodic_bc[2])
-                              ? constants.Nz_owner + 1
-                              : constants.Nz_owner;
+                            ? constants.Nz_owner + 1
+                            : constants.Nz_owner;
         const int start_i_write_local = constants.periodic_bc[0] ? 1 : 0;
         const int start_j_write_local = (constants.prev_proc_y == -1) ? 0 : 1;
         const int start_k_write_local = (constants.prev_proc_z == -1) ? 0 : 1;
@@ -542,17 +541,17 @@ namespace mif{
             << "ASCII\n"
             << "DATASET STRUCTURED_POINTS\n"
             << "DIMENSIONS " << Nx << ' ' << Ny << ' ' << Nz << '\n'
-            << "ORIGIN 0 0 0\n"
+            << "ORIGIN " << constants.min_x_global << " " << constants.min_y_global << " " << constants.min_z_global << "\n"
             << "SPACING " << constants.dx << ' ' << constants.dy << ' ' << constants.dz << '\n'
-            << "POINT_DATA " << Nx * Ny * Nz << '\n';
+            << "POINT_DATA " << Nx*Ny*Nz << '\n';
 
         out
             << "SCALARS u double 1\n"
             << "LOOKUP_TABLE default\n";
 
-        for (int k = start_k_write_local; k < end_k_write_local; ++k){
-            for (int j = start_j_write_local; j < end_j_write_local; ++j){
-                for (int i = start_i_write_local; i < end_i_write_local; ++i){
+        for (int k = start_k_write_local; k < end_k_write_local; ++k) {
+            for (int j = start_j_write_local; j < end_j_write_local; ++j) {
+                for (int i = start_i_write_local; i < end_i_write_local; ++i) {
                     out << ((velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2) << ' ';
                 }
             }
@@ -562,9 +561,9 @@ namespace mif{
             << "SCALARS v double 1\n"
             << "LOOKUP_TABLE default\n";
 
-        for (int k = start_k_write_local; k < end_k_write_local; ++k){
-            for (int j = start_j_write_local; j < end_j_write_local; ++j){
-                for (int i = start_i_write_local; i < end_i_write_local; ++i){
+        for (int k = start_k_write_local; k < end_k_write_local; ++k) {
+            for (int j = start_j_write_local; j < end_j_write_local; ++j) {
+                for (int i = start_i_write_local; i < end_i_write_local; ++i) {
                     out << ((velocity.v(i, j, k) + velocity.v(i, j + 1, k)) / 2) << ' ';
                 }
             }
@@ -574,9 +573,9 @@ namespace mif{
             << "SCALARS w double 1\n"
             << "LOOKUP_TABLE default\n";
 
-        for (int k = start_k_write_local; k < end_k_write_local; ++k){
-            for (int j = start_j_write_local; j < end_j_write_local; ++j){
-                for (int i = start_i_write_local; i < end_i_write_local; ++i){
+        for (int k = start_k_write_local; k < end_k_write_local; ++k) {
+            for (int j = start_j_write_local; j < end_j_write_local; ++j) {
+                for (int i = start_i_write_local; i < end_i_write_local; ++i) {
                     out << ((velocity.w(i, j, k) + velocity.w(i, j, k + 1)) / 2) << ' ';
                 }
             }
@@ -586,9 +585,9 @@ namespace mif{
             << "SCALARS |u| double 1\n"
             << "LOOKUP_TABLE default\n";
 
-        for (int k = start_k_write_local; k < end_k_write_local; ++k){
-            for (int j = start_j_write_local; j < end_j_write_local; ++j){
-                for (int i = start_i_write_local; i < end_i_write_local; ++i){
+        for (int k = start_k_write_local; k < end_k_write_local; ++k) {
+            for (int j = start_j_write_local; j < end_j_write_local; ++j) {
+                for (int i = start_i_write_local; i < end_i_write_local; ++i) {
                     const Real ux = ((velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2);
                     const Real uy = ((velocity.v(i, j, k) + velocity.v(i, j + 1, k)) / 2);
                     const Real uz = ((velocity.w(i, j, k) + velocity.w(i, j, k + 1)) / 2);
@@ -610,4 +609,5 @@ namespace mif{
             }
         }
     }
+
 } // mif

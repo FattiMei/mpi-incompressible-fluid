@@ -1,5 +1,6 @@
 #include <cassert>
 #include <fftw3.h>
+#include <chrono>
 #include <iostream>
 #include <mpi.h>
 #include "Manufactured.h"
@@ -112,6 +113,9 @@ int main(int argc, char *argv[]) {
   */
 
   // Compute the solution.
+  const bool print_times = false;
+  const auto before = chrono::high_resolution_clock::now();
+
   for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
 
     // Set the boundary conditions.
@@ -119,6 +123,16 @@ int main(int argc, char *argv[]) {
 
     // Update the solution inside the mesh.
     timestep(velocity, velocity_buffer, velocity_buffer_2, exact_velocity, current_time, pressure, pressure_buffer, pressure_solver_buffer);
+  }
+
+  if (print_times) {
+    MPI_Barrier(MPI_COMM_WORLD);
+    const auto after = chrono::high_resolution_clock::now();
+    const Real execution_time = (after-before).count() / 1e9;
+    if (rank == 0) {
+      std::cout << "Absolute time: " << execution_time << "s" << std::endl;
+      std::cout << "Relative time: " << execution_time/Nx_global/Ny_global/Nz_global/num_time_steps << std::endl;
+    }
   }
 
   // Compute the pressure gradient.
@@ -160,7 +174,7 @@ int main(int argc, char *argv[]) {
 
   writeVTK("solution.vtk", velocity, pressure);
 
-  if (rank == 0 and size == 1) {
+  if (rank == 0 && size == 1) {
     writeVTKFullMesh("full.vtk", velocity, pressure);
   }
 

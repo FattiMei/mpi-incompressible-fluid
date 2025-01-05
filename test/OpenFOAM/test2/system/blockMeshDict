@@ -17,14 +17,14 @@ convertToMeters 1;
 
 vertices
 (
-    (0 0 -1)
-    (1 0 -1)
-    (1 1 -1)
-    (0 1 -1)
-    (0 0  1)
-    (1 0  1)
-    (1 1  1)
-    (0 1  1)
+    (-0.5 -0.5 -0.5)
+    ( 0.5 -0.5 -0.5)
+    ( 0.5  0.5 -0.5)
+    (-0.5  0.5 -0.5)
+    (-0.5 -0.5  0.5)
+    ( 0.5 -0.5  0.5)
+    ( 0.5  0.5  0.5)
+    (-0.5  0.5  0.5)
 );
 
 //                             
@@ -47,27 +47,33 @@ boundary
         type wall;
         faces
         (
-            (2 6 5 1)
-        );
-    }
-    fixedWalls
-    {
-        type wall;
-        faces
-        (
             (0 4 7 3)
-            (3 7 6 2)
-            (1 5 4 0)
         );
     }
-    frontAndBack
+
+    fixedWalls
     {
         type wall;
         faces
         (
             (0 3 2 1)
             (4 5 6 7)
+            (2 6 5 1)
         );
+    }
+
+    inlet
+    {
+	type cyclic;
+	neighbourPatch outlet;
+	faces ((1 5 4 0));
+    }
+
+    outlet
+    {
+        type cyclic;
+	neighbourPatch inlet;
+        faces ((3 7 6 2));
     }
 );
 

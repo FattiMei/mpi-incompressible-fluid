@@ -3,10 +3,10 @@
 #include "PressureEquation.h"
 #include "TestCaseBoundaries.h"
 #include "Timestep.h"
+#include "VTKExport.h"
 #include <cassert>
 #include <iostream>
 #include <mpi.h>
-#include "VTKExport.h"
 
 double Reynolds;
 
@@ -102,26 +102,20 @@ int main(int argc, char *argv[]) {
   // Store the requested slices as a VTK file.
   writeVTK("solution.vtk", velocity, pressure);
 
-  if (rank == 0 and size == 1) {
+  if (rank == 0 && size == 1) {
     writeVTKFullMesh("full.vtk", velocity, pressure);
   }
 
-  // TODO: store the required parts of the solution as dat files.
-
-  // TODO: based on the test case write the corrisponding dat files
-  //direction is 0 for x, 1 for y, 2 for z. this is the axis witch the line is parallel to
-  // x,y,z are the coordinates of the point contained in the line
+  // Store the required parts of the solution as dat files.
   if (!test_case_2){
-    writeDat("profile1.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0);
-    writeDat("profile2.dat", velocity, constants, pressure, rank, size, 1, 0.5, 0.5, 0);
-    // writeDat("profile3.dat", velocity, constants, pressure, rank, size, 2, 0.5, 0.5, 0);
+    writeDat("profile1.dat", velocity, constants, pressure, rank, size, 1, 0.5, 0.5, 0);
+    writeDat("profile2.dat", velocity, constants, pressure, rank, size, 0, 0.5, 0.5, 0);
   }
   else{
-    writeDat("profile1.dat", velocity, constants, pressure, rank, size, 0, 0, 0, 0);
-    writeDat("profile2.dat", velocity, constants, pressure, rank, size, 1, 0, 0, 0);
+    writeDat("profile1.dat", velocity, constants, pressure, rank, size, 1, 0, 0, 0);
+    writeDat("profile2.dat", velocity, constants, pressure, rank, size, 0, 0, 0, 0);
     writeDat("profile3.dat", velocity, constants, pressure, rank, size, 2, 0, 0, 0);
   }
-
 
   // Finalize MPI.
   MPI_Finalize();

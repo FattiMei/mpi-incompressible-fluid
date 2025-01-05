@@ -6,25 +6,30 @@
 
 namespace mif {
 
+// Export the requested planes of the tensors in VTK.
 void writeVTK(const std::string&     filename,
 			  const VelocityTensor&  velocity,
 			  const StaggeredTensor& pressure);
 
-    void writeDat(
-        const std::string& filename,
-        const VelocityTensor& velocity,
-        const Constants& constants,
-        const StaggeredTensor& pressure,
-        const int rank,
-        const int mpisize,
-        const int direction,
-        const Real x, const Real y, const Real z
-    );
+// Write a profile in dat format.
+// Direction is 0 for x, 1 for y, 2 for z. This is the axis which the line is parallel to.
+// x,y,z are the coordinates of a point contained in the line.
+void writeDat(
+    const std::string& filename,
+    const VelocityTensor& velocity,
+    const Constants& constants,
+    const StaggeredTensor& pressure,
+    const int rank,
+    const int mpisize,
+    const int direction,
+    const Real x, const Real y, const Real z
+);
 
-    // only works for runs with only one processor, used for validating the line exporting
-    void writeVTKFullMesh(const std::string&     filename,
-                          const mif::VelocityTensor& velocity,
-                          const StaggeredTensor& pressure);
+// Export the entire mesh in VTK.
+// Only works for runs serially, used for validating the first function.
+void writeVTKFullMesh(const std::string&     filename,
+                      const mif::VelocityTensor& velocity,
+                      const StaggeredTensor& pressure);
 
 } // mif
 
