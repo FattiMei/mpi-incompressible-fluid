@@ -9,6 +9,7 @@ CXX = mpicxx -std=c++23
 
 CXX_FLAGS = -Wall -Wextra -O3 -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto
 
+DEFINES = -DNDEBUG
 
 DECOMP_DIR = ./deps/2Decomp_C
 DECOMP_SRC = $(DECOMP_DIR)/Alloc.cpp         \
@@ -49,7 +50,7 @@ mif: $(MIF_OBJ) mbuild/decomp.a
 
 
 mbuild/mif/%.o: $(MIF_DIR)/%.cpp
-	$(CXX) $(CXX_FLAGS) $(DEFINE) $(INCLUDE) -c -o $@ $^
+	$(CXX) $(CXX_FLAGS) $(DEFINES) $(INCLUDE) -c -o $@ $^
 
 
 mbuild/decomp.a: $(DECOMP_OBJ)
@@ -57,7 +58,7 @@ mbuild/decomp.a: $(DECOMP_OBJ)
 
 
 mbuild/decomp/%.o: $(DECOMP_DIR)/%.cpp
-	$(CXX) $(CXX_FLAGS) $(DEFINE) $(INCLUDE) -c -o $@ $^
+	$(CXX) $(CXX_FLAGS) $(DEFINES) $(INCLUDE) -c -o $@ $^
 
 
 mbuild:
