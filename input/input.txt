@@ -1,8 +1,8 @@
-Nt : 10
+Nt : 1000
 dt : 1e-3
-Nx : 240
-Ny : 240
-Nz : 240
-Py : 2
-Pz : 3
+Nx : 64
+Ny : 64
+Nz : 64
+Py : 3
+Pz : 4
 test_case_2 : false

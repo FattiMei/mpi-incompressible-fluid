@@ -11,8 +11,8 @@
 # The environmenta variables FFTW_INC and FFTW_LIB should be defined. If not, a default path will be searched, but may 
 # result in errors if the libraries are not available.
 # Finally, the clean and resclean rules are defined. The first removes the executable and compiling folder. The latter
-# removes the vtk and dat files. It is suggested to class `make resclean` before each run, to avoid potential errors
-# when overwriting files. 
+# removes the vtk and dat files. It is suggested to class `make resclean` before each run, to avoid potential Paraview
+# warning that arise when the files have been overwritten.
 
 CXX = mpicxx -std=c++23
 
