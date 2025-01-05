@@ -43,6 +43,7 @@ endif ()
 
 #add_definitions(-DOPT_CPU_CACHE)
 add_definitions(-DMIF_LEGACY_COMPILER)
+add_definitions(-DMIF_NO_DISTRIBUTED_FS)
 
 get_directory_property(MYDEFS COMPILE_DEFINITIONS)
 if (MYDEFS MATCHES "MIF_LEGACY_COMPILER")
