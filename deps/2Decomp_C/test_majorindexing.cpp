@@ -45,17 +45,17 @@ int main(int argc, char *argv[]) {
   bool errorFlag, errorFlagGlobal;
 
   int m = 1;
-  double data1[nz][ny][nx];
+  Real data1[nz][ny][nx];
   for (int kp = 0; kp < nz; kp++) {
     for (int jp = 0; jp < ny; jp++) {
       for (int ip = 0; ip < nx; ip++) {
-        data1[kp][jp][ip] = (double)m;
+        data1[kp][jp][ip] = (Real)m;
         m++;
       }
     }
   }
 
-  double xSize[3], ySize[3], zSize[3];
+  Real xSize[3], ySize[3], zSize[3];
   xSize[0] = c2d->xSize[0];
   xSize[1] = c2d->xSize[1];
   xSize[2] = c2d->xSize[2];
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   zSize[1] = c2d->zSize[1];
   zSize[2] = c2d->zSize[2];
 
-  double *u1, *u2, *u3;
+  Real *u1, *u2, *u3;
 
   c2d->allocX(u1);
   c2d->allocY(u2);
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  double t1, t2, t3;
+  Real t1, t2, t3;
   t1 = MPI_Wtime();
   c2d->transposeX2Y_MajorIndex(u1, u2);
   t2 = MPI_Wtime();
@@ -99,8 +99,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < ySize[1]; jp++) {
       for (int ip = 0; ip < ySize[0]; ip++) {
         int ii = ip * ySize[2] * ySize[1] + kp * ySize[1] + jp;
-        double temp = u2[ii];
-        double temp1 = data1[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
+        Real temp = u2[ii];
+        Real temp1 = data1[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
                             [c2d->yStart[0] + ip];
         if (fabs(temp - temp1) > 1E-16) {
           cout << "Error in blocking X2Y tranposition" << endl;
@@ -121,8 +121,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < zSize[1]; jp++) {
       for (int ip = 0; ip < zSize[0]; ip++) {
         int ii = jp * zSize[2] * zSize[0] + ip * zSize[2] + kp;
-        double temp = u3[ii];
-        double temp1 = data1[c2d->zStart[2] + kp][c2d->zStart[1] + jp]
+        Real temp = u3[ii];
+        Real temp1 = data1[c2d->zStart[2] + kp][c2d->zStart[1] + jp]
                             [c2d->zStart[0] + ip];
         if (fabs(temp - temp1) > 1E-16) {
           cout << "Error in blocking Y2Z tranposition" << endl;
@@ -143,8 +143,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < ySize[1]; jp++) {
       for (int ip = 0; ip < ySize[0]; ip++) {
         int ii = ip * ySize[2] * ySize[1] + kp * ySize[1] + jp;
-        double temp = u2[ii];
-        double temp1 = data1[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
+        Real temp = u2[ii];
+        Real temp1 = data1[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
                             [c2d->yStart[0] + ip];
         if (fabs(temp - temp1) > 1E-16) {
           cout << "Error in blocking Z2Y tranposition" << endl;
@@ -166,8 +166,8 @@ int main(int argc, char *argv[]) {
       for (int jp = 0; jp < xSize[1]; jp++) {
         for (int ip = 0; ip < xSize[0]; ip++) {
           int ii = kp * xSize[1] * xSize[0] + jp * xSize[0] + ip;
-          double temp = u1[ii];
-          double temp1 = data1[c2d->xStart[2] + kp][c2d->xStart[1] + jp]
+          Real temp = u1[ii];
+          Real temp1 = data1[c2d->xStart[2] + kp][c2d->xStart[1] + jp]
                               [c2d->xStart[0] + ip];
           if (fabs(temp - temp1) > 1E-16) {
             cout << "Error in blocking Y2X transposition" << endl;
@@ -178,8 +178,8 @@ int main(int argc, char *argv[]) {
   }
 
   // allocate new buffers for non-blocking comms
-  double *sbuf = new double[c2d->decompBufSize];
-  double *rbuf = new double[c2d->decompBufSize];
+  Real *sbuf = new Real[c2d->decompBufSize];
+  Real *rbuf = new Real[c2d->decompBufSize];
 
   MPI_Request x2yHandle;
 
@@ -198,8 +198,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < ySize[1]; jp++) {
       for (int ip = 0; ip < ySize[0]; ip++) {
         int ii = ip * ySize[1] * ySize[2] + kp * ySize[1] + jp;
-        double temp = u2[ii];
-        double temp1 = data1[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
+        Real temp = u2[ii];
+        Real temp1 = data1[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
                             [c2d->yStart[0] + ip];
         if (fabs(temp - temp1) > 1E-16) {
           cout << "Error in nonblocking X2Y transposition" << endl;
@@ -224,8 +224,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < zSize[1]; jp++) {
       for (int ip = 0; ip < zSize[0]; ip++) {
         int ii = jp * zSize[2] * zSize[0] + ip * zSize[2] + kp;
-        double temp = u3[ii];
-        double temp1 = data1[c2d->zStart[2] + kp][c2d->zStart[1] + jp]
+        Real temp = u3[ii];
+        Real temp1 = data1[c2d->zStart[2] + kp][c2d->zStart[1] + jp]
                             [c2d->zStart[0] + ip];
         if (fabs(temp - temp1) > 1E-16) {
           cout << "Error in nonblocking Y2Z transposition" << endl;
@@ -250,8 +250,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < ySize[1]; jp++) {
       for (int ip = 0; ip < ySize[0]; ip++) {
         int ii = ip * ySize[1] * ySize[2] + kp * ySize[1] + jp;
-        double temp = u2[ii];
-        double temp1 = data1[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
+        Real temp = u2[ii];
+        Real temp1 = data1[c2d->yStart[2] + kp][c2d->yStart[1] + jp]
                             [c2d->yStart[0] + ip];
         if (fabs(temp - temp1) > 1E-16) {
           cout << "Error in nonblocking Z2Y transposition" << endl;
@@ -276,8 +276,8 @@ int main(int argc, char *argv[]) {
     for (int jp = 0; jp < xSize[1]; jp++) {
       for (int ip = 0; ip < xSize[0]; ip++) {
         int ii = kp * xSize[1] * xSize[0] + jp * xSize[0] + ip;
-        double temp = u1[ii];
-        double temp1 = data1[c2d->xStart[2] + kp][c2d->xStart[1] + jp]
+        Real temp = u1[ii];
+        Real temp1 = data1[c2d->xStart[2] + kp][c2d->xStart[1] + jp]
                             [c2d->xStart[0] + ip];
         if (fabs(temp - temp1) > 1E-16) {
           cout << "Error in nonblocking Y2X transposition" << endl;

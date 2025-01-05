@@ -1,4 +1,5 @@
 #include <cassert>
+#include <fftw3.h>
 #include <chrono>
 #include <iostream>
 #include <mpi.h>

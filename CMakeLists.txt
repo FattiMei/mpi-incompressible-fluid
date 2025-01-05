@@ -17,6 +17,7 @@ if (benchmark_FOUND)
 	set(BENCH_OK TRUE)
 endif()
 
+add_compile_definitions(USE_DOUBLE=0)
 # Set the compiler.
 set(CMAKE_C_COMPILER "mpicc")
 set(CMAKE_CXX_COMPILER "mpicxx")
@@ -29,8 +30,8 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 
 # Set custom flags for Debug build.
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast -march=native -mtune=native \
-    -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast  -march=native -mtune=native \
+     -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto -lfftw3 -lfftw3f")
 
 # Set custom flags for Release build.
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG} -DNDEBUG")

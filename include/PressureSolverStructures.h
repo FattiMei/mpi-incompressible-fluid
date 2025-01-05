@@ -9,6 +9,7 @@
 #include "../deps/2Decomp_C/C2Decomp.hpp"
 #pragma GCC diagnostic pop
 
+
 namespace mif {
     class PressureSolverStructures {
     public:
@@ -20,12 +21,21 @@ namespace mif {
         Real *buffer_x; // Buffer to perform fft along the x direction.
         Real *buffer_y; // Buffer to perform fft along the y direction.
         Real *buffer_z; // Buffer to perform fft along the z direction.
+#if USE_DOUBLE
         const fftw_plan fft_plan_x;
         const fftw_plan fft_plan_y;
         const fftw_plan fft_plan_z;
         const fftw_plan ifft_plan_x;
         const fftw_plan ifft_plan_y;
         const fftw_plan ifft_plan_z;
+#else
+        const fftwf_plan fft_plan_x;
+        const fftwf_plan fft_plan_y;
+        const fftwf_plan fft_plan_z;
+        const fftwf_plan ifft_plan_x;
+        const fftwf_plan ifft_plan_y;
+        const fftwf_plan ifft_plan_z;
+#endif
 
         // The following tensor contains precomputed eigenvalues,
         // with position (j,i,k) containing 1 over the sum of the
