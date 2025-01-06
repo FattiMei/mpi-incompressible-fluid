@@ -74,6 +74,7 @@ remove(TEST_SRC ${TEST_DIR}/benchmark.cpp)
 
 set(DECOMP_DIR "${CMAKE_SOURCE_DIR}/deps/2Decomp_C")
 
+make_directory(${CMAKE_SOURCE_DIR}/artifacts)
 set(FORCING_TERM_GENERATOR ${CMAKE_SOURCE_DIR}/generators/manufsol_velocity.py)
 set(FORCING_TERM_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol_velocity.cpp)
 set(PRESSURE_GENERATOR ${CMAKE_SOURCE_DIR}/generators/manufsol_pressure.py)
