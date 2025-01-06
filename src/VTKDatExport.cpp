@@ -128,7 +128,7 @@ void writeVTK(const std::string& filename,
     MPI_File fh;
     MPI_Status status;
     const int outcome = MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
-                                        MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
+                                        MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
     assert(outcome == MPI_SUCCESS);
     (void) outcome;
 
