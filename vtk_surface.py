@@ -84,15 +84,6 @@ if __name__ == '__main__':
     xz_face = remove_duplicate_points(np.array(sorted(points[points[:,1] == closest_y].tolist())))
     xy_face = remove_duplicate_points(np.array(sorted(points[points[:,2] == closest_z].tolist())))
 
-    plt.scatter(xz_face[:,1], xz_face[:,2])
-    plt.show()
-
-    plt.scatter(xz_face[:,0], xz_face[:,1])
-    plt.show()
-
-    plt.scatter(xz_face[:,0], xz_face[:,2])
-    plt.show()
-
     yz_stride = get_face_stride(yz_face[:,0:3])
     xz_stride = get_face_stride(xz_face[:,0:3])
     xy_stride = get_face_stride(xy_face[:,0:3])
