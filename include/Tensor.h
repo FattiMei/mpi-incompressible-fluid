@@ -93,6 +93,12 @@ public:
               static_cast<Type>(0)) {
     resize<false>(in_dimensions);
   }
+
+  /*!
+   * Disable the copy constructor.
+   */
+  Tensor(const Tensor&) = delete;
+
   /*!
    * Swap this tensor's data with another tensor's, without moving data in
    * memory.

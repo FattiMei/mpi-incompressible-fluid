@@ -30,6 +30,7 @@ enum StaggeringDirection {
 class StaggeredTensor : public Tensor<Real, 3U, size_t> {
 public:
   StaggeredTensor(const Constants &constants, const StaggeringDirection &staggering);
+  StaggeredTensor(const StaggeredTensor&) = delete;
 
   // Send data to neighbouring processors using MPI.
   // This will use the tags in [base_tag, base_tag+3].
@@ -76,6 +77,12 @@ public:
   void *max_addr_send_y;
   void *min_addr_send_z;
   void *max_addr_send_z;
+
+  // These MPI objects handle requests for MPI_ISend operations.
+  MPI_Request prev_y_request;
+  MPI_Request next_y_request;
+  MPI_Request prev_z_request;
+  MPI_Request next_z_request;
   
   // These tensors store a slice of the overall tensor with a constant y value,
   // i.e. the y value to send or receive to previous and next processors respectively.

@@ -43,6 +43,7 @@ namespace mif {
         Tensor<Real, 3, int> eigenvalues; 
 
         PressureSolverStructures(const Constants &constants);
+        PressureSolverStructures(const PressureSolverStructures&) = delete;
         ~PressureSolverStructures();
     };
 }

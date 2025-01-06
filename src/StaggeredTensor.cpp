@@ -7,7 +7,10 @@ namespace mif {
                (staggering == StaggeringDirection::y ? std::array<size_t,3>({constants.Nx, constants.Ny_staggered, constants.Nz}) :
                (staggering == StaggeringDirection::z ? std::array<size_t,3>({constants.Nx, constants.Ny, constants.Nz_staggered}) :
                std::array<size_t,3>({constants.Nx, constants.Ny, constants.Nz})))), 
-      constants(constants), staggering(staggering), prev_y_slice_recv({}), next_y_slice_recv({}),
+      constants(constants), staggering(staggering), 
+      prev_y_request(MPI_REQUEST_NULL), next_y_request(MPI_REQUEST_NULL), 
+      prev_z_request(MPI_REQUEST_NULL), next_z_request(MPI_REQUEST_NULL),
+      prev_y_slice_recv({}), next_y_slice_recv({}),
       prev_y_slice_send({}), next_y_slice_send({}) {
   if (constants.Py > 1 || constants.Pz > 1) {
     const std::array<size_t, 3> &sizes = this->sizes();
@@ -62,15 +65,19 @@ void StaggeredTensor::send_mpi_data(int base_tag) {
   // This is where we practically use previously computed MPI addressing.
   if (constants.prev_proc_z != -1) {                                                                                                                                 
     // Send data to the "left" neighbour.
-    MPI_Request request;                                                                                                                                                 
-    int outcome = MPI_Isend(min_addr_send_z, 1, Slice_type_constant_z, constants.prev_proc_z, base_tag, MPI_COMM_WORLD, &request);
+    MPI_Status status;
+    int outcome = MPI_Wait(&prev_z_request, &status);
+    assert(outcome == MPI_SUCCESS);
+    outcome = MPI_Isend(min_addr_send_z, 1, Slice_type_constant_z, constants.prev_proc_z, base_tag, MPI_COMM_WORLD, &prev_z_request);
     assert(outcome == MPI_SUCCESS);
     (void) outcome;
   }                                                                                                                                                                            
   if (constants.next_proc_z != -1) {
-    // Send data to the "right" neighbour.                                                                                                                                 
-    MPI_Request request;                                                                                                                                                       
-    int outcome = MPI_Isend(max_addr_send_z, 1, Slice_type_constant_z, constants.next_proc_z, base_tag + 1, MPI_COMM_WORLD, &request);
+    // Send data to the "right" neighbour.  
+    MPI_Status status;
+    int outcome = MPI_Wait(&next_z_request, &status);
+    assert(outcome == MPI_SUCCESS);
+    outcome = MPI_Isend(max_addr_send_z, 1, Slice_type_constant_z, constants.next_proc_z, base_tag + 1, MPI_COMM_WORLD, &next_z_request);
     assert(outcome == MPI_SUCCESS);
     (void) outcome;
   } 
@@ -82,9 +89,11 @@ void StaggeredTensor::send_mpi_data(int base_tag) {
       }
     }
 
-    // Send data to the "top" neighbour.                                                                                                                                 
-    MPI_Request request;                                                                                                                                                       
-    int outcome = MPI_Isend(min_addr_send_y, 1, Slice_type_constant_y, constants.prev_proc_y, base_tag + 2, MPI_COMM_WORLD, &request);
+    // Send data to the "top" neighbour.                                                                                                                                                    
+    MPI_Status status;
+    int outcome = MPI_Wait(&prev_y_request, &status);
+    assert(outcome == MPI_SUCCESS);
+    outcome = MPI_Isend(min_addr_send_y, 1, Slice_type_constant_y, constants.prev_proc_y, base_tag + 2, MPI_COMM_WORLD, &prev_y_request);
     assert(outcome == MPI_SUCCESS);
     (void) outcome;
   }                                                                                                                                                                            
@@ -96,9 +105,11 @@ void StaggeredTensor::send_mpi_data(int base_tag) {
       }
     }
 
-    // Send data to the "bottom" neighbour.                                                                                                                                 
-    MPI_Request request;                                                                                                                                                       
-    int outcome = MPI_Isend(max_addr_send_y, 1, Slice_type_constant_y, constants.next_proc_y, base_tag + 3, MPI_COMM_WORLD, &request);
+    // Send data to the "bottom" neighbour.                                                                                                                                                   
+    MPI_Status status;
+    int outcome = MPI_Wait(&next_y_request, &status);
+    assert(outcome == MPI_SUCCESS);
+    outcome = MPI_Isend(max_addr_send_y, 1, Slice_type_constant_y, constants.next_proc_y, base_tag + 3, MPI_COMM_WORLD, &next_y_request);
     assert(outcome == MPI_SUCCESS);
     (void) outcome;
   } 
@@ -145,8 +156,8 @@ void StaggeredTensor::receive_mpi_data(int base_tag) {
       (void) return_code;
 
       // Copy it into the tensor.
-    for (size_t k = 1; k < sizes[2]-1; k++) {
-      for (size_t i = 1; i < sizes[0]-1; i++) {
+      for (size_t k = 1; k < sizes[2]-1; k++) {
+        for (size_t i = 1; i < sizes[0]-1; i++) {
           this->operator()(i, 0, k) = prev_y_slice_recv(i,k);
         }
       }

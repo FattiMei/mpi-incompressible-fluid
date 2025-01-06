@@ -11,6 +11,7 @@ class UTensor : public StaggeredTensor {
 public:
   UTensor(const Constants &constants)
       : StaggeredTensor(constants, StaggeringDirection::x) {}
+  UTensor(const UTensor&) = delete;
 
   inline Real evaluate_function_at_index(
       int i, int j, int k,
@@ -34,6 +35,7 @@ class VTensor : public StaggeredTensor {
 public:
   VTensor(const Constants &constants)
       : StaggeredTensor(constants, StaggeringDirection::y) {}
+  VTensor(const VTensor&) = delete;
 
   inline Real evaluate_function_at_index(
       int i, int j, int k,
@@ -57,6 +59,7 @@ class WTensor : public StaggeredTensor {
 public:
   WTensor(const Constants &constants)
       : StaggeredTensor(constants, StaggeringDirection::z) {}
+  WTensor(const WTensor&) = delete;
 
   inline Real evaluate_function_at_index(
       int i, int j, int k,
@@ -88,9 +91,10 @@ public:
   VTensor v;
   WTensor w;
   std::array<StaggeredTensor *, 3> components;
-  const Constants constants;
+  const Constants &constants;
 
   VelocityTensor(const Constants &constants);
+  VelocityTensor(const VelocityTensor&) = delete;
 
   // Swap this tensor's data with another's in constant time by swapping
   // pointers.

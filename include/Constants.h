@@ -88,6 +88,7 @@ public:
             Real min_x_global, Real min_y_global, Real min_z_global, 
             Real Re, Real final_time, unsigned int num_time_steps,
             int Py, int Pz, int rank, const std::array<bool, 3> &periodic_bc);
+  Constants(const Constants&) = delete;
 };
 
 } // namespace mif

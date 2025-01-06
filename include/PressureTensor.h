@@ -18,6 +18,7 @@ public:
     const int max_size;
 
     PressureTensor(PressureSolverStructures &structures);
+    PressureTensor(const PressureTensor&) = delete;
 
     // Copy data from other to this tensor.
     void copy_from_staggered(const StaggeredTensor &other);
