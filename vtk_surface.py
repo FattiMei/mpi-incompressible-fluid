@@ -27,7 +27,11 @@ def remove_duplicate_points(face):
 
 
 if __name__ == '__main__':
-    FILENAME = './solution.vtk'
+    if len(sys.argv) != 2:
+        print("Usage: python vtk_surface.py <vtk input file>")
+        sys.exit(1)
+
+    FILENAME = sys.argv[1]
 
     with open(FILENAME, 'rb') as file:
         data = file.read()
