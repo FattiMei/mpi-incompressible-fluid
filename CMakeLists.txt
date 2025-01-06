@@ -1,6 +1,11 @@
+# Instructions:
+# To build the project, run mkdir build && cd build && cmake .. && make -j
+# Among the produced executables, use the `mif` executable.
+# Depending on what is available on the cluster, you may have to change some parts of this file,
+# with the same meanings as for the Makefile.
+
 cmake_minimum_required(VERSION 3.20)
 project(mpi_incompressible_fluid)
-
 
 find_package(Python3 REQUIRED)
 find_package(benchmark)
@@ -20,7 +25,9 @@ if (benchmark_FOUND)
 	set(BENCH_OK TRUE)
 endif()
 
+# Set precision. If USE_DOUBLE=1, use doubles, otherwise use single precision floats.
 add_compile_definitions(USE_DOUBLE=1)
+
 # Set the compiler.
 set(CMAKE_C_COMPILER "mpicc")
 set(CMAKE_CXX_COMPILER "mpicxx")
@@ -32,19 +39,17 @@ endif()
 
 set(CMAKE_CXX_STANDARD 23)
 
-# Set custom flags for Debug build.
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -Wextra -Ofast  -march=native -mtune=native \
      -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto -lfftw3 -lfftw3f")
 
-# Set custom flags for Release build.
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG} -DNDEBUG")
-
 
 if(NOT DEFINED VERBOSE)
     set(VERBOSE "FALSE")
     add_compile_definitions(VERBOSE=${VERBOSE})
 endif ()
 
+# Set some definitions. Some may need to be commented out or uncommented.
 add_definitions(-DOPT_CPU_CACHE)
 add_definitions(-DMIF_LEGACY_COMPILER)
 add_definitions(-DMIF_NO_DISTRIBUTED_FS)
@@ -54,6 +59,7 @@ if (MYDEFS MATCHES "MIF_LEGACY_COMPILER")
 	MESSAGE(WARNING "Using legacy endian conversion")
 endif()
 
+# Create aliases.
 set(EXE_NAME "mif")
 set(CONVERGENCE_TEST_EXE_NAME "convergence_test")
 set(BENCHMARK_EXE_NAME "benchmark")
@@ -76,6 +82,7 @@ set(EXACT_SOLUTION_ARTIFACT ${CMAKE_SOURCE_DIR}/artifacts/manufsol.cpp)
 
 set(CONVERGENCE_REPORT_NAME "convergence_report.csv")
 
+# Add libraries.
 include_directories(${DECOMP_DIR})
 add_library(
 	decomp
@@ -114,7 +121,7 @@ add_library(
 	${EXACT_SOLUTION_ARTIFACT}
 )
 
-# Add all executables.
+# Add and link all executables.
 add_executable(${EXE_NAME} "${SOURCE_DIR}/main.cpp")
 target_link_libraries(${EXE_NAME} PRIVATE miflib decomp ${MPI_C_LIBRARIES})
 
@@ -129,7 +136,6 @@ if (${BENCH_OK})
 	)
 endif()
 
-
 foreach(TEST_SOURCE ${TEST_SRC})
 	get_filename_component(EXE_NAME ${TEST_SOURCE} NAME_WE)
 
@@ -137,7 +143,7 @@ foreach(TEST_SOURCE ${TEST_SRC})
 	target_link_libraries(${EXE_NAME} PRIVATE miflib decomp ${MPI_C_LIBRARIES})
 endforeach()
 
-
+# Add custom commands and targets.
 add_custom_command(
 	OUTPUT ${FORCING_TERM_ARTIFACT}
 	DEPENDS ${FORCING_TERM_GENERATOR}

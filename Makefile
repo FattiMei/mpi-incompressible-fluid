@@ -1,6 +1,4 @@
 # Instructions:
-# This is a second build option in case CMake does non work on the cluster. If it works, please use CMake, as it 
-# was more thoroughly tested.
 # Depending on what is available on the cluster, you may have to change some parts of this file.
 # CXX is the compiler used. It is mpicxx because we use MPI features.
 # If available, use a modern compiler, as C++23 features are used. For example, g++11.4 does not compile natively.
