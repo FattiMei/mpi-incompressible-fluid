@@ -1,9 +1,8 @@
 #include "PressureEquation.h"
+#include <cassert>
 #include "PressureSolverStructures.h"
 #include "StaggeredTensorMacros.h"
 #include "VelocityDivergence.h"
-
-#include <cassert>
 
 namespace mif {
 
@@ -173,7 +172,7 @@ void solve_pressure_equation(PressureTensor &pressure,
 #if defined(FFTW_USE_NEW_ARRAY_EXECUTE) && (USE_DOUBLE == 1)
             Real* ptr = static_cast<Real*>(pressure.raw_data()) + base_index;
             fftw_execute_r2r(structures.ifft_plan_z, ptr, ptr);
-            // Copy the transformed data.
+            // Normalize the transformed data.
             for (int k = 0; k < c2d.zSize[2]; k++) {
                 pressure(base_index+k) /= normalization_constant_z;
             }
@@ -206,7 +205,7 @@ void solve_pressure_equation(PressureTensor &pressure,
 #if defined(FFTW_USE_NEW_ARRAY_EXECUTE) && (USE_DOUBLE == 1)
             Real* ptr = static_cast<Real*>(pressure.raw_data()) + base_index;
             fftw_execute_r2r(structures.ifft_plan_y, ptr, ptr);
-            // Copy the transformed data.
+            // Normalize the transformed data.
             for (int j = 0; j < c2d.ySize[1]; j++){
                 pressure(base_index+j) /= normalization_constant_y;
             }
@@ -240,7 +239,7 @@ void solve_pressure_equation(PressureTensor &pressure,
 #if defined(FFTW_USE_NEW_ARRAY_EXECUTE) && (USE_DOUBLE == 1)
             Real* ptr = static_cast<Real*>(pressure.raw_data()) + base_index;
             fftw_execute_r2r(structures.ifft_plan_x, ptr, ptr);
-            // Copy the transformed data.
+            // Normalize the transformed data.
             for (int i = 0; i < c2d.xSize[0]; i++) {
                 pressure(base_index+i) /= normalization_constant_x;
             }
