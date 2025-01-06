@@ -26,7 +26,7 @@ CXX = mpicxx $(STD)
 CXX_FLAGS = -Ofast -march=native -mtune=native -funroll-all-loops -flto -fno-signed-zeros -fno-trapping-math -flto=auto
 WARNINGS = -Wall -Wextra 
 
-DEFINES += -DNDEBUG -DUSE_DOUBLE=1 -DOPT_CPU_CACHE
+DEFINES += -DNDEBUG -DUSE_DOUBLE=1 -DOPT_CPU_CACHE -DFFTW_USE_NEW_ARRAY_EXECUTE
 
 DECOMP_DIR = ./deps/2Decomp_C
 DECOMP_SRC = $(DECOMP_DIR)/Alloc.cpp         \

@@ -51,6 +51,7 @@ endif ()
 
 # Set some definitions. DMIF_LEGACY_COMPILER may need to be commented out or uncommented.
 add_definitions(-DOPT_CPU_CACHE)
+add_definitions(-DFFTW_USE_NEW_ARRAY_EXECUTE)
 add_definitions(-DMIF_LEGACY_COMPILER)
 add_definitions(-DMIF_NO_DISTRIBUTED_FS)
 
