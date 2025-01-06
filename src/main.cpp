@@ -10,7 +10,7 @@
 
 double Reynolds;
 
-void delete_old_files(int rank) {
+void delete_old_files() {
   MPI_File fh;
   char filename[256];
   for (int i = 1; i < 4; i++){
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Remove old outputs.
-  delete_old_files(rank);
+  delete_old_files();
 
   // Store the requested slices as a VTK file.
   writeVTK("solution.vtk", velocity, pressure);
