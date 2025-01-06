@@ -21,7 +21,9 @@ void delete_old_files(int rank) {
     if (MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh) == MPI_SUCCESS){
       // File exists, so delete it.
       MPI_File_close(&fh);
-      MPI_File_delete(filename, MPI_INFO_NULL);
+      if (rank == 0){
+        MPI_File_delete(filename, MPI_INFO_NULL);
+      }
     }
   }
 
@@ -29,7 +31,8 @@ void delete_old_files(int rank) {
   if (MPI_File_open(MPI_COMM_SELF, "solution.vtk", MPI_MODE_RDONLY, MPI_INFO_NULL, &fh) == MPI_SUCCESS){
     // File exists, delete it.
     MPI_File_close(&fh);
-    MPI_File_delete("solution.vtk", MPI_INFO_NULL);
+    if (rank == 0)
+      MPI_File_delete("solution.vtk", MPI_INFO_NULL);
   }
 }
 
