@@ -26,6 +26,18 @@ def remove_duplicate_points(face):
     return face[idx]
 
 
+def extract_common_coordinate(arr):
+    count = {}
+
+    for i in arr:
+        if i in count:
+            count[i] += 1
+        else:
+            count[i] = 1
+
+    return list(count.keys())[np.argmax(list(count.values()))]
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print("Usage: python vtk_surface.py <vtk input file>")
@@ -64,13 +76,22 @@ if __name__ == '__main__':
     points = points.reshape((npoints, 3))
     points = np.column_stack((points, np.arange(npoints)))
 
-    closest_x = points[np.argmin(np.abs(points)[:,0]), 0]
-    closest_y = points[np.argmin(np.abs(points)[:,1]), 1]
-    closest_z = points[np.argmin(np.abs(points[points[:,2] <= 0])), 2]
+    closest_x = extract_common_coordinate(points[:,0])
+    closest_y = extract_common_coordinate(points[:,1])
+    closest_z = extract_common_coordinate(points[:,2])
 
     yz_face = remove_duplicate_points(np.array(sorted(points[points[:,0] == closest_x].tolist())))
     xz_face = remove_duplicate_points(np.array(sorted(points[points[:,1] == closest_y].tolist())))
     xy_face = remove_duplicate_points(np.array(sorted(points[points[:,2] == closest_z].tolist())))
+
+    plt.scatter(xz_face[:,1], xz_face[:,2])
+    plt.show()
+
+    plt.scatter(xz_face[:,0], xz_face[:,1])
+    plt.show()
+
+    plt.scatter(xz_face[:,0], xz_face[:,2])
+    plt.show()
 
     yz_stride = get_face_stride(yz_face[:,0:3])
     xz_stride = get_face_stride(xz_face[:,0:3])
