@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     closest_x = points[np.argmin(np.abs(points)[:,0]), 0]
     closest_y = points[np.argmin(np.abs(points)[:,1]), 1]
-    closest_z = points[np.argmin(np.abs(points)[:,2]), 2]
+    closest_z = points[np.argmin(np.abs(points[points[:,2] < 0])), 2]
 
     yz_face = remove_duplicate_points(np.array(sorted(points[points[:,0] == closest_x].tolist())))
     xz_face = remove_duplicate_points(np.array(sorted(points[points[:,1] == closest_y].tolist())))
@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
     yz_face = yz_face.reshape((yz_rows, yz_stride, 4))
     xz_face = xz_face.reshape((xz_rows, xz_stride, 4))
-    # xy_face = xy_face.reshape((xy_rows, xy_stride, 4))
+    xy_face = xy_face.reshape((xy_rows, xy_stride, 4))
 
     cells = []
     for i in range(yz_face.shape[0]-1):
@@ -105,15 +105,15 @@ if __name__ == '__main__':
                 xz_face[i+1, j, 3]
             ))
 
-    # for i in range(xy_face.shape[0]-1):
-    #     for j in range(xy_face.shape[1]-1):
-    #         cells.append((
-    #             4,
-    #             xy_face[i, j, 3],
-    #             xy_face[i, j+1, 3],
-    #             xy_face[i+1, j+1, 3],
-    #             xy_face[i+1, j, 3]
-    #         ))
+    for i in range(xy_face.shape[0]-1):
+        for j in range(xy_face.shape[1]-1):
+            cells.append((
+                4,
+                xy_face[i, j, 3],
+                xy_face[i, j+1, 3],
+                xy_face[i+1, j+1, 3],
+                xy_face[i+1, j, 3]
+            ))
 
     byte_cells = bytearray().join(
         struct.pack(
