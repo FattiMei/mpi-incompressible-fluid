@@ -28,7 +28,7 @@ def remove_duplicate_points(face):
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print('Usage: python vtk_surface.py <vtk file>')
+        print("Usage: python vtk_surface.py <vtk input file>")
         sys.exit(1)
 
     FILENAME = sys.argv[1]
@@ -82,7 +82,6 @@ if __name__ == '__main__':
 
     yz_face = yz_face.reshape((yz_rows, yz_stride, 4))
     xz_face = xz_face.reshape((xz_rows, xz_stride, 4))
-    xy_face = xy_face.reshape((xy_rows, xy_stride, 4))
 
     cells = []
     for i in range(yz_face.shape[0]-1):
@@ -105,15 +104,19 @@ if __name__ == '__main__':
                 xz_face[i+1, j, 3]
             ))
 
-    for i in range(xy_face.shape[0]-1):
-        for j in range(xy_face.shape[1]-1):
-            cells.append((
-                4,
-                xy_face[i, j, 3],
-                xy_face[i, j+1, 3],
-                xy_face[i+1, j+1, 3],
-                xy_face[i+1, j, 3]
-            ))
+    try:
+        xy_face = xy_face.reshape((xy_rows, xy_stride, 4))
+        for i in range(xy_face.shape[0]-1):
+            for j in range(xy_face.shape[1]-1):
+                cells.append((
+                    4,
+                    xy_face[i, j, 3],
+                    xy_face[i, j+1, 3],
+                    xy_face[i+1, j+1, 3],
+                    xy_face[i+1, j, 3]
+                ))
+    except:
+        print("Can't assemble XY face")
 
     byte_cells = bytearray().join(
         struct.pack(
