@@ -66,7 +66,7 @@ void solve_pressure_equation(PressureTensor &pressure,
     const Constants &constants = velocity.constants;
     PressureSolverStructures &structures = pressure.structures;
     C2Decomp &c2d = structures.c2d;
-
+    
     // Execute type 1 DCT/FFT along direction x and transpose from (z,y,x) to (x,z,y).
     // Note: major refers to the last index of the triple, the triple is in the iterating order.
     for (int k = 0; k < c2d.xSize[2]; k++) {

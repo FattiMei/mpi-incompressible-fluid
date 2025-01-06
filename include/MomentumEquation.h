@@ -47,41 +47,49 @@ calculate_momentum_rhs_u(const VelocityTensor &velocity, // Velocity field.
   const VTensor &v = velocity.v;
   const WTensor &w = velocity.w;
 #ifdef OPT_CPU_CACHE
-  const auto &var13 = u(i - 1, j, k);
-  const auto &var8 = u(i, j - 1, k);
-  const auto &var4 = u(i, j, k - 1);
-  const auto &var1 = u(i, j, k);
-  const auto &var2 = u(i, j, k + 1);
-  const auto &var7 = u(i, j + 1, k);
-  const auto &var10 = u(i + 1, j, k);
+  // For vector u
+  const auto& var13_u = u(i - 1, j, k);
+  const auto& var11_u = u(i, j - 1, k);
+  const auto& var5_u = u(i, j, k - 1);
+  const auto& var14_u = u(i, j, k);
+  const auto& var23_u = u(i, j, k + 1);
+  const auto& var17_u = u(i, j + 1, k);
+  const auto& var15_u = u(i + 1, j, k);
 
-  const auto &var15 = v(i, j - 1, k);
-  const auto &var14 = v(i, j, k);
-  const auto &var17 = v(i + 1, j - 1, k);
-  const auto &var16 = v(i + 1, j, k);
+  // For vector v
+  const auto& var13_v = v(i - 1, j, k);
+  const auto& var16_v = v(i - 1, j + 1, k);
+  const auto& var14_v = v(i, j, k);
+  const auto& var17_v = v(i, j + 1, k);
 
-  const auto &var18 = w(i, j, k - 1);
-  const auto &var21 = w(i, j, k);
-  const auto &var20 = w(i + 1, j, k - 1);
-  const auto &var19 = w(i + 1, j, k);
+  // For vector w
+  const auto& var13_w = w(i - 1, j, k);
+  const auto& var22_w = w(i - 1, j, k + 1);
+  const auto& var14_w = w(i, j, k);
+  const auto& var23_w = w(i, j, k + 1);
 
   const Real convection_term =
-      // TERM: u ∂u/∂x
-      -var1 * (var10 - var13) * constants.one_over_2_dx
+    // TERM: u ∂u/∂x
+    // We use a first-order finite difference scheme to approximate the
+    // convection term, this is sufficient for second-order accuracy in the
+    // overall scheme.
+    -var14_u * (var15_u - var13_u) * constants.one_over_2_dx
 
-      // TERM: v ∂u/∂y
-      -
-      (var14 + var15 + var16 + var17) * (var7 - var8) * constants.one_over_8_dy
+    // TERM: v ∂u/∂y
+    // We use a second-order central difference scheme to approximate the
+    // convection term.
+    - (var17_v + var14_v + var16_v + var13_v) *
+        (var17_u - var11_u) * constants.one_over_8_dy
 
-      // TERM: w ∂u/∂z
-      -
-      (var21 + var18 + var19 + var20) * (var2 - var4) * constants.one_over_8_dz;
+    // TERM: w ∂u/∂z
+    - (var23_w + var14_w + var22_w + var13_w) *
+        (var23_u - var5_u) * constants.one_over_8_dz;
 
   // TERM: 1/Re * (∂²u/∂x² + ∂²u/∂y² + ∂²u/∂z²)
   const Real diffusion_term =
-      (var10 - 2 * var1 + var13) * constants.one_over_dx2_Re +
-      (var7 - 2 * var1 + var8) * constants.one_over_dy2_Re +
-      (var2 - 2 * var1 + var4) * constants.one_over_dz2_Re;
+      (var15_u - 2 * var14_u + var13_u) * constants.one_over_dx2_Re +
+      (var17_u - 2 * var14_u + var11_u) * constants.one_over_dy2_Re +
+      (var23_u - 2 * var14_u + var5_u) * constants.one_over_dz2_Re;
 
   return convection_term + diffusion_term;
 #else
@@ -116,40 +124,43 @@ calculate_momentum_rhs_v(const VelocityTensor &velocity, // Velocity field.
   const VTensor &v = velocity.v;
   const WTensor &w = velocity.w;
 #ifdef OPT_CPU_CACHE
-  const auto &var2 = u(i - 1, j, k);
-  const auto &var4 = u(i - 1, j + 1, k);
-  const auto &var1 = u(i, j, k);
-  const auto &var3 = u(i, j + 1, k);
+  // For vector u
+  const auto& var11_u = u(i, j - 1, k);
+  const auto& var14_u = u(i, j, k);
+  const auto& var12_u = u(i + 1, j - 1, k);
+  const auto& var15_u = u(i + 1, j, k);
 
-  const auto &var6 = v(i - 1, j, k);
-  const auto &var8 = v(i, j - 1, k);
-  const auto &var15 = v(i, j, k - 1);
-  const auto &var7 = v(i, j, k);
-  const auto &var14 = v(i, j, k + 1);
-  const auto &var9 = v(i, j + 1, k);
-  const auto &var5 = v(i + 1, j, k);
+  // For vector v
+  const auto& var13_v = v(i - 1, j, k);
+  const auto& var11_v = v(i, j - 1, k);
+  const auto& var5_v = v(i, j, k - 1);
+  const auto& var14_v = v(i, j, k);
+  const auto& var23_v = v(i, j, k + 1);
+  const auto& var17_v = v(i, j + 1, k);
+  const auto& var15_v = v(i + 1, j, k);
 
-  const auto &var11 = w(i, j, k - 1);
-  const auto &var10 = w(i, j, k);
-  const auto &var13 = w(i, j + 1, k - 1);
-  const auto &var12 = w(i, j + 1, k);
+  // For vector w
+  const auto& var11_w = w(i, j - 1, k);
+  const auto& var20_w = w(i, j - 1, k + 1);
+  const auto& var14_w = w(i, j, k);
+  const auto& var23_w = w(i, j, k + 1);
 
   const Real convection_term =
       // TERM: u ∂v/∂x
-      -(var1 + var2 + var3 + var4) * (var5 - var6) * constants.one_over_8_dx
+      -(var15_u + var14_u + var12_u + var11_u) * (var15_v - var13_v) * constants.one_over_8_dx
 
       // TERM: v ∂v/∂y
-      - var7 * (var8 - var9) * constants.one_over_2_dy
+      - var14_v * (var17_v - var11_v) * constants.one_over_2_dy
 
       // TERM: w ∂v/∂z
-      - (var10 + var11 + var12 + var13) * (var14 - var15) *
+      - (var23_w + var14_w + var20_w + var11_w) * (var23_v - var5_v) *
             constants.one_over_8_dz;
 
   const Real diffusion_term =
       // TERM: 1/Re * (∂²v/∂x² + ∂²v/∂y² + ∂²v/∂z²)
-      (var5 - 2 * var7 + var6) * constants.one_over_dx2_Re +
-      (var9 - 2 * var7 + var8) * constants.one_over_dy2_Re +
-      (var14 - 2 * var7 + var15) * constants.one_over_dz2_Re;
+      (var15_v - 2 * var14_v + var13_v) * constants.one_over_dx2_Re +
+      (var17_v - 2 * var14_v + var11_v) * constants.one_over_dy2_Re +
+      (var23_v - 2 * var14_v + var5_v) * constants.one_over_dz2_Re;
 
   return convection_term + diffusion_term;
 #else
@@ -183,40 +194,43 @@ calculate_momentum_rhs_w(const VelocityTensor &velocity, // Velocity field.
   const WTensor &w = velocity.w;
 
 #ifdef OPT_CPU_CACHE
-  const auto &var2 = u(i - 1, j, k);
-  const auto &var4 = u(i - 1, j, k + 1);
-  const auto &var1 = u(i, j, k);
-  const auto &var3 = u(i, j, k + 1);
+  // For vector u
+  const auto& var5_u = u(i, j, k - 1);
+  const auto& var14_u = u(i, j, k);
+  const auto& var6_u = u(i + 1, j, k - 1);
+  const auto& var15_u = u(i + 1, j, k);
 
-  const auto &var8 = v(i, j - 1, k);
-  const auto &var10 = v(i, j - 1, k + 1);
-  const auto &var7 = v(i, j, k);
-  const auto &var9 = v(i, j, k + 1);
+  // For vector v
+  const auto& var5_v = v(i, j, k - 1);
+  const auto& var14_v = v(i, j, k);
+  const auto& var8_v = v(i, j + 1, k - 1);
+  const auto& var17_v = v(i, j + 1, k);
 
-  const auto &var6 = w(i - 1, j, k);
-  const auto &var12 = w(i, j - 1, k);
-  const auto &var15 = w(i, j, k - 1);
-  const auto &var13 = w(i, j, k);
-  const auto &var14 = w(i, j, k + 1);
-  const auto &var11 = w(i, j + 1, k);
-  const auto &var5 = w(i + 1, j, k);
+  // For vector w
+  const auto& var13_w = w(i - 1, j, k);
+  const auto& var11_w = w(i, j - 1, k);
+  const auto& var5_w = w(i, j, k - 1);
+  const auto& var14_w = w(i, j, k);
+  const auto& var23_w = w(i, j, k + 1);
+  const auto& var17_w = w(i, j + 1, k);
+  const auto& var15_w = w(i + 1, j, k);
 
   const Real convection_term =
       // TERM: u ∂w/∂x
-      -(var1 + var2 + var3 + var4) * (var5 - var6) * constants.one_over_8_dx
+      -(var15_u + var14_u + var6_u + var5_u) * (var15_w - var13_w) * constants.one_over_8_dx
 
       // TERM: v ∂w/∂y
-      - (var7 + var8 + var9 + var10) * (var11 - var12) * constants.one_over_8_dy
+      - (var17_v + var14_v + var8_v + var5_v) * (var17_w - var11_w) * constants.one_over_8_dy
 
       // TERM: w ∂w/∂z
-      - var13 * (var14 - var15) * constants.one_over_2_dz;
+      - var14_w * (var23_w - var5_w) * constants.one_over_2_dz;
 
   // TERM: 1/Re * (∂²w/∂x² + ∂²w/∂y² + ∂²w/∂z²)
   const Real diffusion_term =
       // TERM: 1/Re * (∂²w/∂x² + ∂²w/∂y² + ∂²w/∂z²)
-      (var5 - 2 * var13 + var6) * constants.one_over_dx2_Re +
-      (var11 - 2 * var13 + var12) * constants.one_over_dy2_Re +
-      (var14 - 2 * var13 + var15) * constants.one_over_dz2_Re;
+      (var15_w - 2 * var14_w + var13_w) * constants.one_over_dx2_Re +
+      (var17_w - 2 * var14_w + var11_w) * constants.one_over_dy2_Re +
+      (var23_w - 2 * var14_w + var5_w) * constants.one_over_dz2_Re;
 
   return convection_term + diffusion_term;
 #else

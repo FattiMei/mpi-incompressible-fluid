@@ -50,7 +50,7 @@ if(NOT DEFINED VERBOSE)
 endif ()
 
 # Set some definitions. Some may need to be commented out or uncommented.
-#add_definitions(-DOPT_CPU_CACHE)
+add_definitions(-DOPT_CPU_CACHE)
 add_definitions(-DMIF_LEGACY_COMPILER)
 add_definitions(-DMIF_NO_DISTRIBUTED_FS)
 
