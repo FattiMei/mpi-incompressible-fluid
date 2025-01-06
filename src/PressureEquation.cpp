@@ -3,8 +3,6 @@
 #include "StaggeredTensorMacros.h"
 #include "VelocityDivergence.h"
 
-#include <cassert>
-
 namespace mif {
 
 // Add the non-homogeneous term to the boundaries of the rhs.
@@ -69,22 +67,12 @@ void solve_pressure_equation(PressureTensor &pressure,
     PressureSolverStructures &structures = pressure.structures;
     C2Decomp &c2d = structures.c2d;
     
-#ifdef FFTW_USE_NEW_ARRAY_EXECUTE
-      assert(fftw_alignment_of(static_cast<Real*>(pressure.raw_data())) == fftw_alignment_of(structures.buffer_x));
-      assert(fftw_alignment_of(static_cast<Real*>(pressure.raw_data())) == fftw_alignment_of(structures.buffer_y));
-      assert(fftw_alignment_of(static_cast<Real*>(pressure.raw_data())) == fftw_alignment_of(structures.buffer_z));
-#endif
-
     // Execute type 1 DCT/FFT along direction x and transpose from (z,y,x) to (x,z,y).
     // Note: major refers to the last index of the triple, the triple is in the iterating order.
     for (int k = 0; k < c2d.xSize[2]; k++) {
         for (int j = 0; j < c2d.xSize[1]; j++) {
             const int base_index = c2d.xSize[0]*c2d.xSize[1] * k + c2d.xSize[0] * j;
 
-#if defined(FFTW_USE_NEW_ARRAY_EXECUTE) && (USE_DOUBLE == 1)
-            Real* ptr = static_cast<Real*>(pressure.raw_data()) + base_index;
-            fftw_execute_r2r(structures.fft_plan_x, ptr, ptr);
-#else
             // Copy the original data.
             memcpy(structures.buffer_x, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.xSize[0]);
 
@@ -97,7 +85,6 @@ void solve_pressure_equation(PressureTensor &pressure,
 
             // Copy the transformed data.
             memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_x, sizeof(Real)*c2d.xSize[0]);
-#endif
         }
     }
     structures.c2d.transposeX2Y_MajorIndex(static_cast<Real *>(pressure.raw_data()), static_cast<Real *>(pressure.raw_data()));
@@ -108,10 +95,6 @@ void solve_pressure_equation(PressureTensor &pressure,
         for (int k = 0; k < c2d.ySize[2]; k++) {
             const int base_index = c2d.ySize[2]*c2d.ySize[1] * i + c2d.ySize[1] * k;
 
-#if defined(FFTW_USE_NEW_ARRAY_EXECUTE) && (USE_DOUBLE == 1)
-            Real* ptr = static_cast<Real*>(pressure.raw_data()) + base_index;
-            fftw_execute_r2r(structures.fft_plan_y, ptr, ptr);
-#else
             // Copy the original data.
             memcpy(structures.buffer_y, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.ySize[1]);
 
@@ -124,7 +107,6 @@ void solve_pressure_equation(PressureTensor &pressure,
 
             // Copy the transformed data.
             memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_y, sizeof(Real)*c2d.ySize[1]);
-#endif
         }
     }
     structures.c2d.transposeY2Z_MajorIndex(static_cast<Real *>(pressure.raw_data()), static_cast<Real *>(pressure.raw_data()));
@@ -135,10 +117,6 @@ void solve_pressure_equation(PressureTensor &pressure,
         for (int i = 0; i < c2d.zSize[0]; i++) {
             const int base_index = c2d.zSize[2]*c2d.zSize[0] * j + c2d.zSize[2] * i;
 
-#if defined(FFTW_USE_NEW_ARRAY_EXECUTE) && (USE_DOUBLE == 1)
-            Real* ptr = static_cast<Real*>(pressure.raw_data()) + base_index;
-            fftw_execute_r2r(structures.fft_plan_y, ptr, ptr);
-#else
             // Copy the original data.
             memcpy(structures.buffer_z, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.zSize[2]);
 
@@ -150,7 +128,6 @@ void solve_pressure_equation(PressureTensor &pressure,
 #endif
             // Copy the transformed data.
             memcpy(static_cast<Real *>(pressure.raw_data())+base_index, structures.buffer_z, sizeof(Real)*c2d.zSize[2]);
-#endif
         }
     }
 
@@ -170,14 +147,6 @@ void solve_pressure_equation(PressureTensor &pressure,
         for (int i = 0; i < c2d.zSize[0]; i++) {
             const int base_index = c2d.zSize[2]*c2d.zSize[0] * j + c2d.zSize[2] * i;
 
-#if defined(FFTW_USE_NEW_ARRAY_EXECUTE) && (USE_DOUBLE == 1)
-            Real* ptr = static_cast<Real*>(pressure.raw_data()) + base_index;
-            fftw_execute_r2r(structures.ifft_plan_z, ptr, ptr);
-            // Copy the transformed data.
-            for (int k = 0; k < c2d.zSize[2]; k++) {
-                pressure(base_index+k) /= normalization_constant_z;
-            }
-#else
             // Copy the original data.
             memcpy(structures.buffer_z, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.zSize[2]);
 
@@ -191,7 +160,6 @@ void solve_pressure_equation(PressureTensor &pressure,
             for (int k = 0; k < c2d.zSize[2]; k++) {
                 pressure(base_index+k) = structures.buffer_z[k] / normalization_constant_z;
             }
-#endif
         }
     }
     structures.c2d.transposeZ2Y_MajorIndex(static_cast<Real *>(pressure.raw_data()), static_cast<Real *>(pressure.raw_data()));
@@ -203,14 +171,6 @@ void solve_pressure_equation(PressureTensor &pressure,
         for (int k = 0; k < c2d.ySize[2]; k++) {
             const int base_index = c2d.ySize[2]*c2d.ySize[1] * i + c2d.ySize[1] * k;
 
-#if defined(FFTW_USE_NEW_ARRAY_EXECUTE) && (USE_DOUBLE == 1)
-            Real* ptr = static_cast<Real*>(pressure.raw_data()) + base_index;
-            fftw_execute_r2r(structures.ifft_plan_y, ptr, ptr);
-            // Copy the transformed data.
-            for (int j = 0; j < c2d.ySize[1]; j++){
-                pressure(base_index+j) /= normalization_constant_y;
-            }
-#else
             // Copy the original data.
             memcpy(structures.buffer_y, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.ySize[1]);
 
@@ -225,7 +185,6 @@ void solve_pressure_equation(PressureTensor &pressure,
             for (int j = 0; j < c2d.ySize[1]; j++){
                 pressure(base_index+j) = structures.buffer_y[j] / normalization_constant_y;
             }
-#endif
         }
     }
     structures.c2d.transposeY2X_MajorIndex(static_cast<Real *>(pressure.raw_data()), static_cast<Real *>(pressure.raw_data()));
@@ -237,14 +196,6 @@ void solve_pressure_equation(PressureTensor &pressure,
         for (int j = 0; j < c2d.xSize[1]; j++) {
             const int base_index = c2d.xSize[0]*c2d.xSize[1] * k + c2d.xSize[0] * j;
 
-#if defined(FFTW_USE_NEW_ARRAY_EXECUTE) && (USE_DOUBLE == 1)
-            Real* ptr = static_cast<Real*>(pressure.raw_data()) + base_index;
-            fftw_execute_r2r(structures.ifft_plan_x, ptr, ptr);
-            // Copy the transformed data.
-            for (int i = 0; i < c2d.xSize[0]; i++) {
-                pressure(base_index+i) /= normalization_constant_x;
-            }
-#else
             // Copy the original data.
             memcpy(structures.buffer_x, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.xSize[0]);
 
@@ -259,7 +210,6 @@ void solve_pressure_equation(PressureTensor &pressure,
             for (int i = 0; i < c2d.xSize[0]; i++) {
                 pressure(base_index+i) = structures.buffer_x[i] / normalization_constant_x;
             }
-#endif
         }
     }
 }
