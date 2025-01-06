@@ -131,8 +131,13 @@ void StaggeredTensor::receive_mpi_data(int base_tag) {
       (void) return_code;
 
       // Copy it into the tensor.
+#ifdef OPT_CPU_CACHE
+      for (size_t k = 1; k < sizes[2]-1; k++) {
+        for (size_t i = 1; i < sizes[0]-1; i++) {
+#else
       for (size_t i = 1; i < sizes[0]-1; i++) {
         for (size_t k = 1; k < sizes[2]-1; k++) {
+#endif
           this->operator()(i, sizes[1] - 1, k) = next_y_slice_recv(i,k);
         }
       }
@@ -145,8 +150,13 @@ void StaggeredTensor::receive_mpi_data(int base_tag) {
       (void) return_code;
 
       // Copy it into the tensor.
+#ifdef OPT_CPU_CACHE
+    for (size_t k = 1; k < sizes[2]-1; k++) {
+      for (size_t i = 1; i < sizes[0]-1; i++) {
+#else
       for (size_t i = 1; i < sizes[0]-1; i++) {
         for (size_t k = 1; k < sizes[2]-1; k++) {
+#endif
           this->operator()(i, 0, k) = prev_y_slice_recv(i,k);
         }
       }
@@ -198,9 +208,15 @@ void StaggeredTensor::set(const std::function<Real(Real, Real, Real)> &f, bool i
   const size_t upper_limit_j = include_border ? sizes[1] : sizes[1] - 1;
   const size_t upper_limit_k = include_border ? sizes[2] : sizes[2] - 1;
 
+#ifdef OPT_CPU_CACHE
+  for (size_t k = lower_limit; k < upper_limit_k; k++) {
+    for (size_t j = lower_limit; j < upper_limit_j; j++) {
+      for (size_t i = lower_limit; i < upper_limit_i; i++) {
+#else
   for (size_t i = lower_limit; i < upper_limit_i; i++) {
     for (size_t j = lower_limit; j < upper_limit_j; j++) {
       for (size_t k = lower_limit; k < upper_limit_k; k++) {
+#endif
         this->operator()(i, j, k) = evaluate_function_at_index(i, j, k, f);
       }
     }
