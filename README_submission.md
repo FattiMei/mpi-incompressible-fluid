@@ -1,7 +1,7 @@
 # Content
 - `Makefile` and `CMakeLists.txt`: make and cmake files for building the project. If possible, use the make version. Make sure to follow the written instructionts at the top of the respective file. Both build systems produce one or more executables. The executable to be considered is `mif`.
 - `src` and `include`: source directories for the project.
-- `test`: directory with some tests used during development. It is included in case some debugging is needed, but is not needed for the final executable.
+- `test`and `generators`: directories with some tests used during development. THey are included in case some debugging is needed, but not needed for the final executable.
 - `input`: folder containing an example input file. Only change the values to the right of the colons (:), without changing whitespace. In case of parsing errors, they will be reported in cerr.
 - `deps`: folder containing a modified version of the 2decomp library.
 

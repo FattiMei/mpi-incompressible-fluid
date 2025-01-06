@@ -25,7 +25,7 @@ if (benchmark_FOUND)
 	set(BENCH_OK TRUE)
 endif()
 
-# Set precision. If USE_DOUBLE=1, use doubles, otherwise use single precision floats.
+# Set precision. If USE_DOUBLE=1, use doubles, if USE_DOUBLE=0 use single precision floats.
 add_compile_definitions(USE_DOUBLE=1)
 
 # Set the compiler.
@@ -49,7 +49,7 @@ if(NOT DEFINED VERBOSE)
     add_compile_definitions(VERBOSE=${VERBOSE})
 endif ()
 
-# Set some definitions. Some may need to be commented out or uncommented.
+# Set some definitions. DMIF_LEGACY_COMPILER may need to be commented out or uncommented.
 add_definitions(-DOPT_CPU_CACHE)
 add_definitions(-DMIF_LEGACY_COMPILER)
 add_definitions(-DMIF_NO_DISTRIBUTED_FS)

@@ -1,6 +1,5 @@
 #include <cassert>
 #include <fftw3.h>
-#include <chrono>
 #include <iostream>
 #include <mpi.h>
 #include "Manufactured.h"
@@ -88,32 +87,33 @@ int main(int argc, char *argv[]) {
 
   // Compute and print convergence conditions.
   // Note: assuming the highest velocity value is obtained at time 0.
-  /*
-  Real highest_velocity = 0.0;
-  for (size_t k = 0; k < constants.Nz; k++) {
-    for (size_t j = 0; j < constants.Ny; j++) {
-      for (size_t i = 0; i < constants.Nx; i++) {
-        if (std::abs(velocity.u(i,j,k)) > highest_velocity) {
-          highest_velocity = std::abs(velocity.u(i,j,k));
-        }
-        if (std::abs(velocity.v(i,j,k)) > highest_velocity) {
-          highest_velocity = std::abs(velocity.v(i,j,k));
-        }
-        if (std::abs(velocity.w(i,j,k)) > highest_velocity) {
-          highest_velocity = std::abs(velocity.w(i,j,k));
+  const bool print_cfl = false;
+  if (print_cfl) {
+    Real highest_velocity = 0.0;
+    for (size_t k = 0; k < constants.Nz; k++) {
+      for (size_t j = 0; j < constants.Ny; j++) {
+        for (size_t i = 0; i < constants.Nx; i++) {
+          if (std::abs(velocity.u(i,j,k)) > highest_velocity) {
+            highest_velocity = std::abs(velocity.u(i,j,k));
+          }
+          if (std::abs(velocity.v(i,j,k)) > highest_velocity) {
+            highest_velocity = std::abs(velocity.v(i,j,k));
+          }
+          if (std::abs(velocity.w(i,j,k)) > highest_velocity) {
+            highest_velocity = std::abs(velocity.w(i,j,k));
+          }
         }
       }
     }
+    const Real space_step = std::min({constants.dx, constants.dy, constants.dz});
+    if (rank == 0) {
+      std::cout << "CFL: " << constants.dt / space_step * highest_velocity << std::endl;
+      std::cout << "Reynolds condition: " << constants.dt / (Re*space_step*space_step) << std::endl;
+    }
   }
-  const Real space_step = std::min({constants.dx, constants.dy, constants.dz});
-  if (rank == 0) {
-    std::cout << "CFL: " << constants.dt / space_step * highest_velocity << std::endl;
-    std::cout << "Reynolds condition: " << constants.dt / (Re*space_step*space_step) << std::endl;
-  }
-  */
 
   // Compute the solution.
-  const bool print_times = true;
+  const bool print_times = false;
   const auto t1 = MPI_Wtime();
   for (unsigned int time_step = 0; time_step < num_time_steps; time_step++) {
 
