@@ -137,7 +137,7 @@ void solve_pressure_equation(PressureTensor &pressure,
 
 #if defined(FFTW_USE_NEW_ARRAY_EXECUTE) && (USE_DOUBLE == 1)
             Real* ptr = static_cast<Real*>(pressure.raw_data()) + base_index;
-            fftw_execute_r2r(structures.fft_plan_y, ptr, ptr);
+            fftw_execute_r2r(structures.fft_plan_z, ptr, ptr);
 #else
             // Copy the original data.
             memcpy(structures.buffer_z, static_cast<Real *>(pressure.raw_data())+base_index, sizeof(Real)*c2d.zSize[2]);
