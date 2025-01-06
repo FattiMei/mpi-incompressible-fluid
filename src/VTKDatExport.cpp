@@ -466,19 +466,19 @@ void writeDat(
         FILE* file = fopen(filename.c_str(), "w");
         if (direction == 0) {
             for (size_t i = 0; i < points_coordinate_global.size(); i++) {
-                fprintf(file, "%.8f %.8f %.8f %.8f %.8f %.8f %.8f\n", points_coordinate_global[i], y, z, point_data_u_global[i],
+                fprintf(file, "%.8f %.8f %.8f %.8e %.8e %.8e %.8e\n", points_coordinate_global[i], y, z, point_data_u_global[i],
                         point_data_v_global[i], point_data_w_global[i], point_data_p_global[i]);
             }
         }
         else if (direction == 1) {
             for (size_t i = 0; i < points_coordinate_global.size(); i++) {
-                fprintf(file, "%.8f %.8f %.8f %.8f %.8f %.8f %.8f\n", x, points_coordinate_global[i], z, point_data_u_global[i],
+                fprintf(file, "%.8f %.8f %.8f %.8e %.8e %.8e %.8e\n", x, points_coordinate_global[i], z, point_data_u_global[i],
                         point_data_v_global[i], point_data_w_global[i], point_data_p_global[i]);
             }
         }
         else if (direction == 2) {
             for (size_t i = 0; i < points_coordinate_global.size(); i++) {
-                fprintf(file, "%.8f %.8f %.8f %.8f %.8f %.8f %.8f\n", x, y, points_coordinate_global[i], point_data_u_global[i],
+                fprintf(file, "%.8f %.8f %.8f %.8e %.8e %.8e %.8e\n", x, y, points_coordinate_global[i], point_data_u_global[i],
                         point_data_v_global[i], point_data_w_global[i], point_data_p_global[i]);
             }
         }

@@ -1,7 +1,7 @@
 # Content
 - `Makefile` and `CMakeLists.txt`: make and cmake files for building the project. If possible, use the make version. Make sure to follow the written instructionts at the top of the respective file. Both build systems produce one or more executables. The executable to be considered is `mif`.
 - `src` and `include`: source directories for the project.
-- `test`and `generators`: directories with some tests used during development. THey are included in case some debugging is needed, but not needed for the final executable.
+- `test`and `generators`: directories with some tests used during development. They are included in case some debugging is needed, but not needed for the final executable.
 - `input`: folder containing an example input file. Only change the values to the right of the colons (:), without changing whitespace. In case of parsing errors, they will be reported in cerr.
 - `deps`: folder containing a modified version of the 2decomp library.
 
@@ -14,9 +14,9 @@ After compiling using make or cmake, run the program by calling `mpirun -n <num_
 - `test_case_2`: flag signifying whether to simulate test case 1 or 2. If `true`, test case 2 is run, if `false` test case 1 is run.
 
 # Outputs
-The executable will produce one `solution.vtk` file, and 2 or 3 `profile*.dat` files. Note that it will also delete any previous output file in the execution directory. The rules for these output files were not clear on a few points, we made the following decisions:
-- `vtk data`: we store data in `solution.vtk` with data on the pressure points of the three requested planes. If Paraview is used the "Point Gaussian" option must be selected to visualize the points.
-- `duplicate points`: the rules for the `solution.vtk` file request 3 planes. However, the planes may, and in fact do, intersect in some points. We store intersection points once for each requested plane.
-- `planes not on pressure points`: the rules on the content of these files were inconsistent, as they requested values on specific planes and lines, but also requested the values to be located in pressure discretization points. However, in some cases, satisfying both requests is not possible. For example, for Nz even and test case 1, the plane z=0 is not located on pressure points. As such, we return the values on the closest plane of pressure points with a coordinate lower or equal to the requested one. In `solution.vtk`, the coordinates are stored exactly, so for example in the first test case the z coordinate for said plane will be slightly lower than 0 if Nz=480 is used. 
+The executable will produce one `solution.vtk` file, and 2 or 3 `profile*.dat` files depending on the test case. Note that it will also delete any previous output file in the execution directory. The rules for these output files were not clear regarding some aspects, we made the following decisions:
+- `point data`: we store data in `solution.vtk` with data on the pressure points of the three requested planes. If Paraview is used, the "Point Gaussian" option must be selected to visualize the points.
+- `duplicate points`: the rules for the `solution.vtk` file request 3 planes in one file. However, the planes may, and in fact do, intersect in some points. We store intersection points once for each requested plane.
+- `planes not on pressure points`: the rules requested values on specific planes and lines, but also requested the values to be located in pressure discretization points. However, in some cases, satisfying both requests is not possible. For example, for Nz=480 and test case 1, the plane z=0 is not located on pressure points. The alternative were returning the values on the closest plane of pressure points with a coordinate lower or equal to the requested one, or interpolating the solution on the requested planes, but outside of pressure points. We chose the former: for example, in `solution.vtk` for the first test case the z coordinate for the z=0 plane will be slightly lower than 0 if Nz=480 is used. 
 - `profiles not on pressure points`: for the `profile*.dat` files, the same issue holds. The values are computed according to the same criterion as the `solution.vtk` file, but the corresponding coordinates are rounded to the requested ones for readability.
-- `dat file precision`: the rules do not state the precision data should be stored in the `profile*.dat` files. We opted for 8 decimal places.
+- `dat file precision`: the rules do not state the precision data should be stored in the `profile*.dat` files. We opted for 9 significative digits (in scientific notation) for values and 8 decimal digits for coordinates.

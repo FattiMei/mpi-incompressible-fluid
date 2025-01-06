@@ -1,0 +1,8 @@
+Nt : 8000
+dt : 1e-3
+Nx : 64
+Ny : 64
+Nz : 64
+Py : 3
+Pz : 4
+test_case_2 : false
