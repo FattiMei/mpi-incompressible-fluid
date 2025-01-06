@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     closest_x = points[np.argmin(np.abs(points)[:,0]), 0]
     closest_y = points[np.argmin(np.abs(points)[:,1]), 1]
-    closest_z = points[np.argmin(np.abs(points[points[:,2] < 0])), 2]
+    closest_z = points[np.argmin(np.abs(points[points[:,2] <= 0])), 2]
 
     yz_face = remove_duplicate_points(np.array(sorted(points[points[:,0] == closest_x].tolist())))
     xz_face = remove_duplicate_points(np.array(sorted(points[points[:,1] == closest_y].tolist())))
