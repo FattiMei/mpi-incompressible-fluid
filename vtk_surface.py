@@ -1,7 +1,6 @@
 import sys
 import struct
 import numpy as np
-# import matplotlib.pyplot as plt
 
 
 def get_face_stride(face):
@@ -90,18 +89,9 @@ if __name__ == "__main__":
         np.array(sorted(points[points[:, 2] == closest_z].tolist()))
     )
 
-    # plt.scatter(xz_face[:,1], xz_face[:,2])
-    # plt.show()
-
-    # plt.scatter(xz_face[:,0], xz_face[:,1])
-    # plt.show()
-
-    # plt.scatter(xz_face[:,0], xz_face[:,2])
-    # plt.show()
-
-    yz_stride = get_face_stride(yz_face[:, 0:3])
-    xz_stride = get_face_stride(xz_face[:, 0:3])
-    xy_stride = get_face_stride(xy_face[:, 0:3])
+    yz_stride = get_face_stride(yz_face[:,0:3])
+    xz_stride = get_face_stride(xz_face[:,0:3])
+    xy_stride = get_face_stride(xy_face[:,0:3])
 
     yz_rows = len(yz_face) // yz_stride
     xz_rows = len(xz_face) // xz_stride
