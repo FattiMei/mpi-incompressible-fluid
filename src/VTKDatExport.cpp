@@ -351,13 +351,27 @@ void writeDat(
     const int mpi_size = constants.Py * constants.Pz;
     assert(direction >= 0 && direction <= 2);
 
-    // Get the global indices of the point the line passes through.
+    // Get the global indices of the point the line passes through. If not aligned, get the
+    // indices of the point just before.
     const std::tuple<int, Real> index_1 = pos_to_index(x, constants.min_x_global, constants.dx);
     const std::tuple<int, Real> index_2 = pos_to_index(y, constants.min_y_global, constants.dy);
     const std::tuple<int, Real> index_3 = pos_to_index(z, constants.min_z_global, constants.dz);
     const int i_global = std::get<0>(index_1);
     const int j_global = std::get<0>(index_2);
     const int k_global = std::get<0>(index_3);
+
+    // Check alignment. For each direction, the point should be either on a pressure plane or
+    // exactly between two planes.
+    const Real weight_i = std::get<1>(index_1);
+    const Real weight_j = std::get<1>(index_2);
+    const Real weight_k = std::get<1>(index_3);
+    constexpr Real precision = 1e-6;
+    assert(std::abs(weight_i - 1.0) < precision || std::abs(weight_i - 0.5) < precision);
+    assert(std::abs(weight_j - 1.0) < precision || std::abs(weight_j - 0.5) < precision);
+    assert(std::abs(weight_k - 1.0) < precision || std::abs(weight_k - 0.5) < precision);
+    const bool aligned_x = std::abs(weight_i - 1.0) < precision;
+    const bool aligned_y = std::abs(weight_j - 1.0) < precision;
+    const bool aligned_z = std::abs(weight_k - 1.0) < precision;
 
     // Compute local and global indices.
     COMPUTE_INDEXING();
@@ -371,26 +385,46 @@ void writeDat(
     point_data_p.reserve(size);
     std::vector<Real> points_coordinates;
 
-    // Write data in a point given its indices.
-    auto write_point = [&constants, &velocity, &pressure, &points_coordinates,
-            &point_data_u, &point_data_v, &point_data_w, &point_data_p]
-    (int i, int j, int k, Real pos) {
-        points_coordinates.push_back(pos);
-        point_data_u.push_back((velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2);
-        point_data_v.push_back((velocity.v(i, j, k) + velocity.v(i, j + 1, k)) / 2);
-        point_data_w.push_back((velocity.w(i, j, k) + velocity.w(i, j, k + 1)) / 2);
-        point_data_p.push_back(pressure(i, j, k));
-    };
-
     // Write the requested line.
     // Parallel to x axis.
-    if (direction == 0) {
+    if (direction == 0) { 
         if (j_global >= start_j_write_global && j_global < end_j_write_global && 
             k_global >= start_k_write_global && k_global < end_k_write_global) {
             const int j = j_global - start_j_write_global + start_j_write_local;
             const int k = k_global - start_k_write_global + start_k_write_local;
             for (int i = start_i_write_local; i < end_i_write_local; i++) {
-                write_point(i, j, k, constants.min_x_global + (constants.base_i + i) * constants.dx);
+                // Write x coordinates.
+                points_coordinates.push_back(constants.min_x_global + (constants.base_i + i) * constants.dx);
+
+                // Write values of u.
+                point_data_u.push_back(weight_j * weight_k * (velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2 +
+                                       (1-weight_j) * weight_k * (velocity.u(i, j+1, k) + velocity.u(i + 1, j+1, k)) / 2 +
+                                       weight_j * (1-weight_k) * (velocity.u(i, j, k+1) + velocity.u(i + 1, j, k+1)) / 2 +
+                                       (1-weight_j) * (1-weight_k) * (velocity.u(i, j+1, k+1) + velocity.u(i + 1, j+1, k+1)) / 2);
+
+                // Write values of v.
+                if (aligned_y) {
+                    point_data_v.push_back(weight_k * (velocity.v(i, j, k) + velocity.v(i, j + 1, k)) / 2 +
+                                           (1-weight_k) * (velocity.v(i, j, k+1) + velocity.v(i, j + 1, k+1)) / 2);
+                } else {
+                    point_data_v.push_back(weight_k * velocity.v(i, j + 1, k) +
+                                           (1-weight_k) * velocity.v(i, j + 1, k+1));
+                }
+
+                // Write values of w.
+                if (aligned_z) {
+                    point_data_w.push_back(weight_j * (velocity.w(i, j, k) + velocity.w(i, j, k + 1)) / 2 +
+                                           (1-weight_j) * (velocity.w(i, j+1, k) + velocity.w(i, j+1, k + 1)) / 2);
+                } else {
+                    point_data_w.push_back(weight_j * velocity.w(i, j, k + 1) +
+                                           (1-weight_j) * velocity.w(i, j+1, k + 1));
+                }
+
+                // Write values of p.
+                point_data_p.push_back(weight_j * weight_k * pressure(i, j, k) +
+                                       (1-weight_j) * weight_k * pressure(i, j+1, k) +
+                                       weight_j * (1-weight_k) * pressure(i, j, k+1) +
+                                       (1-weight_j) * (1-weight_k) * pressure(i, j+1, k+1));
             }
         }
     }
@@ -401,7 +435,38 @@ void writeDat(
             const int i = i_global - start_i_write_global + start_i_write_local;
             const int k = k_global - start_k_write_global + start_k_write_local;
             for (int j = start_j_write_local; j < end_j_write_local; j++) {
-                write_point(i, j, k, constants.min_y_global + (constants.base_j + j) * constants.dy);
+                // Write y coordinates.
+                points_coordinates.push_back(constants.min_y_global + (constants.base_j + j) * constants.dy);
+
+                // Write values of u.
+                if (aligned_x) {
+                    point_data_u.push_back(weight_k * (velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2 +
+                                           (1-weight_k) * (velocity.u(i, j, k+1) + velocity.u(i + 1, j, k+1)) / 2);
+                } else {
+                    point_data_u.push_back(weight_k * velocity.u(i + 1, j, k) +
+                                           (1-weight_k) * velocity.v(i + 1, j, k+1));
+                }
+
+                // Write values of v.
+                point_data_v.push_back(weight_i * weight_k * (velocity.v(i, j, k) + velocity.v(i, j + 1, k)) / 2 +
+                                       (1-weight_i) * weight_k * (velocity.v(i+1, j, k) + velocity.v(i+1, j + 1, k)) / 2 +
+                                       weight_i * (1-weight_k) * (velocity.v(i, j, k+1) + velocity.v(i, j + 1, k+1)) / 2 +
+                                       (1-weight_i) * (1-weight_k) * (velocity.v(i+1, j, k+1) + velocity.v(i+1, j + 1, k+1)) / 2);
+
+                // Write values of w.
+                if (aligned_z) {
+                    point_data_w.push_back(weight_i * (velocity.w(i, j, k) + velocity.w(i, j, k + 1)) / 2 +
+                                           (1-weight_i) * (velocity.w(i+1, j, k) + velocity.w(i+1, j, k + 1)) / 2);
+                } else {
+                    point_data_w.push_back(weight_i * velocity.w(i, j, k + 1) +
+                                           (1-weight_i) * velocity.w(i+1, j, k + 1));
+                }
+
+                // Write values of p.
+                point_data_p.push_back(weight_i * weight_k * pressure(i, j, k) +
+                                       (1-weight_i) * weight_k * pressure(i+1, j, k) +
+                                       weight_i * (1-weight_k) * pressure(i, j, k+1) +
+                                       (1-weight_i) * (1-weight_k) * pressure(i+1, j, k+1));
             }
         }
     }
@@ -412,7 +477,38 @@ void writeDat(
             const int i = i_global - start_i_write_global + start_i_write_local;
             const int j = j_global - start_j_write_global + start_j_write_local;
             for (int k = start_k_write_local; k < end_k_write_local; k++) {
-                write_point(i, j, k, constants.min_z_global + (constants.base_k + k) * constants.dz);
+                // Write z coordinates.
+                points_coordinates.push_back(constants.min_z_global + (constants.base_k + k) * constants.dz);
+
+                // Write values of u.
+                if (aligned_x) {
+                    point_data_u.push_back(weight_j * (velocity.u(i, j, k) + velocity.u(i + 1, j, k)) / 2 +
+                                           (1-weight_j) * (velocity.u(i, j+1, k) + velocity.u(i + 1, j+1, k)) / 2);
+                } else {
+                    point_data_u.push_back(weight_j * velocity.u(i + 1, j, k) +
+                                           (1-weight_j) * velocity.v(i + 1, j+1, k));
+                }
+
+                // Write values of v.
+                if (aligned_y) {
+                    point_data_v.push_back(weight_i * (velocity.v(i, j, k) + velocity.v(i, j + 1, k)) / 2 +
+                                           (1-weight_i) * (velocity.v(i+1, j, k) + velocity.v(i+1, j + 1, k)) / 2);
+                } else {
+                    point_data_v.push_back(weight_i * velocity.v(i, j + 1, k) +
+                                           (1-weight_i) * velocity.v(i+1, j + 1, k));
+                }
+
+                // Write values of w.
+                point_data_w.push_back(weight_i * weight_j * (velocity.w(i, j, k) + velocity.w(i, j, k + 1)) / 2 +
+                                       (1-weight_i) * weight_j * (velocity.w(i+1, j, k) + velocity.w(i+1, j, k + 1)) / 2 +
+                                       weight_i * (1-weight_j) * (velocity.w(i, j+1, k) + velocity.w(i, j+1, k + 1)) / 2 +
+                                       (1-weight_i) * (1-weight_j) * (velocity.w(i+1, j+1, k) + velocity.w(i+1, j+1, k + 1)) / 2);
+
+                // Write values of p.
+                point_data_p.push_back(weight_i * weight_j * pressure(i, j, k) +
+                                       (1-weight_i) * weight_j * pressure(i+1, j, k) +
+                                       weight_i * (1-weight_j) * pressure(i, j+1, k) +
+                                       (1-weight_i) * (1-weight_j) * pressure(i+1, j+1, k));
             }
         }
     }
